@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt: Personal Assistant to Automatically Manage Your Files
-#AutoIt3Wrapper_Res_Fileversion=8.1.0.0
-#AutoIt3Wrapper_Res_ProductVersion=8.1.0.0
+#AutoIt3Wrapper_Res_Fileversion=8.1.1.0
+#AutoIt3Wrapper_Res_ProductVersion=8.1.1.0
 #AutoIt3Wrapper_Res_LegalCopyright=Andrea Luparia
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.dropitproject.com
@@ -7056,9 +7056,12 @@ EndFunc   ;==>_Sorting_StartProgressCopy
 
 Func _Sorting_RunDelete($sSource, $sMode = 1)
 	If _WinAPI_PathIsDirectory($sSource) Then
-		If __Is("IgnoreAttributes") Then
-			FileSetAttrib($sSource, '-R', 1)
-			Return SetError(2, 0, 0) ; Failed.
+		If __IsReadOnly($sSource) Then
+			If __Is("IgnoreAttributes") Then
+				FileSetAttrib($sSource, '-R', 1)
+			Else
+				Return SetError(2, 0, 0) ; Failed.
+			EndIf
 		EndIf
 		Switch $sMode
 			Case 2
@@ -7069,9 +7072,12 @@ Func _Sorting_RunDelete($sSource, $sMode = 1)
 				DirRemove($sSource, 1)
 		EndSwitch
 	Else
-		If __Is("IgnoreAttributes") Then
-			FileSetAttrib($sSource, '-R')
-			Return SetError(2, 0, 0) ; Failed.
+		If __IsReadOnly($sSource) Then
+			If __Is("IgnoreAttributes") Then
+				FileSetAttrib($sSource, '-R')
+			Else
+				Return SetError(2, 0, 0) ; Failed.
+			EndIf
 		EndIf
 		Switch $sMode
 			Case 2
