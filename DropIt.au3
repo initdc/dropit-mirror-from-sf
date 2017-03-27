@@ -4,8 +4,8 @@
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt - To place your files with a drop
-#AutoIt3Wrapper_Res_Fileversion=0.9.1.0
-#AutoIt3Wrapper_Res_ProductVersion=0.9.1.0
+#AutoIt3Wrapper_Res_Fileversion=0.9.2.0
+#AutoIt3Wrapper_Res_ProductVersion=0.9.2.0
 #AutoIt3Wrapper_Res_LegalCopyright=Lupo PenSuite Team
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Run_Obfuscator=y
@@ -27,13 +27,13 @@ Opt("TrayIconHide", 1)
 Opt("TrayOnEventMode", 1)
 Opt("TrayMenuMode", 1)
 
-Global $sName = "DropIt", $sVer = " (v0.9.1)", $ii = $sName & " - To place your files with a drop"
+Global $sName = "DropIt", $sVer = " (v0.9.2)", $ii = $sName & " - To place your files with a drop"
 Global $sIni = @ScriptDir & "\settings.ini", $sIniPr, $PrDir = @ScriptDir & "\profiles", $ImDir = @ScriptDir & "\img", $ImDef = "default.gif", $sIm, $sPic = $ImDir & "\ps.gif"
 Global $hGUI, $hGUI2, $sIcon, $sIcon2, $sData, $Dummy, $hListView, $temp, $i, $top, $Show, $Separ, $Exit, $menu, $func1, $func3, $func2, $func4, $func5, $func6, $custom, $specialClick
 Global Const $WM_DROPFILES = 0x233, $WM_ENTERSIZEMOVE = 0x231, $WM_EXITSIZEMOVE = 0x232
 Global $gaDropFiles[1], $RelPos[2], $EP = "Exclusion-Pattern"
 Global $tips = '- As destination folders are supported both absolute ("C:\Lupo\My Images") and relative ("..\My Images") paths.' & @LF & @LF & '- If you want to use different pattern groups, for example on different computers, you can click "Profiles" -> "Customize" to create and manage them.' & @LF & @LF & '- If you want to exclude files that match with a specified pattern, you can add "$" at the end of the pattern itself (for example:  *.exe$ ).' & @LF & @LF & '- If you need more info about supported pattern rules, you can click the "Rules" button and see a list of possible patterns.'
-Global $prs = 'Supported pattern rules for files:' & @LF & '*.zip   = all files with "zip" extension' & @LF & 'penguin.*   = all files named "penguin"' & @LF & 'penguin*.*   = all files that begins with "penguin"' & @LF & '*penguin.*   = all files that ends with "penguin"' & @LF & '*penguin*   = all files that contains "penguin"' & @LF & @LF & 'Supported pattern rules for folders:' & @LF & 'robot**   = all folders that begins with "robot"' & @LF & '**robot   = all folders that ends with "robot"' & @LF & '**robot**   = all folders that contains "robot"' & @LF & @LF & 'Add "$" at the end of a pattern to skip files that' & @LF & 'match with it during the dropping (eg:  sky*.jpg$ ).'
+Global $prs = 'Examples of supported pattern rules for files:' & @LF & '*.zip   = all files with "zip" extension' & @LF & 'penguin.*   = all files named "penguin"' & @LF & 'penguin*.*   = all files that begin with "penguin"' & @LF & '*penguin*   = all files that contain "penguin"' & @LF & @LF & 'Examples of supported pattern rules for folders:' & @LF & 'robot**   = all folders that begin with "robot"' & @LF & '**robot   = all folders that end with "robot"' & @LF & '**robot**   = all folders that contain "robot"' & @LF & @LF & 'Add "$" at the end of a pattern to skip loaded' & @LF & 'files that match with it (eg:  sky*.jpg$ ).' & @LF & @LF & 'Separate several strings in a pattern with ";" to' & @LF & 'create multi-string patterns (eg:  *.jpg;*png ).'
 Global $er1 = "You have to select a destination folder to associate it.", $er2 = "You have to insert a correct pattern to add the association.", $er3 = "This pattern rule already exists.", $me1 = "Insert the desired destination folder and write a pattern, to place there files that match with it:", $me2 = "Change the destination folder for files that match with the selected pattern or delete this association:"
 
 
@@ -43,7 +43,7 @@ _Main()
 Func Manage()
 	Local $DFA, $sel, $close, $help, $tem, $var, $ff, $decision
 	Local $hListBox, $Dir1, $Dir2, $fo1, $fo2, $se1, $se2, $bot1, $bot2, $bot3, $bot4
-	$DFA = GUICreate("Destination Folders Association [" & IniRead($sIni, "General", "Profile", "Default") & "]", 410, 280, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI)
+	$DFA = GUICreate("Destination Folders Association [" & IniRead($sIni, "General", "Profile", "Default") & "]", 420, 280, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI)
 	
 	GUICtrlCreateGroup("Add Association", 10, 6, 280, 115)
 	GUICtrlCreateLabel($me1, 21, 6+17, 260, 40)
@@ -69,12 +69,11 @@ Func Manage()
 	GUICtrlSetState($Dir2, $GUI_DISABLE)
 	GUICtrlSetState($se2, $GUI_DISABLE)
 	GUICtrlSetState($bot3, $GUI_DISABLE)
-	GUICtrlSetState($fo2, $GUI_DISABLE)
 	GUICtrlSetState($bot4, $GUI_DISABLE)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	
-	GUICtrlCreateGroup("Pattern List", 300, 6, 100, 234)
-	$hListBox = GUICtrlCreateList("", 308, 6+18, 84, 211, BitOr($LBS_DISABLENOSCROLL, $LBS_STANDARD))
+	GUICtrlCreateGroup("Pattern List", 300, 6, 110, 234)
+	$hListBox = GUICtrlCreateList("", 308, 6+18, 94, 211, BitOr($LBS_DISABLENOSCROLL, $LBS_STANDARD))
 	_GUICtrlListBox_BeginUpdate($hListBox)
 	$var = IniReadSection($sIniPr, "Patterns")
 	If Not @error Then
@@ -115,7 +114,7 @@ Func Manage()
 					MsgBox(0x40000, "Message", $er2)
 				Else
 					If IniRead($sIniPr, "Patterns", $ff, "0") = "0" Then
-						If StringRight($ff, 1) = '$' Then $tem = $EP
+						If StringRight($ff, 1) = "$" Then $tem = $EP
 						If $tem = "" Then
 							MsgBox(0x40000, "Message", $er1)
 						Else
@@ -133,7 +132,7 @@ Func Manage()
 			Case $bot3
 				$decision = MsgBox(0x40004, "Delete Association", 'Are you sure to delete this association?')
 				If $decision = 6 Then
-					IniDelete($sIniPr, "Patterns", GUICtrlRead($fo2))
+					IniDelete($sIniPr, "Patterns", $ff)
 					_GUICtrlListBox_DeleteString($hListBox, _GUICtrlListBox_FindString($hListBox, $ff))
 					GUICtrlSetData($Dir2, "")
 					GUICtrlSetData($fo2, "")
@@ -141,11 +140,21 @@ Func Manage()
 				
 			Case $bot4
 				$tem = GUICtrlRead($Dir2)
-				$ff = StringLower(GUICtrlRead($fo2))
 				If $tem = "" Then
 					MsgBox(0x40000, "Message", $er1)
 				Else
-					IniWrite($sIniPr, "Patterns", $ff, $tem)
+					If $ff = StringLower(GUICtrlRead($fo2)) Then
+						IniWrite($sIniPr, "Patterns", $ff, $tem)
+					ElseIf _GUICtrlListBox_FindInText($hListBox, GUICtrlRead($fo2)) <> -1 Then
+						MsgBox(0x40000, "Message", $er3)
+					Else
+						IniDelete($sIniPr, "Patterns", $ff)
+						_GUICtrlListBox_DeleteString($hListBox, _GUICtrlListBox_FindString($hListBox, $ff))
+						$ff = StringLower(GUICtrlRead($fo2))
+						IniWrite($sIniPr, "Patterns", $ff, $tem)
+						_GUICtrlListBox_AddString($hListBox, $ff)
+						_GUICtrlListBox_Sort($hListBox)
+					EndIf
 				EndIf
 				
 			Case $hListBox
@@ -153,14 +162,13 @@ Func Manage()
 				$tem = IniRead($sIniPr, "Patterns", $ff, "")
 				If $tem <> "" Then
 					GUICtrlSetState($bot3, $GUI_ENABLE)
-					If StringRight($ff, 1) = '$' Then
+					GUICtrlSetState($bot4, $GUI_ENABLE)
+					If StringRight($ff, 1) = "$" Then
 						GUICtrlSetState($Dir2, $GUI_DISABLE)
 						GUICtrlSetState($se2, $GUI_DISABLE)
-						GUICtrlSetState($bot4, $GUI_DISABLE)
 					Else
 						GUICtrlSetState($Dir2, $GUI_ENABLE)
 						GUICtrlSetState($se2, $GUI_ENABLE)
-						GUICtrlSetState($bot4, $GUI_ENABLE)
 					EndIf
 					GUICtrlSetData($Dir2, $tem)
 					GUICtrlSetData($fo2, $ff)
@@ -327,7 +335,7 @@ EndFunc
 
 Func MoreMatches($matches, $item, $j)
 	Local $asso, $sel, $ok, $canc, $rad[$j+1], $ma = "-1"
-	Local $mess = "You have to select the pattern to use."
+	Local $mess = 'You have to select the pattern to use or click "Cancel".'
 	$asso = GUICreate("Pattern ambiguity", 280, 115+21*$j, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI2)
 	
 	GUICtrlCreateGroup("Item with pattern ambiguity:", 8, 6, 264, 40)
@@ -336,7 +344,7 @@ Func MoreMatches($matches, $item, $j)
 	
 	GUICtrlCreateGroup("Select what pattern use for it:", 8, 40+6*2, 264, 22+21*$j)
 	For $i = 1 To $j
-		$rad[$i] = GUICtrlCreateRadio(" " & $matches[$i][0], 30, 46+($i*21))
+		$rad[$i] = GUICtrlCreateRadio(" " & $matches[$i][0], 30, 46+($i*21), 220, 20)
 	Next
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	
@@ -367,19 +375,23 @@ EndFunc
 
 
 Func Checking($item, $ff)
-	Local $str, $match, $pattern, $j = 0, $matches[8][2], $var = IniReadSection($sIniPr, "Patterns")
+	Local $str, $match, $pattern, $j = 0, $k, $matches[8][2], $var = IniReadSection($sIniPr, "Patterns")
 	If Not(@error) Then
 		For $i = 1 To $var[0][0]
 			$match = 0
 			$str = $var[$i][0]
-			If StringRight($var[$i][0], 1) = '$' Then $str = StringTrimRight($var[$i][0], 1)
-			If StringInStr($str, "**") Then
-				$pattern = StringReplace($str, "**", "(.*?)")
-				If $ff = "0" Then $match = StringRegExp(StringLower($item), "^" & $pattern & "$")
-			Else
-				$pattern = StringReplace($str, "*", "(.*?)")
-				If $ff <> "0" Then $match = StringRegExp(StringLower($item), "^" & $pattern & "$")
-			EndIf
+			If StringRight($var[$i][0], 1) = "$" Then $str = StringTrimRight($var[$i][0], 1)
+			Local $strings = StringSplit($str, ";")
+			For $k = 1 To $strings[0]
+				If StringInStr($strings[$k], "**") Then
+					$pattern = StringReplace($strings[$k], "**", "(.*?)")
+					If $ff = "0" Then $match = StringRegExp(StringLower($item), "^" & $pattern & "$")
+				Else
+					$pattern = StringReplace($strings[$k], "*", "(.*?)")
+					If $ff <> "0" Then $match = StringRegExp(StringLower($item), "^" & $pattern & "$")
+				EndIf
+				If $match = 1 Then ExitLoop
+			Next
 			If $match = 1 And $j < 7 Then
 				$j = $j + 1
 				$matches[$j][0] = $var[$i][0]
@@ -387,7 +399,7 @@ Func Checking($item, $ff)
 			EndIf
 		Next
 		If $j = 1 Then
-			If StringRight($matches[$j][0], 1) = '$' Then
+			If StringRight($matches[$j][0], 1) = "$" Then
 				Return "-1"
 			Else
 				Return $matches[$j][1]
@@ -444,7 +456,7 @@ Func Associate($item, $ff)
 					MsgBox(0x40000, "Message", $er2)
 				Else
 					If IniRead($sIniPr, "Patterns", $ff, "0") = "0" Then
-						If StringRight($ff, 1) = '$' Then $tem = $EP
+						If StringRight($ff, 1) = "$" Then $tem = $EP
 						If $tem = "" Then
 							MsgBox(0x40000, "Message", $er1)
 						Else
