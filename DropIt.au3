@@ -18,25 +18,36 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt - Sort your files with a drop
-#AutoIt3Wrapper_Res_Fileversion=2.5.0.0
-#AutoIt3Wrapper_Res_ProductVersion=2.5.0.0
+#AutoIt3Wrapper_Res_Fileversion=2.6.0.0
+#AutoIt3Wrapper_Res_ProductVersion=2.6.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Lupo PenSuite Team
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.lupopensuite.com
 #AutoIt3Wrapper_Res_Field=E-Mail|comment at the website
 #AutoIt3Wrapper_UseX64=N
+#AutoIt3Wrapper_Res_Icon_Add=Lib\img\Custom.ico
+#AutoIt3Wrapper_Res_Icon_Add=Lib\img\Info.ico
+#AutoIt3Wrapper_Res_Icon_Add=Lib\img\Patterns.ico
+#AutoIt3Wrapper_Res_Icon_Add=Lib\img\Search.ico
+#AutoIt3Wrapper_Res_File_Add=Examples\Archiver.ini, 10, ARCHIVER
+#AutoIt3Wrapper_Res_File_Add=Examples\Eraser.ini, 10, ERASER
+#AutoIt3Wrapper_Res_File_Add=Examples\Extractor.ini, 10, EXTRACTOR
 #AutoIt3Wrapper_Res_File_Add=Images\Default.png, 10, IMAGE
 #AutoIt3Wrapper_Res_File_Add=Lib\img\About.png, 10, ABOUT
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Close.png, 10, CLOSE
+#AutoIt3Wrapper_Res_File_Add=Lib\img\Copy.png, 10, COPY
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Custom.png, 10, CUST
+#AutoIt3Wrapper_Res_File_Add=Lib\img\Cut.png, 10, CUT
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Delete.png, 10, DEL
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Edit.png, 10, EDIT
+#AutoIt3Wrapper_Res_File_Add=Lib\img\Example.png, 10, EXAMP
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Help.png, 10, HELP
 #AutoIt3Wrapper_Res_File_Add=Lib\img\HelpFile.png, 10, HELPF
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Hide.png, 10, HIDE
 #AutoIt3Wrapper_Res_File_Add=Lib\img\New.png, 10, NEW
 #AutoIt3Wrapper_Res_File_Add=Lib\img\NoFlag.gif, 10, FLAG
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Options.png, 10, OPT
+#AutoIt3Wrapper_Res_File_Add=Lib\img\Paste.png, 10, PASTE
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Patterns.png, 10, PAT
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Profiles.png, 10, PROF
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Progress.png, 10, PROG
@@ -49,6 +60,7 @@
 
 #include <Crypt.au3>
 #include <File.au3>
+#Include <GUIButton.au3>
 #include <GUIComboBoxEx.au3>
 #include <GUIConstantsEx.au3>
 #include <GUIImageList.au3>
@@ -67,7 +79,7 @@ Opt("TrayOnEventMode", 1)
 OnAutoItExitRegister("_ExitEvent")
 
 ; <<<<< Environment Variables >>>>>
-Global $Global_CurrentVersion = "2.5"
+Global $Global_CurrentVersion = "2.6"
 Global $Global_ImageList ; ImageList.
 __EnvironmentVariables() ; Sets The Standard & User Assigned Environment Variables.
 __ExpandEnvStrings(0) ; Disables The Expansion Of Environment Variables.
@@ -78,11 +90,13 @@ Global $Global_GUI_1, $Global_GUI_2 ; GUI Handles.
 Global $Global_Icon_1 ; Icons Handle.
 Global $Global_ContextMenu[15][2] = [[14, 2]] ; ContextMenu Array.
 Global $Global_TrayMenu[14][2] = [[13, 2]] ; TrayMenu Array.
+Global $Global_Clipboard[6] = [0] ; Manage Patterns Clipboard.
 Global $Global_Customize, $Global_ListViewIndex = -1, $Global_ListViewProfiles, $Global_ListViewRules, $Global_Manage ; ListView Variables.
-Global $Global_ListViewProfiles_Delete, $Global_ListViewProfiles_Enter, $Global_ListViewProfiles_New ; ContextMenu ListViewProfiles Variables.
-Global $Global_ListViewRules_Delete, $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_Enter, $Global_ListViewRules_New ; ContextMenu ListViewManage Variables.
+Global $Global_ListViewProfiles_Delete, $Global_ListViewProfiles_Enter, $Global_ListViewProfiles_New, $Global_ListViewProfiles_Example[2] ; ContextMenu ListViewProfiles Variables.
+Global $Global_ListViewRules_Delete, $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0 ; ContextMenu ListViewManage Variables.
+Global $Global_ListViewRules_Copy, $Global_ListViewRules_Cut, $Global_ListViewRules_Paste, $Global_ListViewRules_Enter, $Global_ListViewRules_New ; ContextMenu ListViewManage Variables.
 Global $Global_Slider, $Global_SliderLabel ; _Customize_GUI_Edit().
-Global $Global_Action, $Global_DroppedFiles[1], $Global_PTR = "ptr" ; Misc.
+Global $Global_Action, $Global_DroppedFiles[1], $Global_PTR = "ptr", $Global_ScriptRestart = 0 ; Misc.
 Global $UniqueID = "DropIt_E15FF08B-84AC-472A-89BF-5F92DB683165" ; WM_COPYDATA.
 Global $Global_ResizeWidth, $Global_ResizeHeight ; Windows Size For Resizing.
 Global $Global_MultipleInstance = 0 ; Multiple Instances.
@@ -105,13 +119,14 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 	$mINI = __IsSettingsFile($mINI) ; Get Default Settings INI File.
 	Local $mGUI = $Global_Manage
 
-	Local $mListView, $mListView_Handle, $mNew, $mDeleteDummy, $mProfileCombo, $mClose, $mEnterDummy, $mText, $mTextINI, $mType, $mStringSplit
-	Local $mIndex_Selected, $mAssociate, $mNewDummy, $mProfileCombo_Handle
+	Local $mListView, $mListView_Handle, $mMsg, $mNew, $mClose, $mProfileCombo, $mProfileCombo_Handle, $mTextINI, $mName, $mText, $mType, $mDestination
+	Local $mIndex_Selected, $mAssociate, $mCopyDummy, $mCutDummy, $mDeleteDummy, $mEnterDummy, $mNewDummy, $mPasteDummy
 
 	Local $mProfile = __IsProfile(-1, 0) ; Get Array Of Current Profile.
 	Local $mSize = __GetCurrentSize("SizeManage") ; 410 x 260.
 
-	$mGUI = GUICreate(__Lang_Get('MANAGE_GUI', 'Manage Patterns'), $mSize[0], $mSize[1], -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX), $WS_EX_TOOLWINDOW, __OnTop($mHandle))
+	$mGUI = GUICreate(__Lang_Get('MANAGE_GUI', 'Manage Patterns'), $mSize[0], $mSize[1], -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_MAXIMIZEBOX, $WS_SIZEBOX), -1, __OnTop($mHandle))
+	GUISetIcon(@ScriptFullPath, -7, $mGUI) ; Use Patterns.ico
 	$Global_Manage = $mGUI
 	$Global_ResizeWidth = 400 ; Set Default Minimum Width.
 	$Global_ResizeHeight = 190 ; Set Default Minimum Height.
@@ -135,13 +150,20 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 	EndIf
 
 	_Manage_Update($mListView_Handle, $mProfile[1]) ; Add/Update The ListView With The Custom Patterns.
+	$Global_Clipboard[5] = $mProfile[0] ; New Profile Of Selected Pattern [C:\Program Files\DropIt\Profiles\ProfileName.ini].
 
+	$mCopyDummy = GUICtrlCreateDummy()
+	$Global_ListViewRules_Copy = $mCopyDummy
+	$mCutDummy = GUICtrlCreateDummy()
+	$Global_ListViewRules_Cut = $mCutDummy
 	$mDeleteDummy = GUICtrlCreateDummy()
 	$Global_ListViewRules_Delete = $mDeleteDummy
 	$mEnterDummy = GUICtrlCreateDummy()
 	$Global_ListViewRules_Enter = $mEnterDummy
 	$mNewDummy = GUICtrlCreateDummy()
 	$Global_ListViewRules_New = $mNewDummy
+	$mPasteDummy = GUICtrlCreateDummy()
+	$Global_ListViewRules_Paste = $mPasteDummy
 
 	$mNew = GUICtrlCreateButton("&" & __Lang_Get('NEW', 'New'), 35, $mSize[1] - 30, 78, 25)
 	GUICtrlSetTip($mNew, __Lang_Get('MANAGE_GUI_TIP_0', 'Click to add a pattern or Right-click a pattern to manage it.'))
@@ -174,7 +196,14 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 
 		$mIndex_Selected = $Global_ListViewIndex
 
-		Switch GUIGetMsg()
+		If $Global_ListViewRules_ComboBoxChange Then
+			$Global_ListViewRules_ComboBoxChange = 0
+			$mProfile = __IsProfile(GUICtrlRead($mProfileCombo), 0) ; Get Array Of Selected Profile.
+			$Global_Clipboard[5] = $mProfile[0] ; New Profile Of Selected Pattern [C:\Program Files\DropIt\Profiles\ProfileName.ini].
+		EndIf
+
+		$mMsg = GUIGetMsg()
+		Switch $mMsg
 			Case $GUI_EVENT_CLOSE, $mClose
 				Local $mColumnSize[_GUICtrlListView_GetColumnCount($mListView_Handle)]
 				For $A = 0 To UBound($mColumnSize) - 1
@@ -184,59 +213,63 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 				ExitLoop
 
 			Case $mNew, $mNewDummy
-				If $Global_ListViewRules_ComboBoxChange Then
-					$Global_ListViewRules_ComboBoxChange = 0
-					$mProfile = __IsProfile(GUICtrlRead($mProfileCombo), 0) ; Get Array Of Selected Profile.
-				EndIf
 				$mAssociate = _Manage_Edit_GUI($mProfile[1], -1, -1, -1, -1, $mGUI, 1) ; Show Manage Edit GUI For New Pattern.
 				If $mAssociate = 1 Then
 					$mProfile = _Manage_Update($mListView_Handle, $mProfile) ; Add/Update The ListView With The Custom Patterns.
 				EndIf
 
 			Case $mDeleteDummy
-				If $Global_ListViewRules_ComboBoxChange Then
-					$Global_ListViewRules_ComboBoxChange = 0
-					$mProfile = __IsProfile(GUICtrlRead($mProfileCombo), 0) ; Get Array Of Selected Profile.
-				EndIf
 				_Manage_Delete($mListView_Handle, $mIndex_Selected, $mProfile[0]) ; Delete Selected Pattern From Current Profile & ListView.
 
-			Case $mEnterDummy
-				If $Global_ListViewRules_ComboBoxChange Then
-					$Global_ListViewRules_ComboBoxChange = 0
-					$mProfile = __IsProfile(GUICtrlRead($mProfileCombo), 0) ; Get Array Of Selected Profile.
-				EndIf
+			Case $mEnterDummy, $mCutDummy, $mCopyDummy
 				$mIndex_Selected = _GUICtrlListView_GetSelectionMark($mListView_Handle)
 				If Not _GUICtrlListView_GetItemState($mListView_Handle, $mIndex_Selected, $LVIS_SELECTED) Then
 					ContinueLoop
 				EndIf
 
+				$mName = _GUICtrlListView_GetItemText($mListView_Handle, $mIndex_Selected)
 				$mText = _GUICtrlListView_GetItemText($mListView_Handle, $mIndex_Selected, 1)
 				$mType = _GUICtrlListView_GetItemText($mListView_Handle, $mIndex_Selected, 2)
-				Switch $mType
-					Case __Lang_Get('COPY', 'Copy')
-						$mTextINI = $mText & "$1"
-					Case __Lang_Get('EXCLUDE', 'Exclude')
-						$mTextINI = $mText & "$2"
-					Case __Lang_Get('COMPRESS', 'Compress')
-						$mTextINI = $mText & "$3"
-					Case __Lang_Get('EXTRACT', 'Extract')
-						$mTextINI = $mText & "$4"
-					Case __Lang_Get('OPEN_WITH', 'Open With')
-						$mTextINI = $mText & "$5"
-					Case __Lang_Get('DELETE', 'Delete')
-						$mTextINI = $mText & "$6"
-					Case Else ; Move.
-						$mTextINI = $mText & "$0"
-				EndSwitch
-				$mStringSplit = StringSplit(IniRead($mProfile[0], "Patterns", $mTextINI, ""), "|") ; Seperate Directory & Name.
-				If $mStringSplit[0] = 1 Then
-					ReDim $mStringSplit[3]
-					$mStringSplit[2] = ""
+				$mDestination = _GUICtrlListView_GetItemText($mListView_Handle, $mIndex_Selected, 3)
+
+				If $mMsg = $mEnterDummy Then
+					_Manage_Edit_GUI($mProfile[1], $mName, $mText, $mType, $mDestination, $mGUI, 0) ; Show Manage Edit GUI For Selected Pattern.
+					If @error Then
+						ContinueLoop
+					EndIf
+					_Manage_Update($mListView_Handle, $mProfile) ; Add/Update The ListView With The Custom Patterns.
+					_GUICtrlListView_SetItemSelected($mListView_Handle, $mIndex_Selected, True, True)
+				Else
+					Switch $mType
+						Case __Lang_Get('COPY', 'Copy')
+							$mTextINI = $mText & "$1"
+						Case __Lang_Get('EXCLUDE', 'Exclude')
+							$mTextINI = $mText & "$2"
+						Case __Lang_Get('COMPRESS', 'Compress')
+							$mTextINI = $mText & "$3"
+						Case __Lang_Get('EXTRACT', 'Extract')
+							$mTextINI = $mText & "$4"
+						Case __Lang_Get('OPEN_WITH', 'Open With')
+							$mTextINI = $mText & "$5"
+						Case __Lang_Get('DELETE', 'Delete')
+							$mTextINI = $mText & "$6"
+						Case Else ; Move.
+							$mTextINI = $mText & "$0"
+					EndSwitch
+					$Global_Clipboard[1] = $mProfile[0] ; Original Profile Of Selected Pattern [C:\Program Files\DropIt\Profiles\ProfileName.ini].
+					$Global_Clipboard[2] = $mTextINI ; Pattern Rule + Action [*.txt$1].
+					$Global_Clipboard[3] = $mDestination ; Destination [C:\Files].
+					$Global_Clipboard[4] = $mName ; Pattern Name [Documents].
+					If $mMsg = $mCutDummy Then
+						$Global_Clipboard[0] = 1 ; Clipboard Cut Mode.
+					Else
+						$Global_Clipboard[0] = 2 ; Clipboard Copy Mode.
+					EndIf
 				EndIf
-				_Manage_Edit_GUI($mProfile[1], $mStringSplit[2], $mText, $mType, $mStringSplit[1], $mGUI, 0) ; Show Manage Edit GUI For Selected Pattern.
-				If @error Then
-					ContinueLoop
-				EndIf
+
+			Case $mPasteDummy
+				_Manage_Paste() ; Paste Cut/Copied Pattern.
+
 				_Manage_Update($mListView_Handle, $mProfile) ; Add/Update The ListView With The Custom Patterns.
 				_GUICtrlListView_SetItemSelected($mListView_Handle, $mIndex_Selected, True, True)
 
@@ -244,6 +277,10 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 	WEnd
 	__SetCurrentSize($mGUI, "SizeManage")
 	GUIDelete($mGUI)
+
+	For $A = 0 To 5
+		$Global_Clipboard[0] = 0 ; Clean Clipboard.
+	Next
 
 	__SetCurrentPosition() ; Set Current Coordinates/Position Of DropIt.
 	__IsOnTop() ; Set GUI "OnTop" If True.
@@ -257,9 +294,9 @@ EndFunc   ;==>_Manage_GUI
 Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileNameExt = -1, $mInitialType = -1, $mDirectory = -1, $mHandle = -1, $mNewAssociation = 0, $mDroppedEvent = 0)
 	Local $mEmptyDestination = "Empty-Destination"
 
-	Local $mGUI, $mInput_Name, $mInput_Rule, $mButton_Rule, $mCombo_Type, $mButton_Type, $mInput_Directory, $mButton_Directory, $mSave, $mCancel
+	Local $mGUI, $mInput_Name, $mInput_Rule, $mRule_Info, $mCombo_Type, $mType_Info, $mInput_Directory, $mButton_Directory, $mSave, $mCancel
 	Local $mInput_RuleData, $mCombo_TypeData, $mInput_NameRead, $mInput_DirectoryRead, $mMsgBox, $mFolder, $mDestination_Label
-	Local $mTEMPFileNameExt, $mItem, $mChanged = 0, $mAssociationType = __Lang_Get('MANAGE_ASSOCIATION_NEW', 'New Association')
+	Local $mTEMPFileNameExt, $mChanged = 0, $mAssociationType = __Lang_Get('MANAGE_ASSOCIATION_NEW', 'New Association')
 
 	Local $mProfile = __IsProfile($mProfileName, 0) ; Get Array Of Current Profile.
 
@@ -272,13 +309,12 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileNameExt = -1, $
 	If $mInitialType = -1 Then
 		$mInitialType = __Lang_Get('MOVE', 'Move')
 	EndIf
-	If $mDirectory = -1 Or $mDirectory = "" Then
-		$mDirectory = @ScriptDir
+	If $mDirectory = -1 Then
+		$mDirectory = ""
 	EndIf
 	Local $mCurrentType = $mInitialType
 	$mInput_RuleData = $mFileNameExt
 	$mCombo_TypeData = __Lang_Get('MOVE', 'Move') & '|' & __Lang_Get('COPY', 'Copy') & '|' & __Lang_Get('COMPRESS', 'Compress') & '|' & __Lang_Get('EXTRACT', 'Extract') & '|' & __Lang_Get('OPEN_WITH', 'Open With') & '|' & __Lang_Get('DELETE', 'Delete') & '|' & __Lang_Get('EXCLUDE', 'Exclude')
-	$mItem = "[" & __Lang_Get('PROFILE', 'Profile') & ": " & $mProfile[1] & "]"
 
 	Select
 		Case $mNewAssociation = 0 And $mDroppedEvent = 0
@@ -291,24 +327,30 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileNameExt = -1, $
 			EndIf
 	EndSelect
 
-	$mGUI = GUICreate($mAssociationType & " " & $mItem, 300, 290, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
-	GUICtrlCreateLabel(__Lang_Get('NAME', 'Name') & ":", 10, 10, 160, 20)
-	$mInput_Name = GUICtrlCreateInput($mFileName, 10, 31, 278, 20)
+	$mGUI = GUICreate($mAssociationType & " [" & __Lang_Get('PROFILE', 'Profile') & ": " & $mProfile[1] & "]", 320, 285, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
+	GUICtrlCreateLabel(__Lang_Get('NAME', 'Name') & ":", 15, 12, 200, 20)
+	$mInput_Name = GUICtrlCreateInput($mFileName, 10, 31, 300, 20)
 	GUICtrlSetTip($mInput_Name, __Lang_Get('MANAGE_EDIT_TIP_0', 'Choose a name for this association.'))
 
-	GUICtrlCreateLabel(__Lang_Get('MANAGE_PATTERN_RULE', 'Pattern Rule') & ":", 10, 60 + 10, 160, 20)
-	$mInput_Rule = GUICtrlCreateInput($mInput_RuleData, 10, 60 + 31, 200, 20)
+	GUICtrlCreateLabel(__Lang_Get('MANAGE_PATTERN_RULE', 'Pattern Rule') & ":", 15, 60 + 12, 200, 20)
+	$mInput_Rule = GUICtrlCreateInput($mInput_RuleData, 10, 60 + 32, 258, 20)
 	GUICtrlSetTip($mInput_Rule, __Lang_Get('MANAGE_EDIT_TIP_1', 'Write a pattern rule for this association.'))
-	$mButton_Rule = GUICtrlCreateButton(__Lang_Get('INFO', 'Info'), 10 + 208, 60 + 30, 70, 22)
+	$mRule_Info = GUICtrlCreateButton("i", 10 + 264, 60 + 30, 36, 24, $BS_ICON)
+	GUICtrlSetTip($mRule_Info, __Lang_Get('INFO', 'Info'))
+	GUICtrlSetImage($mRule_Info, @ScriptFullPath, -6, 0)
 
-	GUICtrlCreateLabel(__Lang_Get('MANAGE_ACTION', 'Action') & ":", 10, 120 + 10, 160, 20)
-	$mCombo_Type = GUICtrlCreateCombo("", 10, 120 + 31, 200, 24, 0x0003)
-	$mButton_Type = GUICtrlCreateButton(__Lang_Get('INFO', 'Info'), 10 + 208, 120 + 30, 70, 22)
+	GUICtrlCreateLabel(__Lang_Get('MANAGE_ACTION', 'Action') & ":", 15, 120 + 12, 200, 20)
+	$mCombo_Type = GUICtrlCreateCombo("", 10, 120 + 32, 258, 24, 0x0003)
+	$mType_Info = GUICtrlCreateButton("i", 10 + 264, 120 + 30, 36, 25, $BS_ICON)
+	GUICtrlSetTip($mType_Info, __Lang_Get('INFO', 'Info'))
+	GUICtrlSetImage($mType_Info, @ScriptFullPath, -6, 0)
 
-	$mDestination_Label = GUICtrlCreateLabel(__Lang_Get('MANAGE_DESTINATION_FOLDER', 'Destination Folder') & ":", 10, 180 + 10, 160, 20)
-	$mInput_Directory = GUICtrlCreateInput($mDirectory, 10, 180 + 31, 200, 20)
+	$mDestination_Label = GUICtrlCreateLabel(__Lang_Get('MANAGE_DESTINATION_FOLDER', 'Destination Folder') & ":", 15, 180 + 12, 200, 20)
+	$mInput_Directory = GUICtrlCreateInput($mDirectory, 10, 180 + 32, 258, 20)
 	GUICtrlSetTip($mInput_Directory, __Lang_Get('MANAGE_EDIT_TIP_2', 'As destination are supported both absolute and relative paths.'))
-	$mButton_Directory = GUICtrlCreateButton(__Lang_Get('SEARCH', 'Search'), 10 + 208, 180 + 30, 70, 22)
+	$mButton_Directory = GUICtrlCreateButton("s", 10 + 264, 180 + 30, 36, 24, $BS_ICON)
+	GUICtrlSetTip($mButton_Directory, __Lang_Get('SEARCH', 'Search'))
+	GUICtrlSetImage($mButton_Directory, @ScriptFullPath, -8, 0)
 
 	If $mCurrentType == __Lang_Get('EXCLUDE', 'Exclude') Or $mCurrentType == __Lang_Get('DELETE', 'Delete') Then
 		GUICtrlSetData($mInput_Directory, __Lang_Get('EMPTY', 'Empty'))
@@ -319,9 +361,9 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileNameExt = -1, $
 	EndIf
 	GUICtrlSetData($mCombo_Type, $mCombo_TypeData, $mCurrentType)
 
-	$mSave = GUICtrlCreateButton("&" & __Lang_Get('SAVE', 'Save'), 150 - 20 - 76, 250, 76, 26)
+	$mSave = GUICtrlCreateButton("&" & __Lang_Get('SAVE', 'Save'), 160 - 20 - 85, 248, 85, 26)
 	GUICtrlSetState($mSave, 144) ; Disable Save Button Initially.
-	$mCancel = GUICtrlCreateButton("&" & __Lang_Get('CANCEL', 'Cancel'), 150 + 20, 250, 76, 26)
+	$mCancel = GUICtrlCreateButton("&" & __Lang_Get('CANCEL', 'Cancel'), 160 + 20, 248, 85, 26)
 	GUICtrlSetState($mCancel, 576)
 
 	GUISetState(@SW_SHOW)
@@ -355,15 +397,15 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileNameExt = -1, $
 			EndSwitch
 		EndIf
 
-		; Enable/Disable Save Button.
-		If GUICtrlRead($mInput_Rule) <> "" And __StringIsValid(GUICtrlRead($mInput_Directory), "$|") And Not StringIsSpace(GUICtrlRead($mInput_Rule)) Then
+		; Enable/Disable Save Button
+		If GUICtrlRead($mInput_Name) <> "" And GUICtrlRead($mInput_Rule) <> "" And GUICtrlRead($mInput_Directory) <> "" And __StringIsValid(GUICtrlRead($mInput_Directory), "$|") And Not StringIsSpace(GUICtrlRead($mInput_Rule)) Then
 			If GUICtrlGetState($mSave) > 80 Then
 				GUICtrlSetState($mSave, 576) ; 80 = Normal; 144 = Disabled; 576 = Focused.
 			EndIf
 			If GUICtrlGetState($mCancel) = 512 Then
 				GUICtrlSetState($mCancel, 80) ; 80 = Normal; 144 = Disabled; 576 = Focused.
 			EndIf
-		ElseIf GUICtrlRead($mInput_Rule) = "" Or Not __StringIsValid(GUICtrlRead($mInput_Directory), "$|") Or StringIsSpace(GUICtrlRead($mInput_Rule)) Then
+		ElseIf GUICtrlRead($mInput_Name) = "" Or GUICtrlRead($mInput_Rule) = "" Or GUICtrlRead($mInput_Directory) = "" Or Not __StringIsValid(GUICtrlRead($mInput_Directory), "$|") Or StringIsSpace(GUICtrlRead($mInput_Rule)) Then
 			If GUICtrlGetState($mSave) = 80 Then
 				GUICtrlSetState($mSave, 144) ; 80 = Normal; 144 = Disabled; 576 = Focused.
 			EndIf
@@ -457,12 +499,12 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileNameExt = -1, $
 					MsgBox(0x30, __Lang_Get('MANAGE_EDIT_MSGBOX_4', 'Pattern Error'), __Lang_Get('MANAGE_EDIT_MSGBOX_5', 'You have to insert a correct pattern ("$", "?", "|" characters cannot be used)'), 0, __OnTop())
 				EndIf
 
-			Case $mButton_Rule
+			Case $mRule_Info
 				MsgBox(0, __Lang_Get('MANAGE_EDIT_MSGBOX_6', 'Supported Rules'), __Lang_Get('MANAGE_EDIT_MSGBOX_7', 'Examples of supported pattern rules for files:  @LF  *.jpg   = all files with "jpg" extension  @LF  penguin.*   = all files named "penguin"  @LF  penguin*.*   = all files that begin with "penguin"  @LF  *penguin*   = all files that contain "penguin"  @LF  @LF  Examples of supported pattern rules for folders:  @LF  robot**   = all folders that begin with "robot"  @LF  **robot   = all folders that end with "robot"  @LF  **robot**   = all folders that contain "robot"  @LF  @LF  Separate several rules in a pattern with ";" to  @LF  create multi-rule patterns (eg:  *.jpg;*.png ).'), 0, __OnTop())
 
-			Case $mButton_Type
+			Case $mType_Info
 				__ExpandEnvStrings(0)
-				MsgBox(0, __Lang_Get('MANAGE_EDIT_MSGBOX_8', 'Actions and Destination'), __Lang_Get('MANAGE_EDIT_MSGBOX_9', 'The action is the mode of processing files that match with this pattern.  @LF  @LF  This is the list of internal environment variables for destination:  @LF  %CurrentDate% = current date  @LF  %DateAccessed% = date file last access  @LF  %DateCreated% = date file creation  @LF  %DateModified% = date file modification  @LF  %DateTaken% = date picture taken  @LF  %DefaultProgram% = system default program (only for Open With)  @LF  %File% = file full path (only for Open With)  @LF  %FileAuthor% = file author  @LF  %FileName% = file name (only for Open With)  @LF  %FileType% = file type  @LF  %ParentDir% = parent directory of each file  @LF  %PortableDrive% = current drive letter  @LF  %SongAlbum% = song album  @LF  %SongArtist% = song artist  @LF  %SongGenre% = song genre  @LF  %SongYear% = song year', 1), 0, __OnTop())
+				MsgBox(0, __Lang_Get('MANAGE_EDIT_MSGBOX_8', 'Actions and Destination'), __Lang_Get('MANAGE_EDIT_MSGBOX_9', 'The action is the mode of processing files that match with this pattern.  @LF  @LF  This is the list of internal environment variables for destination:  @LF  %CurrentDate% = current date  @LF  %DateAccessed% = date file last access  @LF  %DateCreated% = date file creation  @LF  %DateModified% = date file modification  @LF  %DateTaken% = date picture taken  @LF  %DefaultProgram% = system default program (only for Open With)  @LF  %File% = file full path (only for Open With)  @LF  %FileAuthor% = file author  @LF  %FileName% = file name (only for Open With)  @LF  %FileType% = file type  @LF  %ParentDir% = parent directory of each file  @LF  %PortableDrive% = current drive letter (eg. "C:")  @LF  %SongAlbum% = song album  @LF  %SongArtist% = song artist  @LF  %SongGenre% = song genre  @LF  %SongYear% = song year', 1), 0, __OnTop())
 				__ExpandEnvStrings(1)
 
 			Case $mButton_Directory
@@ -476,6 +518,10 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileNameExt = -1, $
 					If @error Then
 						$mFolder = ""
 					EndIf
+				EndIf
+				If __Is("ConvertPath") Then
+					Local $mRelative = _PathGetRelative(@ScriptDir, $mFolder)
+					$mFolder = $mRelative
 				EndIf
 				If $mFolder <> "" Then
 					GUICtrlSetData($mInput_Directory, $mFolder)
@@ -540,6 +586,32 @@ Func _Manage_Delete($mListView, $mIndex, $mProfile)
 	Return 1
 EndFunc   ;==>_Manage_Delete
 
+Func _Manage_Paste()
+	; $Global_Clipboard[0] = Clipboard Cut/Copy Mode.
+	; $Global_Clipboard[1] = Original Profile Of Selected Pattern [C:\Program Files\DropIt\Profiles\ProfileName.ini].
+	; $Global_Clipboard[2] = Pattern Rule + Action [*.txt$1].
+	; $Global_Clipboard[3] = Destination [C:\Files].
+	; $Global_Clipboard[4] = Pattern Name [Documents].
+	; $Global_Clipboard[5] = New Profile Of Selected Pattern [C:\Program Files\DropIt\Profiles\ProfileName.ini].
+
+	Local $mMsgBox = 6, $mSubstitutePattern = IniRead($Global_Clipboard[5], "Patterns", $Global_Clipboard[2], "")
+
+	If $mSubstitutePattern <> "" Then ; Pattern Already Exists.
+		$mMsgBox = MsgBox(0x04, __Lang_Get('MANAGE_EDIT_MSGBOX_2', 'Replace association'), __Lang_Get('MANAGE_EDIT_MSGBOX_3', 'This pattern rule already exists. Do you want to replace it?'), 0, __OnTop())
+	EndIf
+	If $mMsgBox = 6 Then
+		If $Global_Clipboard[0] = 1 Then ; Cut Mode.
+			IniDelete($Global_Clipboard[1], "Patterns", $Global_Clipboard[2])
+		EndIf
+		IniWrite($Global_Clipboard[5], "Patterns", $Global_Clipboard[2], $Global_Clipboard[3] & "|" & $Global_Clipboard[4])
+	EndIf
+
+	For $A = 0 To 5
+		$Global_Clipboard[$A] = 0 ; Clean Clipboard.
+	Next
+	Return 1
+EndFunc   ;==>_Manage_Paste
+
 Func _Manage_Update($mListView, $mProfile)
 	Local $mPatterns, $mFileNameExt_Pattern, $mFileNameExt_Shown, $mState, $mType
 
@@ -588,7 +660,7 @@ EndFunc   ;==>_Manage_Update
 
 Func _GUICtrlListView_ContextMenu_Manage($cmListView, $cmIndex, $cmSubItem)
 	#forceref $cmSubItem
-	Local Enum $cmItem1 = 1000, $cmItem2, $cmItem3
+	Local Enum $cmItem1 = 1000, $cmItem2, $cmItem3, $cmItem4, $cmItem5, $cmItem6
 
 	If IsHWnd($cmListView) = 0 Then
 		$cmListView = GUICtrlGetHandle($cmListView)
@@ -598,24 +670,44 @@ Func _GUICtrlListView_ContextMenu_Manage($cmListView, $cmIndex, $cmSubItem)
 	If $cmIndex <> -1 And $cmSubItem <> -1 Then ; Won't Show These MenuItem(s) Unless An Item Is Selected.
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('EDIT', 'Edit'), $cmItem1)
 		__SetItemImage("EDIT", $cmIndex, $cmContextMenu, 2, 1)
-		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('DELETE', 'Delete'), $cmItem2)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, "")
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('CUT', 'Cut'), $cmItem2)
+		__SetItemImage("CUT", $cmIndex, $cmContextMenu, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('COPY', 'Copy'), $cmItem3)
+		__SetItemImage("COPY", $cmIndex, $cmContextMenu, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('PASTE', 'Paste'), $cmItem4)
+		__SetItemImage("PASTE", $cmIndex, $cmContextMenu, 2, 1)
+		If $Global_Clipboard[0] = 0 Or $Global_Clipboard[1] == $Global_Clipboard[5] Then ; If Clipboard Is Empty Or Original Profile = Current Profile.
+			_GUICtrlMenu_SetItemState($cmContextMenu, $cmIndex, $MFS_DISABLED)
+		EndIf
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, "")
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('DELETE', 'Delete'), $cmItem5)
 		__SetItemImage("DEL", $cmIndex, $cmContextMenu, 2, 1)
 	EndIf
 	If $cmIndex = -1 And $cmSubItem <> -1 Then ; Will Show These MenuItem(s) If No Item Is Selected.
-		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('NEW', 'New'), $cmItem3) ; Will Show These MenuItem(s) Regardless.
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('NEW', 'New'), $cmItem6) ; Will Show These MenuItem(s) Regardless.
 		__SetItemImage("NEW", $cmIndex, $cmContextMenu, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, "")
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('PASTE', 'Paste'), $cmItem4)
+		__SetItemImage("PASTE", $cmIndex, $cmContextMenu, 2, 1)
+		If $Global_Clipboard[0] = 0 Or $Global_Clipboard[1] == $Global_Clipboard[5] Then ; If Clipboard Is Empty Or Original Profile = Current Profile.
+			_GUICtrlMenu_SetItemState($cmContextMenu, $cmIndex, $MFS_DISABLED)
+		EndIf
 	EndIf
 
 	Switch _GUICtrlMenu_TrackPopupMenu($cmContextMenu, $cmListView, -1, -1, 1, 1, 2)
 		Case $cmItem1
 			GUICtrlSendToDummy($Global_ListViewRules_Enter)
-
 		Case $cmItem2
-			GUICtrlSendToDummy($Global_ListViewRules_Delete)
-
+			GUICtrlSendToDummy($Global_ListViewRules_Cut)
 		Case $cmItem3
+			GUICtrlSendToDummy($Global_ListViewRules_Copy)
+		Case $cmItem4
+			GUICtrlSendToDummy($Global_ListViewRules_Paste)
+		Case $cmItem5
+			GUICtrlSendToDummy($Global_ListViewRules_Delete)
+		Case $cmItem6
 			GUICtrlSendToDummy($Global_ListViewRules_New)
-
 	EndSwitch
 	_GUICtrlMenu_DestroyMenu($cmContextMenu)
 	Return 1
@@ -627,7 +719,7 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 	Local $cGUI = $Global_Customize
 
 	Local $cProfileDirectory, $cListView, $cListView_Handle, $cNew, $cClose, $cIndex_Selected, $cText, $cImage, $cSizeText, $cTransparency
-	Local $cDeleteDummy, $cEnterDummy, $cNewDummy
+	Local $cDeleteDummy, $cEnterDummy, $cNewDummy, $cExampleDummy
 
 	$cProfileDirectory = __GetDefault(2) ; Get Default Profile Directory.
 	Local $cSize = __GetCurrentSize("SizeCustom") ; 320 x 200.
@@ -639,7 +731,8 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 		Return SetError(1, 0, 0) ; Exit Function If No ProfileList.
 	EndIf
 
-	$cGUI = GUICreate(__Lang_Get('CUSTOMIZE_GUI', 'Customize Profiles'), $cSize[0], $cSize[1], -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX), $WS_EX_TOOLWINDOW, __OnTop($cHandle))
+	$cGUI = GUICreate(__Lang_Get('CUSTOMIZE_GUI', 'Customize Profiles'), $cSize[0], $cSize[1], -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_MAXIMIZEBOX, $WS_SIZEBOX), -1, __OnTop($cHandle))
+	GUISetIcon(@ScriptFullPath, -5, $cGUI) ; Use Custom.ico
 	$Global_Customize = $cGUI
 	$Global_ResizeWidth = 300 ; Set Default Minimum Width.
 	$Global_ResizeHeight = 190 ; Set Default Minimum Height.
@@ -677,6 +770,8 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 	$Global_ListViewProfiles_Enter = $cEnterDummy
 	$cNewDummy = GUICtrlCreateDummy()
 	$Global_ListViewProfiles_New = $cNewDummy
+	$cExampleDummy = GUICtrlCreateDummy()
+	$Global_ListViewProfiles_Example[0] = $cExampleDummy
 
 	$cNew = GUICtrlCreateButton("&" & __Lang_Get('NEW', 'New'), 50, $cSize[1] - 30, 74, 25)
 	GUICtrlSetTip($cNew, __Lang_Get('CUSTOMIZE_GUI_TIP_0', 'Click to add a profile or Right-click a profile to manage it.'))
@@ -725,6 +820,21 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 				_Customize_Edit_GUI($cGUI, $cText, $cImage, $cSizeText, $cTransparency, 0) ; Show Customize Edit GUI Of Selected Profile.
 				_Customize_Update($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
 				_GUICtrlListView_SetItemSelected($cListView_Handle, $cIndex_Selected, True, True)
+
+			Case $cExampleDummy
+				If FileExists(__GetDefault(2) & $Global_ListViewProfiles_Example[1] & ".ini") Then
+					MsgBox(0x30, __Lang_Get('PROFILEUNIQUE_MSGBOX_0', 'Name not available'), __Lang_Get('PROFILEUNIQUE_MSGBOX_1', 'This profile name already exists.'), 0, __OnTop())
+					ContinueLoop
+				EndIf
+				Switch $Global_ListViewProfiles_Example[1]
+					Case "Archiver"
+						_ResourceSaveToFile(__GetDefault(2) & "Archiver.ini", "ARCHIVER")
+					Case "Eraser"
+						_ResourceSaveToFile(__GetDefault(2) & "Eraser.ini", "ERASER")
+					Case "Extractor"
+						_ResourceSaveToFile(__GetDefault(2) & "Extractor.ini", "EXTRACTOR")
+				EndSwitch
+				_Customize_Update($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
 
 		EndSwitch
 	WEnd
@@ -1138,36 +1248,59 @@ EndFunc   ;==>_Customize_Update
 
 Func _GUICtrlListView_ContextMenu_Customize($cmListView, $cmIndex, $cmSubItem)
 	#forceref $cmSubItem
-	Local Enum $cmItem1 = 1000, $cmItem2, $cmItem3
+	Local Enum $cmItem1 = 1000, $cmItem2, $cmItem3, $cmItem4, $cmItem5, $cmItem6, $cmItem7
 
 	If IsHWnd($cmListView) = 0 Then
 		$cmListView = GUICtrlGetHandle($cmListView)
 	EndIf
 
-	Local $cmContextMenu = _GUICtrlMenu_CreatePopup()
+	Local $cmContextMenu_1 = _GUICtrlMenu_CreatePopup()
 	If $cmIndex <> -1 And $cmSubItem <> -1 Then ; Won't Show These MenuItem(s) Unless An Item Is Selected.
-		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('EDIT', 'Edit'), $cmItem1)
-		__SetItemImage("EDIT", $cmIndex, $cmContextMenu, 2, 1)
-		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('DELETE', 'Delete'), $cmItem2)
-		__SetItemImage("DEL", $cmIndex, $cmContextMenu, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __Lang_Get('EDIT', 'Edit'), $cmItem1)
+		__SetItemImage("EDIT", $cmIndex, $cmContextMenu_1, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, "")
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __Lang_Get('DELETE', 'Delete'), $cmItem2)
+		__SetItemImage("DEL", $cmIndex, $cmContextMenu_1, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, "")
 	EndIf
 	If $cmIndex = -1 And $cmSubItem <> -1 Then ; Will Show These MenuItem(s) If No Item Is Selected.
-		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('NEW', 'New'), $cmItem3)
-		__SetItemImage("NEW", $cmIndex, $cmContextMenu, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __Lang_Get('NEW', 'New'), $cmItem3)
+		__SetItemImage("NEW", $cmIndex, $cmContextMenu_1, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, "")
 	EndIf
 
-	Switch _GUICtrlMenu_TrackPopupMenu($cmContextMenu, $cmListView, -1, -1, 1, 1, 2)
+	Local $cmContextMenu_2 = _GUICtrlMenu_CreatePopup()
+	$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __Lang_Get('EXAMPLES', 'Examples'), $cmItem4, $cmContextMenu_2)
+	__SetItemImage("EXAMP", $cmIndex, $cmContextMenu_1, 2, 1)
+
+	$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_2, "Archiver", $cmItem5)
+	__SetItemImage(__GetDefault(4) & "Big_Box4.png", $cmIndex, $cmContextMenu_2, 2, 0)
+
+	$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_2, "Eraser", $cmItem6)
+	__SetItemImage(__GetDefault(4) & "Big_Delete1.png", $cmIndex, $cmContextMenu_2, 2, 0)
+
+	$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_2, "Extractor", $cmItem7)
+	__SetItemImage(__GetDefault(4) & "Big_Box6.png", $cmIndex, $cmContextMenu_2, 2, 0)
+
+	Switch _GUICtrlMenu_TrackPopupMenu($cmContextMenu_1, $cmListView, -1, -1, 1, 1, 2)
 		Case $cmItem1
 			GUICtrlSendToDummy($Global_ListViewProfiles_Enter)
-
 		Case $cmItem2
 			GUICtrlSendToDummy($Global_ListViewProfiles_Delete)
-
 		Case $cmItem3
 			GUICtrlSendToDummy($Global_ListViewProfiles_New)
-
+		Case $cmItem5
+			$Global_ListViewProfiles_Example[1] = "Archiver"
+			GUICtrlSendToDummy($Global_ListViewProfiles_Example[0])
+		Case $cmItem6
+			$Global_ListViewProfiles_Example[1] = "Eraser"
+			GUICtrlSendToDummy($Global_ListViewProfiles_Example[0])
+		Case $cmItem7
+			$Global_ListViewProfiles_Example[1] = "Extractor"
+			GUICtrlSendToDummy($Global_ListViewProfiles_Example[0])
 	EndSwitch
-	_GUICtrlMenu_DestroyMenu($cmContextMenu)
+	_GUICtrlMenu_DestroyMenu($cmContextMenu_1)
+	_GUICtrlMenu_DestroyMenu($cmContextMenu_2)
 	Return 1
 EndFunc   ;==>_GUICtrlListView_ContextMenu_Customize
 #Region End >>>>> Customize Functions <<<<<
@@ -2072,6 +2205,9 @@ Func _Sorting_Process($sSource, $sDestination, $sElementsGUI, $sRoot = '')
 					$sFile = FileFindNextFile($sSearch)
 					If @error Then
 						FileClose($sSearch)
+						If $Global_Action == "$0" And DirGetSize($sSource & $sRoot) = 0 Then ; Move Action And Source Folder Is Empty.
+							DirRemove($sSource & $sRoot)
+						EndIf
 						Return 1
 					EndIf
 					$sPath = $sRoot & '\' & $sFile
@@ -2551,9 +2687,9 @@ EndFunc   ;==>_Update_Check
 Func _Options($oHandle = -1)
 	Local $oINI = __IsSettingsFile() ; Get Default Settings INI File.
 
-	Local $oCheckItems[18] = [17], $oRadioItems[6] = [5], $oComboItems[5] = [4], $oGroup[5] = [4], $oCurrent[5] = [4]
-	Local $oINI_TrueOrFalse_Array[18][3] = [ _
-			[17, 3], _
+	Local $oCheckItems[19] = [18], $oRadioItems[6] = [5], $oComboItems[5] = [4], $oGroup[5] = [4], $oCurrent[5] = [4]
+	Local $oINI_TrueOrFalse_Array[19][3] = [ _
+			[18, 3], _
 			["General", "OnTop", 1], _
 			["General", "LockPosition", 1], _
 			["General", "MultipleInstances", 1], _
@@ -2570,7 +2706,8 @@ Func _Options($oHandle = -1)
 			["General", "StartAtStartup", 1], _
 			["General", "IntegrityCheck", 1], _
 			["General", "SafetyErase", 1], _
-			["General", "SizeMessage", 1]]
+			["General", "SizeMessage", 1], _
+			["General", "ConvertPath", 1]]
 	Local $oINI_Various_Array[9][3] = [ _
 			[8, 3], _
 			["General", "SendToMode", 2], _
@@ -2685,26 +2822,31 @@ Func _Options($oHandle = -1)
 	GUICtrlCreateTabItem(__Lang_Get('OPTIONS_TAB_3', 'Various'))
 
 	; Group Of General Options
-	GUICtrlCreateGroup(__Lang_Get('OPTIONS_LABEL_14', 'Security'), 10, 30, 279, 115)
-	$oCheckItems[15] = GUICtrlCreateCheckbox(__Lang_Get('OPTIONS_CHECKBOX_4', 'Check processed files integrity'), 25, 30 + 15)
+	GUICtrlCreateGroup(__Lang_Get('OPTIONS_LABEL_0', 'General'), 10, 30, 279, 65)
+	$oCheckItems[18] = GUICtrlCreateCheckbox(__Lang_Get('OPTIONS_CHECKBOX_17', 'Convert to relative path if possible'), 25, 30 + 15)
+	GUICtrlSetTip(-1, __Lang_Get('OPTIONS_TIP_7', 'Convert destination folder to relative path at pattern editing.'))
+	$oCheckItems[15] = GUICtrlCreateCheckbox(__Lang_Get('OPTIONS_CHECKBOX_4', 'Check processed files integrity'), 25, 30 + 15 + 20)
 	GUICtrlSetTip(-1, __Lang_Get('OPTIONS_TIP_4', 'The activation of MD5 checking slows down sorting processes.'))
-	$oCheckItems[16] = GUICtrlCreateCheckbox(__Lang_Get('OPTIONS_CHECKBOX_15', 'Safety erase deleted files/folders'), 25, 30 + 15 + 20)
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+
+	GUICtrlCreateGroup(__Lang_Get('OPTIONS_LABEL_14', 'Security'), 10, 100, 279, 95)
+	$oCheckItems[16] = GUICtrlCreateCheckbox(__Lang_Get('OPTIONS_CHECKBOX_15', 'Safety erase deleted files/folders'), 25, 100 + 15)
 	GUICtrlSetTip(-1, __Lang_Get('OPTIONS_TIP_5', 'Wipe files/folders removed with Delete action.'))
-	$oCheckItems[12] = GUICtrlCreateCheckbox(__Lang_Get('OPTIONS_CHECKBOX_12', 'Encrypt profiles at software closing'), 25, 30 + 15 + 40)
+	$oCheckItems[12] = GUICtrlCreateCheckbox(__Lang_Get('OPTIONS_CHECKBOX_12', 'Encrypt profiles at software closing'), 25, 100 + 15 + 20)
 	GUICtrlSetTip(-1, __Lang_Get('OPTIONS_TIP_6', 'Password will be requested at software startup.'))
-	GUICtrlCreateLabel(__Lang_Get('OPTIONS_LABEL_13', 'Password') & ":", 25, 30 + 15 + 40 + 30, 90, 20)
-	$oMasterPassword = GUICtrlCreateInput("", 25 + 100, 30 + 15 + 40 + 27, 138, 20, 0x0020)
-	$oShowMasterPassword = GUICtrlCreateButton("", 25 + 100 + 138, 30 + 15 + 40 + 27, 12, 20)
+	GUICtrlCreateLabel(__Lang_Get('OPTIONS_LABEL_13', 'Password') & ":", 25, 100 + 15 + 20 + 30, 90, 20)
+	$oMasterPassword = GUICtrlCreateInput("", 25 + 100, 100 + 15 + 20 + 27, 138, 20, 0x0020)
+	$oShowMasterPassword = GUICtrlCreateButton("", 25 + 100 + 138, 100 + 15 + 20 + 27, 12, 20)
 	GUICtrlSetTip(-1, __Lang_Get('OPTIONS_TIP_2', 'Show/Hide the password.'))
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 	; Group Of Backup Options
-	GUICtrlCreateGroup(__Lang_Get('OPTIONS_LABEL_2', 'Settings Backup'), 10, 150, 279, 50)
-	$oBackup = GUICtrlCreateButton(__Lang_Get('OPTIONS_BUTTON_1', 'Backup'), 25, 150 + 15 + 3, 73, 22)
+	GUICtrlCreateGroup(__Lang_Get('OPTIONS_LABEL_2', 'Settings Backup'), 10, 200, 279, 50)
+	$oBackup = GUICtrlCreateButton(__Lang_Get('OPTIONS_BUTTON_1', 'Backup'), 25, 200 + 15 + 3, 73, 22)
 	GUICtrlSetTip(-1, __Lang_Get('OPTIONS_BUTTON_1', 'Backup'))
-	$oRestore = GUICtrlCreateButton(__Lang_Get('OPTIONS_BUTTON_2', 'Restore'), 25 + 88, 150 + 15 + 3, 73, 22)
+	$oRestore = GUICtrlCreateButton(__Lang_Get('OPTIONS_BUTTON_2', 'Restore'), 25 + 88, 200 + 15 + 3, 73, 22)
 	GUICtrlSetTip(-1, __Lang_Get('OPTIONS_BUTTON_2', 'Restore'))
-	$oRemove = GUICtrlCreateButton(__Lang_Get('OPTIONS_BUTTON_3', 'Remove'), 25 + 177, 150 + 15 + 3, 73, 22)
+	$oRemove = GUICtrlCreateButton(__Lang_Get('OPTIONS_BUTTON_3', 'Remove'), 25 + 177, 200 + 15 + 3, 73, 22)
 	GUICtrlSetTip(-1, __Lang_Get('OPTIONS_BUTTON_3', 'Remove'))
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
@@ -3401,8 +3543,6 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 		Case $nListViewProfiles
 			Switch $nCode
 				Case $NM_CLICK
-					If $nIndex <> -1 And $nSubItem <> -1 Then
-					EndIf
 					$Global_ListViewIndex = $nIndex
 
 				Case $NM_DBLCLK
@@ -3412,8 +3552,6 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 					EndIf
 
 				Case $NM_RCLICK
-					If $nIndex <> -1 And $nSubItem <> -1 Then
-					EndIf
 					_GUICtrlListView_ContextMenu_Customize($nListViewProfiles, $nIndex, $nSubItem) ; Show Customize GUI RightClick Menu.
 					$Global_ListViewIndex = $nIndex
 
@@ -3422,8 +3560,6 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 		Case $nListViewRules
 			Switch $nCode
 				Case $NM_CLICK
-					If $nIndex <> -1 And $nSubItem <> -1 Then
-					EndIf
 					$Global_ListViewIndex = $nIndex
 
 				Case $NM_DBLCLK
@@ -3886,35 +4022,6 @@ Func __Column_Width($cColumn, $cSave = -1)
 	EndSwitch
 	Return $cReturn
 EndFunc   ;==>__Column_Width
-
-Func __EncryptionFile($eFilePath, $eDecryptOnly = 0) ; $eDecryptOnly = 1, Is If The File Is An INI Then Don't Encrypt.
-	#cs
-		Description: Creates An Encrypted/Decrypted Of A Profile File. .dat Is The Extension Used For Encryption.
-		Returns: Full Path Of Encrypted/Decrypted File [C:\Program Files\DropIt\Profiles\Default.dat]
-	#ce
-	Local $eEncryptionKey = $Global_Encryption_Key
-
-	Local $eCryptFile
-	Switch __GetFileNameExExt($eFilePath, 1)
-		Case "ini"
-			If $eDecryptOnly Or __Is("ProfileEncryption") = 0 Then
-				Return $eFilePath
-			EndIf
-			$eCryptFile = __GetFileNameExExt($eFilePath) & ".ini"
-			If FileExists($eFilePath) = 0 Then
-				Return $eCryptFile
-			EndIf
-			_Crypt_EncryptFile($eFilePath, $eCryptFile, $eEncryptionKey, $CALG_AES_256)
-		Case "dat"
-			$eCryptFile = __GetFileNameExExt($eFilePath) & ".ini"
-			If FileExists($eFilePath) = 0 Then
-				Return $eCryptFile
-			EndIf
-			_Crypt_DecryptFile($eFilePath, $eCryptFile, $eEncryptionKey, $CALG_AES_256)
-	EndSwitch
-	FileDelete($eFilePath)
-	Return $eCryptFile
-EndFunc   ;==>__EncryptionFile
 
 Func __EncryptionFolder($fDecrypt = -1) ; $fDecrypt = 0, Encrypt/Decrypt Profiles.
 	#cs
@@ -4721,12 +4828,13 @@ Func __IsSettingsFile($iINI = -1, $iShowLang = 1)
 
 	If $iFileExists = 0 Or $iFileGetSize = 0 Then
 		$iINIData = "Version=" & $Global_CurrentVersion & @LF & "Profile=Default" & @LF & "Language=English" & @LF & "PosX=-1" & @LF & "PosY=-1" & @LF & _
-				"OnTop=True" & @LF & "LockPosition=False" & @LF & "CustomTrayIcon=False" & @LF & "MultipleInstances=False" & @LF & "StartAtStartup=False" & @LF & _
+				"SizeCustom=320;200" & @LF & "SizeManage=410;260" & @LF & "ColumnCustom=95;95;60;50" & @LF & "ColumnManage=115;100;85;85" & @LF & "OnTop=True" & @LF & _
+				"LockPosition=False" & @LF & "CustomTrayIcon=False" & @LF & "MultipleInstances=False" & @LF & "StartAtStartup=False" & @LF & "ConvertPath=False" & @LF & _
 				"UseSendTo=False" & @LF & "SendToMode=Permanent" & @LF & "ShowSorting=True" & @LF & "ProfileEncryption=False" & @LF & "DirForFolders=False" & @LF & _
 				"IgnoreNew=False" & @LF & "AutoDup=False" & @LF & "DupMode=Overwrite" & @LF & "CreateLog=False" & @LF & "IntegrityCheck=False" & @LF & "SafetyErase=False" & @LF & _
 				"SizeMessage=True" & @LF & "ArchiveFormat=ZIP" & @LF & "ArchiveLevel=Normal" & @LF & "ArchiveMethod=LZMA" & @LF & "ArchiveSelf=False" & @LF & _
-				"ArchiveEncrypt=False" & @LF & "ArchiveEncryptMethod=AES-256" & @LF & "ArchivePassword=" & @LF & "MasterPassword=" & @LF & _
-				"ColumnCustom=95;95;60;50" & @LF & "ColumnManage=115;100;85;85" & @LF & "SizeCustom=320;200" & @LF & "SizeManage=410;260"
+				"ArchiveEncrypt=False" & @LF & "ArchiveEncryptMethod=AES-256" & @LF & "ArchivePassword=" & @LF & "MasterPassword="
+
 		IniWriteSection($iINI, "General", $iINIData)
 		IniWriteSection($iINI, "EnvironmentVariables", "")
 		If $iShowLang Then
@@ -5192,9 +5300,6 @@ Func __ScriptRestart($sExit = 1)
 		Description: Restarts The Running Process. [Not Used In DropIt! But Might Be Soon.]
 		Returns: Nothing
 	#ce
-	If IsDeclared("Global_ScriptRestart") = 0 Then
-		Global $Global_ScriptRestart = 0
-	EndIf
 	$CmdLineRaw = ""
 	If $Global_ScriptRestart = 0 Then
 		If @Compiled Then
@@ -5797,61 +5902,31 @@ Func __Upgrade()
 		Description: Upgrades Settings To New Version, If Needed.
 		Returns: 1
 	#ce
-	Local $uINIRead, $uSearch, $uFileName, $uPatternsINI
-	Local $uDropIt_Directory = __GetDefault(1) ; Get Default Settings Directory.
+	Local $uINIRead
 	Local $uINI = __IsSettingsFile() ; Get Default Settings INI File.
 	If IniRead($uINI, "General", "Version", "None") == $Global_CurrentVersion Then
 		Return SetError(1, 0, 0) ; Abort Upgrade If INI Version Is The Same Of Current Software Version.
 	EndIf
 
-	; Decrypt Single Encrypted Profiles Of Versions Older Than 1.6
-	Local $uProfilesDirectory = __GetDefault(2)
-	Local $uProfileList = __ProfileList()
-	For $A = 1 To $uProfileList[0]
-		__EncryptionFile($uProfilesDirectory & $uProfileList[$A] & ".dat")
-	Next
-
-	; Upgrade Patterns Of Versions Older Than 1.5
-	$uSearch = FileFindFirstFile($uDropIt_Directory & "Profiles\*.ini") ; Load Files.
-	While 1
-		$uFileName = FileFindNextFile($uSearch)
-		If @error Then
-			ExitLoop
-		EndIf
-		$uFileName = $uDropIt_Directory & "Profiles\" & $uFileName
-		$uPatternsINI = __IniReadSection($uFileName, "Patterns")
-		If @error Then
-			ContinueLoop
-		EndIf
-		IniDelete($uFileName, "Patterns")
-		For $A = 1 To $uPatternsINI[0][0]
-			If StringRight($uPatternsINI[$A][0], 1) == "$" Then ; Exclude Pattern.
-				$uPatternsINI[$A][0] = StringTrimRight($uPatternsINI[$A][0], 1) & "$2"
-			ElseIf StringRight($uPatternsINI[$A][0], 1) == "&" Then ; Compress Pattern.
-				$uPatternsINI[$A][0] = StringTrimRight($uPatternsINI[$A][0], 1) & "$3"
-			ElseIf StringInStr($uPatternsINI[$A][0], "$") = 0 Then ; Normal Pattern.
-				$uPatternsINI[$A][0] &= "$0"
-			EndIf
-			$uPatternsINI[$A][1] = StringReplace($uPatternsINI[$A][1], "Exclusion-Pattern", "Empty-Destination")
-			IniWrite($uFileName, "Patterns", $uPatternsINI[$A][0], $uPatternsINI[$A][1])
-		Next
-	WEnd
-	FileClose($uSearch)
-
 	FileMove($uINI, $uINI & ".old", 1) ; Rename The Old INI.
 	__IsSettingsFile(-1, 0) ; Create A New Upgraded INI, Skipping Language Selection.
 
-	Local $uINI_Array[34][3] = [ _
-			[33, 3], _
+	Local $uINI_Array[35][3] = [ _
+			[34, 3], _
 			["General", "Profile", 1], _ ; Unchanged.
 			["General", "Language", 1], _ ; Unchanged.
 			["General", "PosX", 1], _ ; Unchanged.
 			["General", "PosY", 1], _ ; Unchanged.
+			["General", "SizeCustom", 1], _ ; Unchanged.
+			["General", "SizeManage", 1], _ ; Unchanged.
+			["General", "ColumnCustom", 1], _ ; Unchanged.
+			["General", "ColumnManage", 1], _ ; Unchanged.
 			["General", "OnTop", 1], _ ; Unchanged.
 			["General", "LockPosition", 1], _ ; Unchanged.
 			["General", "CustomTrayIcon", 1], _ ; Unchanged.
 			["General", "MultipleInstances", 1], _ ; Unchanged.
 			["General", "StartAtStartup", 1], _ ; Unchanged.
+			["General", "ConvertPath", 1], _ ; Unchanged.
 			["General", "UseSendTo", 1], _ ; Unchanged.
 			["General", "SendToMode", 1], _ ; Unchanged.
 			["General", "ShowSorting", 1], _ ; Unchanged.
@@ -5871,11 +5946,7 @@ Func __Upgrade()
 			["General", "ArchiveEncrypt", 1], _ ; Unchanged.
 			["General", "ArchiveEncryptMethod", 1], _ ; Unchanged.
 			["General", "ArchivePassword", 1], _ ; Unchanged.
-			["General", "MasterPassword", 1], _ ; Unchanged.
-			["General", "ColumnCustom", 1], _ ; Unchanged.
-			["General", "ColumnManage", 1], _ ; Unchanged.
-			["General", "SizeCustom", 1], _ ; Unchanged.
-			["General", "SizeManage", 1]] ; Unchanged.
+			["General", "MasterPassword", 1]] ; Unchanged.
 	; ["General", "Duplicates", "DupMode"], _ ; Example Of Changed Item.
 
 	For $A = 1 To $uINI_Array[0][0]
