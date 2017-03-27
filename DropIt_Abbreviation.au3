@@ -251,8 +251,8 @@ EndFunc   ;==>_ContextMenuAbbreviations
 
 Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDir = "")
 	Local $sLoadedProperty
-	Local $aEnvArray[123][3] = [ _
-			[122, 0, 0], _
+	Local $aEnvArray[127][3] = [ _
+			[126, 0, 0], _
 			["FileExt", 0, 1], _
 			["FileName", 0, 2], _
 			["FileNameExt", 0, 3], _
@@ -285,7 +285,11 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 			["ExposureTime", 4, 5], _
 			["ExposureTimeFraction", 4, 6], _
 			["ExposureBias", 4, 7], _
-			["Brightness", 4, 8], _
+			["ExposureProgram", 4, 8], _
+			["Brightness", 4, 9], _
+			["FlashMode", 4, 10], _
+			["ImageDescription", 4, 11], _
+			["ImageComments", 4, 12], _
 			["SongAlbum", 1, 15], _
 			["SongArtist", 1, 13], _
 			["SongGenre", 1, 16], _
@@ -434,7 +438,15 @@ Func __GetFileExif($sFilePath, $iExifCode)
 		Case 7
 			$sReturn = Round(_ImageGetParam($sExif, "ExposureBiasValue"), 1)
 		Case 8
+			$sReturn = _ImageGetParam($sExif, "ExposureProgram")
+		Case 9
 			$sReturn = Round(_ImageGetParam($sExif, "BrightnessValue"), 2)
+		Case 10
+			$sReturn = _ImageGetParam($sExif, "Flash")
+		Case 11
+			$sReturn = _ImageGetParam($sExif, "ImageDescription")
+		Case 12
+			$sReturn = _ImageGetParam($sExif, "UserComments")
 	EndSwitch
 
 	Return $sReturn

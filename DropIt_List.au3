@@ -2,15 +2,15 @@
 ; List funtions of DropIt
 
 #include-once
+#include <WinAPI.au3>
+
 #include "DropIt_Abbreviation.au3"
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
-#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
 #include "Lib\udf\HashForFile.au3"
 #include "Lib\udf\MPDF.au3"
-#include "Lib\udf\WinAPIEx.au3"
 
 Func __ConvertListProperties($cListProperties, $cProfileName, $cAssociationName)
 	#cs
@@ -154,13 +154,13 @@ Func __DefaultListProperties()
 	Return $dListProperties
 EndFunc   ;==>__DefaultListProperties
 
-Func __List_GetProperties($lStringProperties, $lFilePath = "")
+Func __List_GetProperties($lStringProperties, $lGetValues = 0)
 	Local $lStringSplit = StringSplit($lStringProperties, ";")
 	Local $B = 0, $lArray[Int($lStringSplit[0] / 2) + 1] = [Int($lStringSplit[0] / 2)]
 
 	For $A = 1 To $lStringSplit[0] Step 2
 		$B += 1
-		If $lFilePath <> "" Then ; Get Values.
+		If $lGetValues <> 0 Then ; Get Values.
 			$lArray[$B] = $lStringSplit[$A + 1]
 		Else ; Get Titles.
 			$lArray[$B] = $lStringSplit[$A]
@@ -195,12 +195,15 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 		Returns: 1
 	#ce
 	Local $lFileOpen, $lArray, $lString, $lRelativePath, $lTable, $lAlign
+	Local $lThemeFolder = @ScriptDir & "\Lib\list\themes"
+	Local $lTitleArray = __List_GetProperties($lStringProperties)
+	Local $lValueArray = __List_GetProperties($lStringProperties, 1)
 
-	If FileExists(@ScriptDir & "\Lib\list\themes\" & $lTheme & ".css") = 0 Then
+	If FileExists($lThemeFolder & "\" & $lTheme & ".css") = 0 Then
 		$lTheme = "Default"
 	EndIf
-	Local $lLoadedCSS = __LoadCSS($lTheme)
-	Local $lLoadedJS = __LoadJS()
+	Local $lLoadedCSS = __LoadList_CSS($lTheme)
+	Local $lLoadedJS = __LoadList_JS()
 
 	Local $lHeader = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">' & @CRLF & _
 			'<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"><head>' & @CRLF & _
@@ -228,7 +231,7 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 	Local $lColumns = '<div id="di-table">' & @CRLF & '<table id="di-mainTable" cellpadding="0" cellspacing="0">' & @CRLF
 	If __Is("ListHeader") Then
 		$lColumns &= '<thead>' & @CRLF & '<tr>' & @CRLF
-		$lArray = __List_GetProperties($lStringProperties) ; Get Titles.
+		$lArray = $lTitleArray
 		For $B = 1 To $lArray[0]
 			Switch $lArray[$B]
 				Case "#"
@@ -241,7 +244,7 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 	EndIf
 
 	For $A = 1 To $lSubArray[0]
-		$lArray = __List_GetProperties($lStringProperties, $lSubArray[$A])
+		$lArray = $lValueArray
 		$lString = ''
 		For $B = 1 To $lArray[0]
 			$lAlign = ''
@@ -280,7 +283,7 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 			'<div id="di-footer-wrap">' & @CRLF & _
 			@TAB & '<div id="di-footer">' & @CRLF & _
 			@TAB & '<p>' & @CRLF & _
-			@TAB & @TAB & StringReplace(__GetLang('LIST_HTML_GENERATED', 'Generated with %DropItWebLink%', 1), '%DropItWebLink%', '<a id="di-homeLink" href="%DropItURL%" title="' & __GetLang('LIST_HTML_VISIT', 'Visit DropIt website') & '" target="_blank">DropIt</a>') & '<span> - ' & __GetLang('TITLE_TOOLTIP', 'Process your files with a drop!') & '</span>' & @CRLF & _
+			@TAB & @TAB & StringReplace(__GetLang('LIST_HTML_GENERATED', 'Generated with %DropItWebLink%', 1), '%DropItWebLink%', '<a id="di-homeLink" href="%DropItURL%" title="' & __GetLang('LIST_HTML_VISIT', 'Visit DropIt website') & '" target="_blank">DropIt</a>') & @CRLF & _
 			@TAB & '</p>' & @CRLF & _
 			@TAB & '<a id="di-top" href="#" title="' & __GetLang('LIST_HTML_GO_TOP', 'Go to top') & '">' & __GetLang('LIST_HTML_TOP', 'top') & '</a>' & @CRLF & _
 			@TAB & '</div><!-- #di-footer -->' & @CRLF & _
@@ -305,9 +308,11 @@ Func __List_WritePDF($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 		Returns: 1
 	#ce
 	Local $lArray, $lText
+	Local $lTitleArray = __List_GetProperties($lStringProperties)
+	Local $lValueArray = __List_GetProperties($lStringProperties, 1)
 
 	If __Is("ListHeader") Then
-		$lArray = __List_GetProperties($lStringProperties) ; Get Titles.
+		$lArray = $lTitleArray
 		For $B = 1 To $lArray[0]
 			$lText &= $lArray[$B] & @CRLF
 		Next
@@ -315,7 +320,7 @@ Func __List_WritePDF($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	EndIf
 
 	For $A = 1 To $lSubArray[0]
-		$lArray = __List_GetProperties($lStringProperties, $lSubArray[$A])
+		$lArray = $lValueArray
 		For $B = 1 To $lArray[0]
 			If $lArray[$B] = "" Then
 				$lArray[$B] = "-"
@@ -354,9 +359,11 @@ Func __List_WriteTEXT($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 		Returns: 1
 	#ce
 	Local $lFileOpen, $lArray, $lString
+	Local $lTitleArray = __List_GetProperties($lStringProperties)
+	Local $lValueArray = __List_GetProperties($lStringProperties, 1)
 
 	If __Is("ListHeader") Then
-		$lArray = __List_GetProperties($lStringProperties) ; Get Titles.
+		$lArray = $lTitleArray
 		For $B = 1 To $lArray[0]
 			If $lQuote <> '' Then
 				$lArray[$B] = StringReplace($lArray[$B], $lQuote, $lQuote & $lQuote, 0, 1)
@@ -370,7 +377,7 @@ Func __List_WriteTEXT($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 	EndIf
 
 	For $A = 1 To $lSubArray[0]
-		$lArray = __List_GetProperties($lStringProperties, $lSubArray[$A])
+		$lArray = $lValueArray
 		For $B = 1 To $lArray[0]
 			If StringInStr($lArray[$B], "%") Then
 				$lArray[$B] = __List_ReplaceAbbreviations($lArray[$B], $lSubArray[$A], $lListPath, $lProfile, $A)
@@ -404,9 +411,11 @@ Func __List_WriteXML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 		Returns: 1
 	#ce
 	Local $lFileOpen, $lArray, $lString, $lRows = $lSubArray[0]
+	Local $lTitleArray = __List_GetProperties($lStringProperties)
+	Local $lValueArray = __List_GetProperties($lStringProperties, 1)
 
 	If __Is("ListHeader") Then
-		$lArray = __List_GetProperties($lStringProperties) ; Get Titles.
+		$lArray = $lTitleArray
 		$lString &= @TAB & '<header>' & @CRLF
 		For $B = 1 To $lArray[0]
 			$lString &= @TAB & @TAB & '<title' & $B & '>' & StringRegExpReplace($lArray[$B], "[<>']", "") & '</title' & $B & '>' & @CRLF
@@ -416,7 +425,7 @@ Func __List_WriteXML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	EndIf
 
 	For $A = 1 To $lSubArray[0]
-		$lArray = __List_GetProperties($lStringProperties, $lSubArray[$A])
+		$lArray = $lValueArray
 		$lString &= @TAB & '<item' & $A & '>' & @CRLF
 		For $B = 1 To $lArray[0]
 			If $lArray[$B] = "" Then
@@ -446,6 +455,8 @@ Func __List_WriteXLS($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 		Returns: 1
 	#ce
 	Local $lArray, $hFile, $nBytes, $str_bof, $str_eof, $lStart = 0
+	Local $lTitleArray = __List_GetProperties($lStringProperties)
+	Local $lValueArray = __List_GetProperties($lStringProperties, 1)
 
 	$hFile = _WinAPI_CreateFile($lListPath, 1)
 	If @error Then
@@ -461,7 +472,7 @@ Func __List_WriteXLS($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	_WinAPI_WriteFile($hFile, DLLStructGetPtr($str_bof), DllStructGetSize($str_bof), $nBytes)
 
 	If __Is("ListHeader") Then
-		$lArray = __List_GetProperties($lStringProperties) ; Get Titles.
+		$lArray = $lTitleArray
 		For $B = 1 To $lArray[0]
 			__XLSWriteCell($hFile, 0, $B - 1, $lArray[$B])
 		Next
@@ -469,7 +480,7 @@ Func __List_WriteXLS($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	EndIf
 
 	For $A = 1 To $lSubArray[0]
-		$lArray = __List_GetProperties($lStringProperties, $lSubArray[$A])
+		$lArray = $lValueArray
 		For $B = 1 To $lArray[0]
 			If $lArray[$B] = "" Then
 				$lArray[$B] = "-"
@@ -493,7 +504,7 @@ Func __List_WriteXLS($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	Return 1
 EndFunc   ;==>__List_WriteXLS
 
-Func __LoadCSS($lTheme) ; Internal Function For __List_WriteHTML()
+Func __LoadList_CSS($lTheme) ; Internal Function For __List_WriteHTML()
 	Local $lLoadedCSS, $lStyle, $lArrayCSS[4] = [3, "base.css", "lighterbox2.css", "themes\" & $lTheme & ".css"]
 	For $A = 1 To $lArrayCSS[0]
 		If $A = 2 And __Is("ListLightbox") = 0 Then ; Lightbox Disabled.
@@ -506,9 +517,9 @@ Func __LoadCSS($lTheme) ; Internal Function For __List_WriteHTML()
 		$lLoadedCSS &= @CRLF & $lStyle & @CRLF
 	Next
 	Return $lLoadedCSS
-EndFunc   ;==>__LoadCSS
+EndFunc   ;==>__LoadList_CSS
 
-Func __LoadJS() ; Internal Function For __List_WriteHTML()
+Func __LoadList_JS() ; Internal Function For __List_WriteHTML()
 	Local $lLoadedJS, $lJavaScript, $lArrayJS[4][2] = [[3, 3],["ListSortable", "sortable.js"],["ListFilter", "filter.js"],["ListLightbox", "lighterbox2.js"]]
 	For $A = 1 To $lArrayJS[0][0]
 		If __Is($lArrayJS[$A][0]) Then
@@ -545,7 +556,7 @@ Func __LoadJS() ; Internal Function For __List_WriteHTML()
 				'</script>' & @CRLF & $lLoadedJS
 	EndIf
 	Return $lLoadedJS
-EndFunc   ;==>__LoadJS
+EndFunc   ;==>__LoadList_JS
 
 Func __Text2PDF($sText, $sFontAlias, $iMarginX = 2, $iMarginY = 1.5, $iLineHeight = 0.5) ; Internal Function For __List_WritePDF()
 	Local $iUnit = _GetUnit()
@@ -579,6 +590,26 @@ Func __Text2PDF($sText, $sFontAlias, $iMarginX = 2, $iMarginY = 1.5, $iLineHeigh
 		_EndPage()
 	Next
 EndFunc   ;==>__Text2PDF
+
+Func __ThemeList_Combo($sFolder)
+	#cs
+		Description: Get Themes And Create String For Use In A Combo Box.
+		Returns: String Of Themes.
+	#ce
+	Local $iSearch, $sFileName, $sData
+
+	$iSearch = FileFindFirstFile($sFolder & "\*.css")
+	While 1
+		$sFileName = FileFindNextFile($iSearch)
+		If @error Then
+			ExitLoop
+		EndIf
+		$sData &= StringTrimRight($sFileName, 4) & "|"
+	WEnd
+	FileClose($iSearch)
+
+	Return StringTrimRight($sData, 1)
+EndFunc   ;==>__ThemeList_Combo
 
 Func __XLSWriteCell($hFile, $Row, $Col, $Value) ; Internal Function For __List_WriteXLS()
 	Local $nBytes, $Len, $str_cell, $tBuffer

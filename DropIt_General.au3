@@ -6,16 +6,15 @@
 #include <GUIComboBoxEx.au3>
 #include <GUIConstantsEx.au3>
 #include <GUIImageList.au3>
+#include <WinAPI.au3>
 
 #include "DropIt_Association.au3"
 #include "DropIt_Duplicate.au3"
 #include "DropIt_Global.au3"
 #include "DropIt_ProfileList.au3"
-#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibImages.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
-#include "Lib\udf\WinAPIEx.au3"
 
 Global $G_General_Language
 
@@ -113,9 +112,10 @@ Func __IsSettingsFile($iINI = -1)
 				"SendToMode=Permanent" & @LF & "ProfileEncryption=False" & @LF & "WaitOpened=False" & @LF & "ScanSubfolders=True" & @LF & "FolderAsFile=False" & @LF & _
 				"IgnoreNew=False" & @LF & "AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & "DupMode=Skip" & @LF & _
 				"UseRegEx=False" & @LF & "CreateLog=False" & @LF & "ShowListView=False" & @LF & "AmbiguitiesCheck=False" & @LF & "GroupOrder=Path" & @LF & _
-				"AlertSize=True" & @LF & "AlertDelete=False" & @LF & "ListHeader=True" & @LF & "ListSortable=True" & @LF & "ListFilter=True" & @LF & "ListLightbox=True" & @LF & _
-				"Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & "ZIPLevel=5" & @LF & "ZIPMethod=Deflate" & @LF & "ZIPEncryption=None" & @LF & _
-				"ZIPPassword=" & @LF & "7ZLevel=5" & @LF & "7ZMethod=LZMA" & @LF & "7ZEncryption=None" & @LF & "7ZPassword=" & @LF & "MasterPassword="
+				"AlertSize=True" & @LF & "AlertDelete=False" & @LF & "AlertFailed=True" & @LF & "ListHeader=True" & @LF & "ListSortable=True" & @LF & "ListFilter=True" & @LF & _
+				"ListLightbox=True" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & "ZIPLevel=5" & @LF & "ZIPMethod=Deflate" & @LF & _
+				"ZIPEncryption=None" & @LF & "ZIPPassword=" & @LF & "7ZLevel=5" & @LF & "7ZMethod=LZMA" & @LF & "7ZEncryption=None" & @LF & "7ZPassword=" & @LF & _
+				"MasterPassword="
 
 		__IniWriteEx($iINI, $G_Global_GeneralSection, "", $iINIData)
 		__IniWriteEx($iINI, "MonitoredFolders", "", "")
@@ -344,8 +344,8 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 		Return: Profile Name
 	#ce
 	Local $sProfilePath, $sAssociationField
-	Local $sFields[10] = [9, "State", "Rules", "Action", "Destination", "Filters", "ListProperties", "HTMLTheme", "SiteSettings", "CryptSettings"]
-	ReDim $aArray[$aArray[0][0] + 1][$sFields[0] + 1]
+	Local $sFields[13] = [12, "State", "Rules", "Action", "Destination", "Filters", "ListProperties", "HTMLTheme", "SiteSettings", "CryptSettings", "GalleryProperties", "GalleryTheme", "GallerySettings"]
+	ReDim $aArray[$aArray[0][0] + 1][$sFields[0] + 2]
 
 	If $sProfileDirectory = -1 Then
 		$sProfileDirectory = __GetDefault(2) ; Get Default Profile Directory.
@@ -445,7 +445,7 @@ Func __ArrayToCSV($aArray, $sDestination)
 		Description: Write An Array Of Associations To CSV File.
 		Returns: 1
 	#ce
-	Local $hFileOpen, $sString = "NAME, STATE, RULES, ACTION, DESTINATION, FILTERS, LIST PROPERTIES, HTML THEME, SITE SETTINGS, CRYPT SETTINGS" & @CRLF
+	Local $hFileOpen, $sString = "NAME, STATE, RULES, ACTION, DESTINATION, FILTERS, LIST PROPERTIES, HTML THEME, SITE SETTINGS, CRYPT SETTINGS, GALLERY PROPERTIES, GALLERY THEME, GALLERY SETTINGS" & @CRLF
 
 	For $A = 1 To $aArray[0][0]
 		For $B = 1 To $aArray[0][1]
@@ -880,8 +880,8 @@ Func __EnvironmentVariables()
 			[5, 2], _
 			["DropItLicense", "Open Source GPL"], _ ; Returns: DropIt License [Open Source GPL]
 			["DropItTeam", "Lupo PenSuite Team"], _ ; Returns: Team Name [Lupo PenSuite Team]
-			["DropItURL", "http://dropit.sourceforge.net/index.php"], _ ; Returns: URL Hyperlink [http://dropit.sourceforge.net/index.php]
-			["DropItTargetURL", "http://dropit.sourceforge.net/targets.php"], _ ; Returns: URL Hyperlink [http://dropit.sourceforge.net/targets.php]
+			["DropItURL", "http://www.dropitproject.com/index.php"], _ ; Returns: URL Hyperlink [http://www.dropitproject.com/index.php]
+			["DropItTargetURL", "http://www.dropitproject.com/targets.php"], _ ; Returns: URL Hyperlink [http://www.dropitproject.com/targets.php]
 			["DropItVersionNo", $G_Global_CurrentVersion]] ; Returns: Version Number [1.0]
 
 	For $A = 1 To $eEnvironmentArray[0][0]
@@ -958,26 +958,6 @@ Func __OnTop($hHandle = -1, $iState = -1)
 	WinSetOnTop($hHandle, "", $iState)
 	Return $hHandle
 EndFunc   ;==>__OnTop
-
-Func __ThemeList_Combo()
-	#cs
-		Description: Get Themes And Create String For Use In A Combo Box.
-		Returns: String Of Themes.
-	#ce
-	Local $iSearch, $sFileName, $sData
-
-	$iSearch = FileFindFirstFile(@ScriptDir & "\Lib\list\themes\*.css")
-	While 1
-		$sFileName = FileFindNextFile($iSearch)
-		If @error Then
-			ExitLoop
-		EndIf
-		$sData &= StringTrimRight($sFileName, 4) & "|"
-	WEnd
-	FileClose($iSearch)
-
-	Return StringTrimRight($sData, 1)
-EndFunc   ;==>__ThemeList_Combo
 
 Func __Uninstall()
 	#cs

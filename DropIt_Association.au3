@@ -94,6 +94,8 @@ Func __GetActionResult($gAction)
 			$gReturn = __GetLang('POSITIONPROCESS_LOG_17', 'Encrypted')
 		Case "$G"
 			$gReturn = __GetLang('POSITIONPROCESS_LOG_18', 'Decrypted')
+		Case "$H"
+			$gReturn = __GetLang('POSITIONPROCESS_LOG_19', 'Added to Gallery')
 		Case Else
 			$gReturn = __GetLang('POSITIONPROCESS_LOG_5', 'Moved')
 	EndSwitch
@@ -141,6 +143,8 @@ Func __GetActionString($gAction)
 				$gReturn = __GetLang('ACTION_ENCRYPT', 'Encrypt')
 			Case "$G"
 				$gReturn = __GetLang('ACTION_DECRYPT', 'Decrypt')
+			Case "$H"
+				$gReturn = __GetLang('ACTION_GALLERY', 'Create Gallery')
 			Case Else ; Move.
 				$gReturn = __GetLang('ACTION_MOVE', 'Move')
 		EndSwitch
@@ -178,6 +182,8 @@ Func __GetActionString($gAction)
 				$gReturn = "$F"
 			Case __GetLang('ACTION_DECRYPT', 'Decrypt'), 'Decrypt'
 				$gReturn = "$G"
+			Case __GetLang('ACTION_GALLERY', 'Create Gallery'), 'Create Gallery'
+				$gReturn = "$H"
 			Case Else ; __GetLang('ACTION_MOVE', 'Move').
 				$gReturn = "$0"
 		EndSwitch
@@ -269,7 +275,7 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 	Switch $gAction
 		Case "$6"
 			$gDestination = __GetDeleteString($gDestination)
-		Case "$8", "$F", "$G"
+		Case "$8", "$F", "$G", "$H"
 			$gStringSplit = StringSplit($gDestination, "|")
 			$gDestination = $gStringSplit[1]
 		Case "$C"
@@ -465,7 +471,7 @@ EndFunc   ;==>__GetTimeStringCode
 Func __GetAssociationField($gProfile, $gAssociationName, $gField)
 	#cs
 		Description: Get String Of The Defined Association Field.
-		Returns: String [0;1;2;3;9;13]
+		Returns: String [*.png;*.jpg]
 	#ce
 	If $gAssociationName = "" Then
 		Return SetError(1, 0, "")
@@ -480,7 +486,7 @@ Func __GetAssociations($gProfile = -1)
 	#cs
 		Description: Get Associations Of The Current Profile [-1] Or Specified Profile Name [Valid Profile Name].
 		Returns: Array[0][0] - Number Of Items [?]
-		[0][1] - Number Of Fields [10]
+		[0][1] - Number Of Fields [13]
 		[0][2] - Profile Name [Profile]
 
 		Array[A][0] - Association Name [Example]
@@ -489,14 +495,17 @@ Func __GetAssociations($gProfile = -1)
 		[A][3] - Action [$3]
 		[A][4] - Destination [C:\Example]
 		[A][5] - Filters [1<20MB;1<20d;1<20d;1<20d]
-		[A][6] - List Properties [0;1;2;3;9;13]
+		[A][6] - List Properties [#=%Counter%;Name=%FileName%]
 		[A][7] - HTML Theme [Default]
 		[A][8] - Site Settings [Host;Port;User;Password]
 		[A][9] - Crypt Settings [Algorithm|Password]
+		[A][10] - Gallery Properties [#=%Counter%;Name=%FileName%]
+		[A][11] - Gallery Theme [Default]
+		[A][12] - Gallery Settings [2;1;]
 	#ce
 	$gProfile = __IsProfile($gProfile, 0) ; Get Array Of Selected Profile.
 
-	Local $gNumberFields = 10
+	Local $gNumberFields = 13
 	Local $gAssociationNames = __IniReadSectionNamesEx($gProfile[0])
 	If @error Then
 		Local $gReturn[1][$gNumberFields + 1] = [[0, $gNumberFields, $gProfile[1]]]
@@ -536,6 +545,12 @@ Func __GetAssociations($gProfile = -1)
 					$gIndex = 8
 				Case "CryptSettings"
 					$gIndex = 9
+				Case "GalleryProperties"
+					$gIndex = 10
+				Case "GalleryTheme"
+					$gIndex = 11
+				Case "GallerySettings"
+					$gIndex = 12
 				Case Else
 					ContinueLoop
 			EndSwitch

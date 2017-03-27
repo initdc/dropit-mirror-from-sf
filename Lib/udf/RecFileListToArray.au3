@@ -33,7 +33,9 @@
 ; Name...........: _RecFileListToArray
 ; Description ...: Lists files and\or folders in a specified path with optional recursion to defined level and result sorting
 ; Syntax.........: _RecFileListToArray($sPath[, $sMask = "*"[, $iReturn = 0[, $iRecur = 0[, $iSort = 0[, $iReturnPath = 1[, $sExclude_List = ""[, $sExclude_List_Folder]]]]]]])
-; Parameters ....: $sPath - Initial path used to generate filelist.  If path ends in \ then folders will be returned with an ending \
+; Parameters ....: $sPath - Initial path used to generate filelist
+;                               If path ends in \ then folders will be returned with an ending \
+;                               If path lengths > 260 chars, prefix path with "\\?\" - return paths are not affected
 ;                  $sMask - Optional: Filter for result. Multiple filters must be separated by ";"
 ;                           Use "|" to separate 3 possible sets of filters: "Include|Exclude|Exclude_Folders"
 ;                               Include = Files/Folders to include (default = "*" [all])
@@ -75,7 +77,7 @@
 ;                            [2] = 2nd File\Folder
 ;                            ...
 ;                            [n] = nth File\Folder
-;					Failure: Null string and @error = 1 with @extended set as follows:
+;                   Failure: Null string and @error = 1 with @extended set as follows:
 ;                            1 = Path not found or invalid
 ;                            2 = Invalid $sInclude_List
 ;                            3 = Invalid $iReturn
@@ -95,10 +97,13 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 
 	Local $asReturnList[100] = [0], $asFileMatchList[100] = [0], $asRootFileMatchList[100] = [0], $asFolderMatchList[100] = [0], $asFolderSearchList[100] = [1]
 	Local $sFolderSlash = "", $iMaxLevel, $sInclude_List, $sInclude_File_Mask, $sExclude_File_Mask, $sInclude_Folder_Mask = ".+", $sExclude_Folder_Mask = ":"
-	Local $hSearch, $fFolder, $sRetPath = "", $sCurrentPath, $sName, $iAttribs, $iHide_HS = 0, $iHide_Link = 0
+	Local $hSearch, $fFolder, $sRetPath = "", $sCurrentPath, $sName, $iAttribs, $iHide_HS = 0, $iHide_Link = 0, $fLongPath = False
 	Local $asFolderFileSectionList[100][2] = [[0, 0]], $sFolderToFind, $iFileSectionStartIndex, $iFileSectionEndIndex
 
 	; Check for valid path
+	If StringLeft($sInitialPath, 4) == "\\?\" Then
+		$fLongPath = True
+	EndIf
 	If Not FileExists($sInitialPath) Then Return SetError(1, 1, "")
 	; Check if folders should have trailing \ and ensure that initial path does have one
 	If StringRight($sInitialPath, 1) = "\" Then
@@ -110,17 +115,17 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 	$asFolderSearchList[1] = $sInitialPath
 
 	; Check for H or S omitted
-	If BitAnd($iReturn, 4) Then
+	If BitAND($iReturn, 4) Then
 		$iHide_HS += 2
 		$iReturn -= 4
 	EndIf
-	If BitAnd($iReturn, 8) Then
+	If BitAND($iReturn, 8) Then
 		$iHide_HS += 4
 		$iReturn -= 8
 	EndIf
 
 	; Check for link/junction omitted
-	If BitAnd($iReturn, 16) Then
+	If BitAND($iReturn, 16) Then
 		$iHide_HS = 0x406
 		$iReturn -= 16
 	EndIf
@@ -129,7 +134,7 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 	If $iRecur > 1 Or Not IsInt($iRecur) Then Return SetError(1, 4, "")
 	; If required, determine \ count for max recursive level setting
 	If $iRecur < 0 Then
-		StringReplace($sInitialPath, "\", "", 2)
+		StringReplace($sInitialPath, "\", "", 0, 2)
 		$iMaxLevel = @extended - $iRecur
 	EndIf
 
@@ -161,11 +166,7 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 				Case 0
 					; Folders match mask for compatibility
 					$sInclude_Folder_Mask = $sInclude_File_Mask
-				;Case Else
-					; All folders match
 			EndSwitch
-		;Case 1
-			; All folders match
 		Case 2
 			; Folders affected by mask
 			$sInclude_Folder_Mask = $sInclude_File_Mask
@@ -177,26 +178,21 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 	Else
 		If Not _RFLTA_ListToMask($sExclude_File_Mask, $sExclude_List) Then Return SetError(1, 7, "")
 	EndIf
-	; Set Exclude mask for folders
-	Switch $iReturn
-		Case 0
-			; Folders affected by mask if not recursive
-			Switch $iRecur
-				Case 0
-					; Folders match mask for compatibility
-					$sExclude_Folder_Mask = $sExclude_File_Mask
-				Case Else
-					; Exclude defined folders as set in extended
-					If $sExclude_List_Folder <> "" Then
-						If Not _RFLTA_ListToMask($sExclude_Folder_Mask, $sExclude_List_Folder) Then Return SetError(1, 8, "")
-					EndIf
-			EndSwitch
-		;Case 1
-			; All folders match
-		Case 2
+
+	; Create Exclude mask for folders
+	If $iRecur Then
+		If $sExclude_List_Folder Then
+			If Not _RFLTA_ListToMask($sExclude_Folder_Mask, $sExclude_List_Folder) Then Return SetError(1, 8, "")
+		EndIf
+		; If folders only
+		If $iReturn = 2 Then
 			; Folders affected by normal mask
 			$sExclude_Folder_Mask = $sExclude_File_Mask
-	EndSwitch
+		EndIf
+	Else
+		; Folders affected by normal mask
+		$sExclude_Folder_Mask = $sExclude_File_Mask
+	EndIf
 
 	; Verify other parameters
 	If Not ($iReturn = 0 Or $iReturn = 1 Or $iReturn = 2) Then Return SetError(1, 3, "")
@@ -206,7 +202,7 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 	; Prepare for DllCall if required
 	If $iHide_HS Or $iHide_Link Then
 		Local $tFile_Data = DllStructCreate("struct;align 4;dword FileAttributes;uint64 CreationTime;uint64 LastAccessTime;uint64 LastWriteTime;" & _
-							"dword FileSizeHigh;dword FileSizeLow;dword Reserved0;dword Reserved1;wchar FileName[260];wchar AlternateFileName[14];endstruct")
+				"dword FileSizeHigh;dword FileSizeLow;dword Reserved0;dword Reserved1;wchar FileName[260];wchar AlternateFileName[14];endstruct")
 		Local $pFile_Data = DllStructGetPtr($tFile_Data), $hDLL = DllOpen('kernel32.dll'), $aDLL_Ret
 	EndIf
 
@@ -222,11 +218,15 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 		; Determine return path to add to file/folder name
 		Switch $iReturnPath
 			; Case 0 ; Name only
-				; Leave as ""
+			; Leave as ""
 			Case 1 ;Relative to initial path
 				$sRetPath = StringReplace($sCurrentPath, $sInitialPath, "")
 			Case 2 ; Full path
-				$sRetPath = $sCurrentPath
+				If $fLongPath Then
+					$sRetPath = StringTrimLeft($sCurrentPath, 4)
+				Else
+					$sRetPath = $sCurrentPath
+				EndIf
 		EndSwitch
 
 		; Get search handle - use code matched to required listing
@@ -270,16 +270,16 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 				EndIf
 				$iAttribs = DllStructGetData($tFile_Data, "FileAttributes")
 				; Check for hidden/system attributes and skip if found
-				If $iHide_HS And BitAnd($iAttribs, $iHide_HS) Then
+				If $iHide_HS And BitAND($iAttribs, $iHide_HS) Then
 					ContinueLoop
 				EndIf
 				; Check for link attribute and skip if found
-				If $iHide_Link And BitAnd($iAttribs, $iHide_Link) Then
+				If $iHide_Link And BitAND($iAttribs, $iHide_Link) Then
 					ContinueLoop
 				EndIf
 				; Set subfolder flag
 				$fFolder = 0
-				If BitAnd($iAttribs, 16) Then
+				If BitAND($iAttribs, 16) Then
 					$fFolder = 1
 				EndIf
 			Else
@@ -305,7 +305,7 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 						If Not StringRegExp($sName, $sExclude_Folder_Mask) Then ; Add folder unless excluded
 							_RFLTA_AddToList($asFolderSearchList, $sCurrentPath & $sName & "\")
 						EndIf
-					; Case $iRecur = 0 ; Never add
+						; Case $iRecur = 0 ; Never add
 						; Do nothing
 				EndSelect
 			EndIf
@@ -407,6 +407,9 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 					_RFLTA_ArraySort($asFolderMatchList, 1, $asFolderMatchList[0])
 					; Work through folder list
 					For $i = 1 To $asFolderMatchList[0]
+						; Add folder to return list
+						$asReturnList[$iNextInsertionIndex] = $asFolderMatchList[$i]
+						$iNextInsertionIndex += 1
 						; Format folder name for search
 						If $sFolderSlash Then
 							$sFolderToFind = $asFolderMatchList[$i]
@@ -415,26 +418,24 @@ Func _RecFileListToArray($sInitialPath, $sMask = "*", $iReturn = 0, $iRecur = 0,
 						EndIf
 						; Find folder in FolderFileSectionList
 						For $j = 1 To $asFolderFileSectionList[0][0]
-							If $sFolderToFind = $asFolderFileSectionList[$j][0] Then ExitLoop
-						Next
-						; Set file list indexes
-						$iFileSectionStartIndex = $asFolderFileSectionList[$j][1]
-						If $j = $asFolderFileSectionList[0][0] Then
-							$iFileSectionEndIndex = $asFileMatchList[0]
-						Else
-							$iFileSectionEndIndex = $asFolderFileSectionList[$j + 1][1] - 1
-						EndIf
-						; Sort files if required
-						;If $iSort = 1 Then
-							_RFLTA_ArraySort($asFileMatchList, $iFileSectionStartIndex, $iFileSectionEndIndex)
-						;EndIf
-						; Add folder to return list
-						$asReturnList[$iNextInsertionIndex] = $asFolderMatchList[$i]
-						$iNextInsertionIndex += 1
-						; Add files to return list
-						For $j = $iFileSectionStartIndex To $iFileSectionEndIndex
-							$asReturnList[$iNextInsertionIndex] = $asFileMatchList[$j]
-							$iNextInsertionIndex += 1
+							; If found then deal with files
+							If $sFolderToFind = $asFolderFileSectionList[$j][0] Then
+								; Set file list indexes
+								$iFileSectionStartIndex = $asFolderFileSectionList[$j][1]
+								If $j = $asFolderFileSectionList[0][0] Then
+									$iFileSectionEndIndex = $asFileMatchList[0]
+								Else
+									$iFileSectionEndIndex = $asFolderFileSectionList[$j + 1][1] - 1
+								EndIf
+								; Sort files
+								_RFLTA_ArraySort($asFileMatchList, $iFileSectionStartIndex, $iFileSectionEndIndex)
+								; Add files to return list
+								For $k = $iFileSectionStartIndex To $iFileSectionEndIndex
+									$asReturnList[$iNextInsertionIndex] = $asFileMatchList[$k]
+									$iNextInsertionIndex += 1
+								Next
+								ExitLoop
+							EndIf
 						Next
 					Next
 				EndIf
@@ -475,7 +476,7 @@ Func _RFLTA_ListToMask(ByRef $sMask, $sList)
 	; Convert to SRE pattern
 	$sList = StringReplace(StringReplace(StringRegExpReplace($sList, "[][$^.{}()+\-]", "\\$0"), "?", "."), "*", ".*?")
 	; Add prefix and suffix
-	$sMask =  "(?i)^(" & $sList & ")\z"
+	$sMask = "(?i)^(" & $sList & ")\z"
 	Return 1
 
 EndFunc   ;==>_RFLTA_ListToMask

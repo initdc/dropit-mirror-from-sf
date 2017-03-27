@@ -6,6 +6,7 @@ Func __CSVSplit($sString, $sDelim = ",")
 	If IsString($sString) = 0 Or $sString = "" Or IsString($sDelim) = 0 Or $sDelim = "" Then
 		Return SetError(1, 0, 0)
 	EndIf
+	$sString = StringRegExpReplace($sString, '[“”„]', '"') ; Fix Quotes.
 
 	Local $iOverride = 255, $asDelim[3] ; Replacements For Delimiters.
 	For $A = 0 To 2

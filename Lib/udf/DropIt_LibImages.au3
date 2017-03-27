@@ -2,15 +2,16 @@
 ; Image funtions collected for DropIt
 
 #include-once
-#include "APIConstants.au3"
-#include <DropIt_LibVarious.au3>
 #include <GDIPlus.au3>
 #include <GUIComboBoxEx.au3>
 #include <GUIImageList.au3>
 #include <GUIListView.au3>
 #include <GUIMenu.au3>
+#include <WinAPI.au3>
+#include <WinAPITheme.au3>
+
+#include "DropIt_LibVarious.au3"
 #include "Resources.au3"
-#include "WinAPIEx.au3"
 
 Func __ImageConvert($sImagePath, $sSaveDirectory, $sFileExtension = "PNG")
 	#cs
@@ -93,6 +94,56 @@ Func __ImageSize($sFilePath) ; Taken From: http://www.autoitscript.com/forum/top
 	EndIf
 	Return $aReturn
 EndFunc   ;==>__ImageSize
+
+Func __ImageWriteResize($sInFile, $sOutFile, $iOutWidth, $iOutHeight, $iCrop = 0) ; Taken From: http://www.autoitscript.com/forum/topic/152974-unique-function-to-convert-resize-and-crop-images/
+	#cs
+		Description: Save A Converted, Resized And Cropped Image From A Loaded Image File.
+		Returns: 1
+	#ce
+	Local $hInHandle, $iInWidth, $iInHeight, $iRatio, $hOutHandle, $hGraphic, $CLSID, $iInX = 0, $iInY = 0
+	Local $sExt = StringTrimLeft(_WinAPI_PathFindExtension($sOutFile), 1)
+
+	_GDIPlus_Startup()
+	$hInHandle = _GDIPlus_ImageLoadFromFile($sInFile)
+	$iInWidth = _GDIPlus_ImageGetWidth($hInHandle)
+	$iInHeight = _GDIPlus_ImageGetHeight($hInHandle)
+
+	If $iCrop = 1 Then ; Images Are Cropped To Width And Height, Keeping Aspect Ratio (Smaller Images Are Expanded).
+		If $iOutWidth / $iInWidth > $iOutHeight / $iInHeight Then
+			$iRatio = $iOutWidth / $iInWidth
+		Else
+			$iRatio = $iOutHeight / $iInHeight
+		EndIf
+		$iInX = Int(($iInWidth - $iOutWidth / $iRatio) / 2)
+		$iInY = Int(($iInHeight - $iOutHeight / $iRatio) / 4)
+		$iInWidth = Int($iOutWidth / $iRatio)
+		$iInHeight = Int($iOutHeight / $iRatio)
+	Else ; Images Are Limited To Width And Height, Keeping Aspect Ratio (Smaller Images Are Not Expanded).
+		If $iOutWidth / $iInWidth < $iOutHeight / $iInHeight Then
+			$iRatio = $iOutWidth / $iInWidth
+		Else
+			$iRatio = $iOutHeight / $iInHeight
+		EndIf
+		If $iRatio > 1 Then
+			$iRatio = 1 ; To Keep Size Of Smaller Images.
+		EndIf
+		$iOutWidth = Int($iInWidth * $iRatio)
+		$iOutHeight = Int($iInHeight * $iRatio)
+	EndIf
+
+	$hOutHandle = _GDIPlus_BitmapCreateFromScan0($iOutWidth, $iOutHeight)
+	$hGraphic = _GDIPlus_ImageGetGraphicsContext($hOutHandle)
+	_GDIPlus_GraphicsDrawImageRectRect($hGraphic, $hInHandle, $iInX, $iInY, $iInWidth, $iInHeight, 0, 0, $iOutWidth, $iOutHeight)
+	$CLSID = _GDIPlus_EncodersGetCLSID(StringUpper($sExt))
+	_GDIPlus_ImageSaveToFileEx($hOutHandle, $sOutFile, $CLSID)
+
+	_GDIPlus_ImageDispose($hInHandle)
+	_GDIPlus_ImageDispose($hOutHandle)
+	_GDIPlus_GraphicsDispose($hGraphic)
+	_GDIPlus_Shutdown()
+
+	Return 1
+EndFunc   ;==>__ImageWriteResize
 
 Func __IsClassicTheme() ; By guinness 2011.
 	#cs

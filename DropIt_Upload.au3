@@ -3,11 +3,10 @@
 
 #include-once
 #include <FTPEx.au3>
+#include <WinAPI.au3>
 
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
-#include "Lib\udf\APIConstants.au3"
-#include "Lib\udf\WinAPIEx.au3"
 
 Func __FTP_DirCreateEx($l_FTPSession, $s_RemoteDir)
 	If $l_FTPSession = 0 Then
@@ -44,11 +43,13 @@ Func __SFTP_DirCreateEx($l_SFTPSession, $s_RemoteDir)
 EndFunc   ;==>__SFTP_DirCreateEx
 
 Func __FTP_ListToArrayEx($l_FTPSession, $s_RemoteDir = "", $ReturnType = 0, $iFlags = 0, $fTimeFormat = 1)
+	Local $aFileList[1][5]
+	$aFileList[0][0] = 0
 	If $l_FTPSession = 0 Then
-		Return SetError(1, 0, 0)
+		Return SetError(1, 0, $aFileList)
 	EndIf
 
-	Local $aFileList, $sPreviousDir, $iError = 0
+	Local $sPreviousDir, $iError = 0
 	$sPreviousDir = _FTP_DirGetCurrent($l_FTPSession)
 	_FTP_DirSetCurrent($l_FTPSession, $s_RemoteDir)
 	$aFileList = _FTP_ListToArrayEx($l_FTPSession, $ReturnType, $iFlags, $fTimeFormat)
@@ -94,7 +95,7 @@ Func __FTP_ProgressUpload($l_FTPSession, $s_LocalFile, $s_RemoteFile, $l_Progres
 		EndIf
 		DllStructSetData($fBuffer, 1, FileRead($fHandle, $X))
 
-		$ai_FTPWrite = DllCall($__ghWinInet_FTP, 'bool', 'InternetWriteFile', 'handle', $ai_FTPOpenFile[0], 'ptr', DllStructGetPtr($fBuffer), 'dword', $X, 'dword*', $fOut)
+		$ai_FTPWrite = DllCall($__ghWinInet_FTP, 'bool', 'InternetWriteFile', 'handle', $ai_FTPOpenFile[0], 'struct*', $fBuffer, 'dword', $X, 'dword*', $fOut)
 		If @error Or $ai_FTPWrite[0] = 0 Then
 			$ai_InternetCloseHandle = DllCall($__ghWinInet_FTP, 'bool', 'InternetCloseHandle', 'handle', $ai_FTPOpenFile[0])
 			FileClose($fHandle)

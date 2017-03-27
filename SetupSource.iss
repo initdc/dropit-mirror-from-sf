@@ -1,13 +1,13 @@
-#define MyAppVer "5.2"
+#define MyAppVer "5.3"
 
 [Setup]
 AppName=DropIt
 AppVersion={#MyAppVer}
 AppVerName=DropIt (v{#MyAppVer})
 AppPublisher=Lupo PenSuite Team
-AppPublisherURL=http://dropit.sourceforge.net/
+AppPublisherURL=http://www.dropitproject.com/
 AppSupportURL=http://www.lupopensuite.com/contact.htm
-AppUpdatesURL=http://dropit.sourceforge.net/
+AppUpdatesURL=http://www.dropitproject.com/
 DefaultDirName={pf}\DropIt
 DefaultGroupName=DropIt
 AllowNoIcons=yes

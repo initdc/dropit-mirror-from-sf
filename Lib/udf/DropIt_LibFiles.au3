@@ -2,11 +2,13 @@
 ; File funtions collected for DropIt
 
 #include-once
+#include <Constants.au3>
 #include <Date.au3>
 #include <String.au3>
-#include "APIConstants.au3"
+#include <WinAPI.au3>
+#include <WinAPIFiles.au3>
+
 #include "RecFileListToArray.au3"
-#include "WinAPIEx.au3"
 
 Func __FileCompareDate($sSource, $sDestination, $fDestinationIsDate = 0, $iMethod = 0) ; Modified From: http://www.autoitscript.com/forum/topic/125127-compare-file-datetime-stamps/page__p__868705#entry868705
 	#cs
@@ -89,13 +91,123 @@ Func __FileListToArrayEx($sFilePath, $sFilter = "*") ; Taken From: _FileListToAr
 	Return StringSplit(StringTrimRight($sReturn, 1), "*")
 EndFunc   ;==>__FileListToArrayEx
 
+Func __FindInDOCX($sFilePath, $sSearch, $iLiteral = 0, $iCaseSensitive = 0) ; Inspired By: http://www.autoitscript.com/forum/topic/80806-reading-docx-files/
+	#cs
+		Description: Search for a string in a DOCX file.
+		Returns: True or False
+	#ce
+	Local $hwnd = FileOpen($sFilePath, 16)
+	Local $header = FileRead($hwnd, 2)
+	FileClose($hwnd)
+	If $header <> '0x504B' Or StringTrimLeft(_WinAPI_PathFindExtension($sFilePath), 1) <> 'docx' Then
+		Return SetError(1, 0, -1)
+	EndIf
+
+	Local $Name, $UnZipName, $TempZipName, $i, $j, $k, $f_name = "~TempDoc"
+	Do
+		$i += 1
+		$Name = @TempDir & "\" & $f_name & $i & ".zip"
+	Until Not FileExists($Name)
+	FileCopy($sFilePath, $Name, 9)
+	Do
+		$j += 1
+		$UnZipName = @TempDir & "\~DocXdoc" & $j
+	Until Not FileExists($UnZipName)
+	DirCreate($UnZipName)
+	Do
+		$k += 1
+		$TempZipName = @TempDir & "\Temporary Directory " & $k & " for " & $f_name & $i & ".zip"
+	Until Not FileExists($TempZipName)
+
+	Local $oApp = ObjCreate("Shell.Application")
+	If Not IsObj($oApp) Then
+		DirRemove($UnZipName, 1)
+		FileDelete($Name)
+		DirRemove($TempZipName, 1)
+		Return SetError(1, 0, -2)
+	EndIf
+	$oApp.NameSpace($UnZipName).CopyHere($oApp.NameSpace($Name & '\word').ParseName("document.xml"), 4)
+
+	Local $Text = FileRead($UnZipName & "\document.xml")
+	DirRemove($UnZipName, 1)
+	FileDelete($Name)
+	DirRemove($TempZipName, 1)
+
+	$Text = StringReplace($Text, @CRLF, "")
+	$Text = StringRegExpReplace($Text, "<w:body>(.*?)</w:body>", '$1', 0)
+	$Text = StringReplace($Text, "</w:p>", @CRLF)
+	$Text = StringReplace($Text, "<w:cr/>", @CRLF)
+	$Text = StringReplace($Text, "<w:br/>", @CRLF)
+	$Text = StringReplace($Text, "<w:tab/>", @TAB)
+	$Text = StringRegExpReplace($Text, "<(.*?)>", "")
+	$Text = StringReplace($Text, "&lt;", "<")
+	$Text = StringReplace($Text, "&gt;", ">")
+	$Text = StringReplace($Text, "&amp;", "&")
+	$Text = StringReplace($Text, Chr(226) & Chr(130) & Chr(172), Chr(128))
+	$Text = StringReplace($Text, Chr(194) & Chr(129), Chr(129))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(154), Chr(130))
+	$Text = StringReplace($Text, Chr(198) & Chr(146), Chr(131))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(158), Chr(132))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(166), Chr(133))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(160), Chr(134))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(161), Chr(135))
+	$Text = StringReplace($Text, Chr(203) & Chr(134), Chr(136))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(176), Chr(137))
+	$Text = StringReplace($Text, Chr(197) & Chr(160), Chr(138))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(185), Chr(139))
+	$Text = StringReplace($Text, Chr(197) & Chr(146), Chr(140))
+	$Text = StringReplace($Text, Chr(194) & Chr(141), Chr(141))
+	$Text = StringReplace($Text, Chr(197) & Chr(189), Chr(142))
+	$Text = StringReplace($Text, Chr(194) & Chr(143), Chr(143))
+	$Text = StringReplace($Text, Chr(194) & Chr(144), Chr(144))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(152), Chr(145))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(153), Chr(146))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(156), Chr(147))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(157), Chr(148))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(162), Chr(149))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(147), Chr(150))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(148), Chr(151))
+	$Text = StringReplace($Text, Chr(203) & Chr(156), Chr(152))
+	$Text = StringReplace($Text, Chr(226) & Chr(132) & Chr(162), Chr(153))
+	$Text = StringReplace($Text, Chr(197) & Chr(161), Chr(154))
+	$Text = StringReplace($Text, Chr(226) & Chr(128) & Chr(186), Chr(155))
+	$Text = StringReplace($Text, Chr(197) & Chr(147), Chr(156))
+	$Text = StringReplace($Text, Chr(194) & Chr(157), Chr(157))
+	$Text = StringReplace($Text, Chr(197) & Chr(190), Chr(158))
+	$Text = StringReplace($Text, Chr(197) & Chr(184), Chr(159))
+	For $x = 160 To 191
+		$Text = StringReplace($Text, Chr(194) & Chr($x), Chr($x))
+	Next
+	For $x = 192 To 255
+		$Text = StringReplace($Text, Chr(195) & Chr($x - 64), Chr($x))
+	Next
+
+	If $iLiteral = 0 Then
+		$sSearch = StringReplace($sSearch, " ", "|")
+	EndIf
+	If $iCaseSensitive = 0 Then
+		$sSearch = "(?i)" & $sSearch
+	EndIf
+
+	If StringRegExp($Text, $sSearch) Then
+		Return 1
+	EndIf
+	Return SetError(1, 0, 0)
+EndFunc   ;==>__FindInDOCX
+
 Func __FindInFile($sFilePath, $sSearch, $iLiteral = 0, $iCaseSensitive = 0) ; Inspired By: http://www.autoitscript.com/forum/topic/132159-findinfile-search-for-a-string-within-files-located-in-a-specific-directory/
 	#cs
 		Description: Search for a string in a file.
 		Returns: True or False
 	#ce
-	Local $iPID = 0, $sCaseSensitive = '/i', $sLiteral = '', $sOutput = ''
+	If __FindInDOCX($sFilePath, $sSearch, $iLiteral, $iCaseSensitive) >= 0 Then ; File Is DOCX.
+		If @error = 0 Then
+			Return 1
+		EndIf
+		Return SetError(1, 0, 0)
+	EndIf
 
+	Local $iPID = 0, $sCaseSensitive = '/i', $sLiteral = '', $sOutput = ''
 	If $iCaseSensitive Then
 		$sCaseSensitive = ''
 	EndIf
@@ -211,7 +323,7 @@ Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gMode = 0) ; Modifie
 		0 Name, 1 Size, 2 Type, 3 Date Modified, 4 Date Created, 5 Date Opened, 6 Attributes, 7 Status, 8 Owner, 9 Date Taken,
 		10 Dimensions, 11 Camera Model, 12 Authors, 13 Artists, 14 Title, 15 Album, 16 Genre, 17 Year, 18 Track Number,
 		19 Subject, 20 Category, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate, 25 Camera Maker, 26 Company.
-		This Numeration Is Automatically Converted For Win2000, WinXP, Win2003, WinVista, Win7, Win8.
+		This Numeration Is Automatically Converted For Win2000, WinXP, Win2003, WinVista, Win7, Win8, Win8.1.
 		More Properties And Relative Numeration Are Reported At The AutoIt Webpage.
 	#ce
 	Local $gFileName, $gFileDir, $gObjShell, $gObjFolder, $gObjFile, $gFileProperty, $gFileProperties[2]
