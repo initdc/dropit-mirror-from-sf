@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Comment=DropIt - To place your files with a drop
 #AutoIt3Wrapper_Res_Description=DropIt
-#AutoIt3Wrapper_Res_Fileversion=0.7.0.0
+#AutoIt3Wrapper_Res_Fileversion=0.7.1.0
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_LegalCopyright=by Lupo PenSuite Team
 #AutoIt3Wrapper_Run_Obfuscator=y
@@ -22,15 +22,14 @@ Opt("TrayIconHide", 1)
 Opt("TrayOnEventMode", 1)
 Opt("TrayMenuMode", 1)
 
-Global $sName = "DropIt", $sVer = " (v0.7)"
+Global $sName = "DropIt", $sVer = " (v0.7.1)", $ii = $sName & " - To place your files with a drop"
 Global $sIni = @ScriptDir & "\settings.ini", $sIm = @ScriptDir & "\img\image.gif", $sPic = @ScriptDir & "\img\ps.gif"
 Global $hGUI1, $hGUI2, $sData, $temp, $i, $top, $Show, $Separ, $Exit, $list, $gaDropFiles[1], $RelPos[2]
 Global Const $WM_DROPFILES = 0x233, $SC_MOVE = 0xF010, $WM_ENTERSIZEMOVE = 0x231, $WM_EXITSIZEMOVE = 0x232
 Global $xD = IniRead($sIni, "General", "SizeX", "64"), $yD = IniRead($sIni, "General", "SizeY", "64")
-Global $ii = $sName & " - To place your files with a drop"
 Global $EP = "Exclusion-Pattern"
 Global $tips = '- As destination folders are supported both absolute ("C:\Lupo\My Images") and relative ("..\My Images") paths.' & @LF & @LF & '- If you want to exclude files that match with a specified pattern, you can add "$" at the end of the pattern (for example:  *.exe$ ).' & @LF & @LF & '- If you need more info about supported pattern rules, you can simply click the "Rules" button.'
-Global $prs = 'Supported pattern rules for files:' & @LF & '*.zip   = all files with "zip" extension' & @LF & 'penguin.*   = all files named "penguin"' & @LF & 'penguin*.*   = all files that begins with "penguin"' & @LF & '*penguin.*   = all files that ends with "penguin"' & @LF & '*penguin*   = all files that contains "penguin"' & @LF & @LF & 'Supported pattern rules for folders:' & @LF & 'robot**   = all folders that begins with "robot"' & @LF & '**robot   = all folders that ends with "robot"' & @LF & '**robot**   = all folders that contains "robot"' & @LF & @LF & '(add "$" at the end of the pattern to create an exclusion rule)'
+Global $prs = 'Supported pattern rules for files:' & @LF & '*.zip   = all files with "zip" extension' & @LF & 'penguin.*   = all files named "penguin"' & @LF & 'penguin*.*   = all files that begins with "penguin"' & @LF & '*penguin.*   = all files that ends with "penguin"' & @LF & '*penguin*   = all files that contains "penguin"' & @LF & @LF & 'Supported pattern rules for folders:' & @LF & 'robot**   = all folders that begins with "robot"' & @LF & '**robot   = all folders that ends with "robot"' & @LF & '**robot**   = all folders that contains "robot"' & @LF & @LF & 'Add "$" at the end of a pattern to skip files that' & @LF & 'match with it during the dropping (ex:  sky*.jpg$ ).'
 Global $er1 = "You have to select a destination folder to associate it.", $er2 = "You have to insert a correct pattern to add the association.", $er3 = "Destination folder already associated for this pattern.", $me1 = "Insert the desired destination folder and write a pattern, to positioning files that match with it:", $me2 = "Change the destination folder for files that match with the selected pattern or delete this association:"
 
 
@@ -95,9 +94,6 @@ Func Manage()		; OK
 	While 1
 		$sel = GUIGetMsg()
 		Switch $sel
-			Case $GUI_EVENT_CLOSE
-				ExitLoop
-				
 			Case $se1
 				If $top = "True" Then WinSetOnTop($DFA, "", 0)
 				$tem = FileSelectFolder("Select a destination folder:", "", 1)
@@ -174,7 +170,7 @@ Func Manage()		; OK
 			Case $help
 					MsgBox(0x40000, "Tips of this tool", $tips)
 				
-			Case $close
+			Case $close, $GUI_EVENT_CLOSE
 				ExitLoop
 				
 		EndSwitch
@@ -254,9 +250,6 @@ Func Options()		; OK
 	While 1
 		$sel = GUIGetMsg()
 		Switch $sel
-			Case $GUI_EVENT_CLOSE
-				ExitLoop
-				
 			Case $check4
 				If GUICtrlRead($check4) = 1 Then
 					GUICtrlSetState($do1, $GUI_ENABLE)
@@ -317,7 +310,7 @@ Func Options()		; OK
 				IniWrite($sIni, "General", "AskMode", $tp)
 				ExitLoop
 				
-			Case $canc
+			Case $canc, $GUI_EVENT_CLOSE
 				ExitLoop
 				
 		EndSwitch
@@ -348,10 +341,6 @@ Func MoreMatches($matches, $item, $j)		; OK
 	While 1
 		$sel = GUIGetMsg()
 		Switch $sel
-			Case $GUI_EVENT_CLOSE
-				$ma = "-1"
-				ExitLoop
-				
 			Case $ok
 				If GUICtrlRead($rad[1]) = 1 Then
 					$ma = $matches[1][1]
@@ -365,7 +354,7 @@ Func MoreMatches($matches, $item, $j)		; OK
 				EndIf
 				MsgBox(0x40000, "Message", $mess)
 				
-			Case $canc
+			Case $canc, $GUI_EVENT_CLOSE
 				$ma = "-1"
 				ExitLoop
 				
@@ -387,10 +376,10 @@ Func Checking($item, $ff)			; OK
 			If StringRight($var[$i][0], 1) = '$' Then $str = StringTrimRight($var[$i][0], 1)
 			If StringInStr($str, "**") Then
 				$pattern = StringReplace($str, "**", "(.*?)")
-				If $ff = "0" Then $match = StringRegExp(StringLower($item), $pattern)
+				If $ff = "0" Then $match = StringRegExp(StringLower($item), "^" & $pattern & "$")
 			Else
 				$pattern = StringReplace($str, "*", "(.*?)")
-				If Not($ff = "0") Then $match = StringRegExp(StringLower($item), $pattern)
+				If Not($ff = "0") Then $match = StringRegExp(StringLower($item), "^" & $pattern & "$")
 			EndIf
 			If $match = 1 And $j < 4 Then
 				$j = $j + 1
@@ -441,9 +430,6 @@ Func Associate($item, $ff)		; OK
 	While 1
 		$sel = GUIGetMsg()
 		Switch $sel
-			Case $GUI_EVENT_CLOSE
-				ExitLoop
-				
 			Case $se1
 				If $top = "True" Then WinSetOnTop($asso, "", 0)
 				$tem = FileSelectFolder("Select a destination folder:", "", 1)
@@ -472,7 +458,7 @@ Func Associate($item, $ff)		; OK
 					EndIf
 				EndIf
 				
-			Case $canc
+			Case $canc, $GUI_EVENT_CLOSE
 				ExitLoop
 				
 		EndSwitch
@@ -747,9 +733,6 @@ Func _Main()
 	While 1
 		$nMsg = GUIGetMsg()
 		Switch $nMsg
-			Case $GUI_EVENT_CLOSE
-				ExitLoop
-				
 			Case $GUI_EVENT_DROPPED
 				DropEvent()
 				
@@ -769,7 +752,7 @@ Func _Main()
 			Case $func4
 				MsgBox(0x40040, "About", "      " & $sName & $sVer & @LF & @LF & "Software developed by Lupo PenSuite Team." & @LF & "Released under Open Source GPL.")
 				
-			Case $func5
+			Case $func5, $GUI_EVENT_CLOSE
 				ExitLoop
 				
 		EndSwitch
