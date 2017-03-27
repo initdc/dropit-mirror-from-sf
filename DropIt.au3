@@ -3,14 +3,17 @@
 #AutoIt3Wrapper_outfile=DropIt.exe
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseUpx=N
-#AutoIt3Wrapper_Res_Comment=DropIt - To place your files with a drop
-#AutoIt3Wrapper_Res_Description=DropIt
-#AutoIt3Wrapper_Res_Fileversion=0.9.0.0
+#AutoIt3Wrapper_Res_Description=DropIt - To place your files with a drop
+#AutoIt3Wrapper_Res_Fileversion=0.9.1.0
+#AutoIt3Wrapper_Res_ProductVersion=0.9.1.0
+#AutoIt3Wrapper_Res_LegalCopyright=Lupo PenSuite Team
 #AutoIt3Wrapper_Res_Language=1033
-#AutoIt3Wrapper_Res_LegalCopyright=by Lupo PenSuite Team
 #AutoIt3Wrapper_Run_Obfuscator=y
 #Obfuscator_Parameters=/striponly
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI ****
+
+; Info: http://www.autoitscript.com/autoit3/scite/docs/AutoIt3Wrapper.htm
+; Icons added to the resources can be used with TraySetIcon(@ScriptFullPath, -5) etc. and are stored with numbers -5, -6...
 
 #include <GUIConstantsEx.au3>
 #include <WindowsConstants.au3>
@@ -24,7 +27,7 @@ Opt("TrayIconHide", 1)
 Opt("TrayOnEventMode", 1)
 Opt("TrayMenuMode", 1)
 
-Global $sName = "DropIt", $sVer = " (v0.9)", $ii = $sName & " - To place your files with a drop"
+Global $sName = "DropIt", $sVer = " (v0.9.1)", $ii = $sName & " - To place your files with a drop"
 Global $sIni = @ScriptDir & "\settings.ini", $sIniPr, $PrDir = @ScriptDir & "\profiles", $ImDir = @ScriptDir & "\img", $ImDef = "default.gif", $sIm, $sPic = $ImDir & "\ps.gif"
 Global $hGUI, $hGUI2, $sIcon, $sIcon2, $sData, $Dummy, $hListView, $temp, $i, $top, $Show, $Separ, $Exit, $menu, $func1, $func3, $func2, $func4, $func5, $func6, $custom, $specialClick
 Global Const $WM_DROPFILES = 0x233, $WM_ENTERSIZEMOVE = 0x231, $WM_EXITSIZEMOVE = 0x232
@@ -323,7 +326,7 @@ EndFunc
 
 
 Func MoreMatches($matches, $item, $j)
-	Local $asso, $sel, $ok, $canc, $ma, $rad[$j+1]
+	Local $asso, $sel, $ok, $canc, $rad[$j+1], $ma = "-1"
 	Local $mess = "You have to select the pattern to use."
 	$asso = GUICreate("Pattern ambiguity", 280, 115+21*$j, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI2)
 	
@@ -346,15 +349,12 @@ Func MoreMatches($matches, $item, $j)
 		Switch $sel
 			Case $ok
 				For $i = 1 To $j
-					If GUICtrlRead($rad[$i]) = 1 Then
-						$ma = $matches[$i][1]
-						ExitLoop
-					EndIf
+					If GUICtrlRead($rad[$i]) = 1 Then $ma = $matches[$i][1]
 				Next
+				If $ma <> "-1" Then ExitLoop
 				MsgBox(0x40000, "Message", $mess)
 				
 			Case $canc, $GUI_EVENT_CLOSE
-				$ma = "-1"
 				ExitLoop
 				
 		EndSwitch
@@ -498,6 +498,7 @@ Func PosFile($temp)
 	EndIf
 	; File positioning
 	If $Place <> "0" And $Place <> "-1" Then
+		Opt("ExpandEnvStrings", 1)
 		$decision = 6
 		If Not FileExists($Place) Then DirCreate($Place)
 		If FileExists($Place & "\" & $item) Then
@@ -547,6 +548,7 @@ Func PosFile($temp)
 				EndIf
 			EndIf
 		EndIf
+		Opt("ExpandEnvStrings", 0)
 	EndIf
 EndFunc
 
