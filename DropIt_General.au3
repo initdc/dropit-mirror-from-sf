@@ -87,7 +87,7 @@ Func __Is($iData, $iINI = -1, $iDefault = "False", $iProfile = -2)
 	Return IniRead($iINI, "General", $iData, $iDefault) = "True"
 EndFunc   ;==>__Is
 
-Func __IsSettingsFile($iINI = -1, $iShowLang = 1)
+Func __IsSettingsFile($iINI = -1)
 	#cs
 		Description: Provide A Valid Location Of The Settings INI File.
 		Returns: Settings INI File [C:\Program Files\DropIt\Settings.ini]
@@ -108,20 +108,17 @@ Func __IsSettingsFile($iINI = -1, $iShowLang = 1)
 		$iINIData = "Version=" & $G_Global_CurrentVersion & @LF & "Profile=Default" & @LF & "Language=" & __GetOSLanguage() & @LF & "PosX=-1" & @LF & "PosY=-1" & @LF & _
 				"SizeCustom=320;200" & @LF & "SizeManage=460;260" & @LF & "ColumnCustom=100;100;60;50" & @LF & "ColumnManage=130;100;90;115" & @LF & _
 				"OnTop=True" & @LF & "LockPosition=False" & @LF & "CustomTrayIcon=True" & @LF & "MultipleInstances=False" & @LF & "CheckUpdates=False" & @LF & _
-				"StartAtStartup=False" & @LF & "Minimized=False" & @LF & "ShowSorting=True" & @LF & "UseSendTo=False" & @LF & "SendToMode=Permanent" & @LF & _
-				"ProfileEncryption=False" & @LF & "WaitOpened=False" & @LF & "ScanSubfolders=True" & @LF & "DirForFolders=False" & @LF & "IgnoreNew=False" & @LF & _
-				"AutoDup=False" & @LF & "DupMode=Skip" & @LF & "UseRegEx=False" & @LF & "CreateLog=False" & @LF & "IntegrityCheck=False" & @LF & "AmbiguitiesCheck=False" & @LF & _
-				"AlertSize=True" & @LF & "AlertDelete=False" & @LF & "ListHeader=True" & @LF & "ListSortable=True" & @LF & "ListFilter=True" & @LF & "ListLightbox=True" & @LF & _
-				"ListTheme=Default" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "ZIPLevel=5" & @LF & "ZIPMethod=Deflate" & @LF & _
-				"ZIPEncryption=None" & @LF & "ZIPPassword=" & @LF & "7ZLevel=5" & @LF & "7ZMethod=LZMA" & @LF & "7ZEncryption=None" & @LF & _
-				"7ZPassword=" & @LF & "MasterPassword="
+				"StartAtStartup=False" & @LF & "Minimized=False" & @LF & "ShowSorting=True" & @LF & "ShowMonitored=False" & @LF & "UseSendTo=False" & @LF & _
+				"SendToMode=Permanent" & @LF & "ProfileEncryption=False" & @LF & "WaitOpened=False" & @LF & "ScanSubfolders=True" & @LF & "FolderAsFile=False" & @LF & _
+				"IgnoreNew=False" & @LF & "AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & "DupMode=Skip" & @LF & _
+				"UseRegEx=False" & @LF & "CreateLog=False" & @LF & "ShowListView=False" & @LF & "AmbiguitiesCheck=False" & @LF & "AlertSize=True" & @LF & _
+				"AlertDelete=False" & @LF & "ListHeader=True" & @LF & "ListSortable=True" & @LF & "ListFilter=True" & @LF & "ListLightbox=True" & @LF & "Monitoring=False" & @LF & _
+				"MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & "ZIPLevel=5" & @LF & "ZIPMethod=Deflate" & @LF & "ZIPEncryption=None" & @LF & "ZIPPassword=" & @LF & _
+				"7ZLevel=5" & @LF & "7ZMethod=LZMA" & @LF & "7ZEncryption=None" & @LF & "7ZPassword=" & @LF & "MasterPassword="
 
 		__IniWriteEx($iINI, "General", "", $iINIData)
 		__IniWriteEx($iINI, "MonitoredFolders", "", "")
 		__IniWriteEx($iINI, "EnvironmentVariables", "", "")
-		If $iShowLang Then
-			__LangList_GUI() ; Skip Language Selection If $iShowLang = 0
-		EndIf
 	EndIf
 	Return $iINI
 EndFunc   ;==>__IsSettingsFile
@@ -143,9 +140,7 @@ Func __GetLang($sData, $sDefault, $iNotEnvironmentVariables = 0)
 		EndIf
 	EndIf
 	$sData = StringReplace($sData, "@TAB", @TAB)
-	$sData = StringStripWS($sData, 7)
-	$sData = StringRegExpReplace($sData, "(\h*)@CRLF(\h*)|(\h*)@CR(\h*)|(\h*)@LF(\h*)", @CRLF)
-	Return $sData
+	Return StringStripWS($sData, 7)
 EndFunc   ;==>__GetLang
 
 Func __GetCurrentLanguage()
@@ -182,30 +177,6 @@ Func __SetCurrentLanguage($sLanguage = -1)
 	Return $sLanguage
 EndFunc   ;==>__SetCurrentLanguage
 
-Func __LangList_Combo($lComboBox)
-	#cs
-		Description: Get Languages And Create String For Use In A Combo Box.
-		Returns: String Of Languages.
-	#ce
-	Local $lIndex
-	Local $lCurrentLanguage = __GetCurrentLanguage()
-	Local $lImageList = $G_Global_ImageList
-	Local $lLanguageDefault = __GetDefault(1024) ; Get Default Language Directory.
-	Local $lLanguageList = __LangList_Get()
-
-	If $lLanguageList[0] = 0 Then
-		Local $lLanguageList[2] = [1, $lCurrentLanguage] ; Show Default Language & NoFlag.
-	EndIf
-	For $A = 1 To $lLanguageList[0]
-		$lIndex = _GUICtrlComboBoxEx_AddString($lComboBox, $lLanguageList[$A], $A - 1, $A - 1)
-		__SetItemImageEx($lComboBox, $lIndex, $lImageList, $lLanguageDefault & $lLanguageList[$A] & ".gif", 2)
-		If $lCurrentLanguage == $lLanguageList[$A] Then
-			_GUICtrlComboBoxEx_SetCurSel($lComboBox, $lIndex)
-		EndIf
-	Next
-	Return 1
-EndFunc   ;==>__LangList_Combo
-
 Func __LangList_Get()
 	#cs
 		Description: Proivide Details Of The Languages In The Languages Directory.
@@ -222,40 +193,13 @@ Func __LangList_Get()
 	For $A = 1 To $aLanguageList[0]
 		$aLanguageList[$A] = __GetFileNameOnly($aLanguageList[$A])
 	Next
+	If $aLanguageList[0] = 0 Then ; Show Default Language & NoFlag.
+		ReDim $aLanguageList[2]
+		$aLanguageList[0] = 1
+		$aLanguageList[1] = __GetCurrentLanguage()
+	EndIf
 	Return $aLanguageList
 EndFunc   ;==>__LangList_Get
-
-Func __LangList_GUI()
-	#cs
-		Description: Select Language.
-		Returns: Write Selected Language To The Settings INI File.
-	#ce
-	Local $hCombo, $hGUI, $hImageList, $iOK, $sLanguage
-
-	$hGUI = GUICreate('Language Choice', 230, 70, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop())
-	$hCombo = _GUICtrlComboBoxEx_Create($hGUI, "", 5, 10, 220, 200, 0x0003)
-	$hImageList = _GUIImageList_Create(16, 16, 5, 3) ; Create An ImageList.
-	_GUICtrlComboBoxEx_SetImageList($hCombo, $hImageList)
-	$G_Global_ImageList = $hImageList
-	__LangList_Combo($hCombo)
-	$iOK = GUICtrlCreateButton("OK", 115 - 38, 40, 76, 24)
-	GUICtrlSetState($iOK, $GUI_DEFBUTTON)
-	GUISetState(@SW_SHOW)
-
-	While 1
-		Switch GUIGetMsg()
-			Case $GUI_EVENT_CLOSE, $iOK
-				ExitLoop
-
-		EndSwitch
-	WEnd
-	_GUICtrlComboBoxEx_GetItemText($hCombo, _GUICtrlComboBoxEx_GetCurSel($hCombo), $sLanguage)
-	__SetCurrentLanguage($sLanguage) ; Set The Selected Language To The Settings INI File.
-
-	GUIDelete($hGUI)
-	_GUIImageList_Destroy($hImageList)
-	Return $sLanguage
-EndFunc   ;==>__LangList_GUI
 #EndRegion >>>>> Language Functions <<<<<
 
 #Region >>>>> Profile Functions <<<<<
@@ -413,8 +357,15 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 	EndIf
 
 	For $A = 2 To $aArray[0][0]
-		If ($aArray[$A][2] & $aArray[$A][3]) = "" Or StringLeft($aArray[$A][2], 1) = "[" Then
+		If ($aArray[$A][2] & $aArray[$A][3]) = "" Then
 			ContinueLoop
+		EndIf
+		If StringLeft($aArray[$A][2], 1) = "[" Then
+			If StringInStr($aArray[$A][2], "**") Then
+				$aArray[$A][2] = "**" & $aArray[$A][2]
+			Else
+				$aArray[$A][2] = "*" & $aArray[$A][2]
+			EndIf
 		EndIf
 		$aArray[$A][1] = StringReplace($aArray[$A][1], "|", "")
 		$aArray[$A][2] = StringReplace($aArray[$A][2], "=", "")
@@ -422,60 +373,48 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 		If StringInStr($aArray[$A][2], "*") = 0 And __Is("UseRegEx") = 0 Then ; Fix Rules Without * Characters.
 			$aArray[$A][2] = "*" & $aArray[$A][2]
 		EndIf
+		If $aArray[$A][5] = "" Then
+			$aArray[$A][5] = "|Enabled||"
+		EndIf
 
 		Switch $aArray[$A][3]
-			Case "Extract"
+			Case __GetLang('ACTION_EXTRACT', 'Extract'), 'Extract'
 				If StringInStr($aArray[$A][2], "**") Then
 					ContinueLoop
 				EndIf
-			Case "Open With"
+			Case __GetLang('ACTION_OPEN_WITH', 'Open With'), 'Open With'
 				If StringInStr($aArray[$A][4], "%DefaultProgram%") = 0 And (__IsValidFileType($aArray[$A][4], "bat;cmd;com;exe;pif") = 0 Or StringInStr($aArray[$A][4], "DropIt.exe")) Then ; DropIt.exe Is Excluded To Avoid Loops.
 					ContinueLoop
 				EndIf
-			Case "Create List"
-				If __IsValidFileType($aArray[$A][4], "html;htm;txt;csv;xml") = 0 Then
+			Case __GetLang('ACTION_LIST', 'Create List'), 'Create List'
+				If __IsValidFileType($aArray[$A][4], "html;htm;pdf;xls;txt;csv;xml") = 0 Then
 					ContinueLoop
 				EndIf
-			Case "Compress"
+			Case __GetLang('ACTION_COMPRESS', 'Compress'), 'Compress'
 				If __IsValidFileType($aArray[$A][4], "zip;7z;exe") = 0 And StringInStr($aArray[$A][4], ".") Then
 					ContinueLoop
 				EndIf
-			Case "Create Playlist"
+			Case __GetLang('ACTION_PLAYLIST', 'Create Playlist'), 'Create Playlist'
 				If StringInStr($aArray[$A][2], "**") Then
 					ContinueLoop
 				EndIf
 				If __IsValidFileType($aArray[$A][4], "m3u;m3u8;pls;wpl") = 0 Then
 					ContinueLoop
 				EndIf
-			Case "Delete"
+			Case __GetLang('ACTION_DELETE', 'Delete'), 'Delete'
 				Switch $aArray[$A][4]
-					Case "Safely Erase"
+					Case __GetLang('DELETE_MODE_2', 'Safely Erase'), 'Safely Erase'
 						$aArray[$A][4] = 2
-					Case "Send to Recycle Bin"
+					Case __GetLang('DELETE_MODE_3', 'Send to Recycle Bin'), 'Send to Recycle Bin'
 						$aArray[$A][4] = 3
 					Case Else ; Directly Remove.
 						$aArray[$A][4] = 1
 				EndSwitch
-			Case "Copy to Clipboard"
-				Switch $aArray[$A][4]
-					Case "File Name"
-						$aArray[$A][4] = 2
-					Case "MD5 Hash"
-						$aArray[$A][4] = 3
-					Case "SHA-1 Hash"
-						$aArray[$A][4] = 4
-					Case "CRC Hash"
-						$aArray[$A][4] = 5
-					Case "MD4 Hash"
-						$aArray[$A][4] = 6
-					Case Else ; Full Path.
-						$aArray[$A][4] = 1
-				EndSwitch
-			Case "Ignore"
+			Case __GetLang('ACTION_IGNORE', 'Ignore'), 'Ignore'
 				$aArray[$A][4] = "-"
 		EndSwitch
 
-		$sString &= __GetAssociationString($aArray[$A][3], $aArray[$A][2]) & "=" & $aArray[$A][4] & "|" & $aArray[$A][1] & "||Enabled||" & @LF
+		$sString &= __GetAssociationString($aArray[$A][3], $aArray[$A][2]) & "=" & $aArray[$A][4] & "|" & $aArray[$A][1] & "|" & $aArray[$A][5] & @LF
 	Next
 
 	$sIniWrite = $sProfileDirectory & $sProfileName & ".ini"
@@ -486,19 +425,80 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 	Return $sProfileName
 EndFunc   ;==>__ArrayToProfile
 
+Func __ProfileToArray($sProfileName)
+	#cs
+		Description: Populate An Array From A Profile.
+		Return: Array
+	#ce
+	Local $aAssociations, $sAction, $aArray[1][6]
+
+	$aAssociations = __GetAssociations($sProfileName) ; Get Associations Array For The Current Profile.
+	ReDim $aArray[$aAssociations[0][0] + 1][6]
+	$aArray[0][0] = $aAssociations[0][0]
+
+	For $A = 1 To $aAssociations[0][0]
+		$sAction = StringRight($aAssociations[$A][0], 2)
+		If $sAction == "$6" Then
+			Switch $aAssociations[$A][1] ; Destination.
+				Case 2
+					$aAssociations[$A][1] = __GetLang('DELETE_MODE_2', 'Safely Erase')
+				Case 3
+					$aAssociations[$A][1] = __GetLang('DELETE_MODE_3', 'Send to Recycle Bin')
+				Case Else
+					$aAssociations[$A][1] = __GetLang('DELETE_MODE_1', 'Directly Remove')
+			EndSwitch
+		EndIf
+		$sAction = __GetAssociationString($sAction) ; Convert Action Code To Action Name.
+
+		$aArray[$A][1] = $aAssociations[$A][2]
+		$aArray[$A][2] = StringTrimRight($aAssociations[$A][0], 2)
+		$aArray[$A][3] = $sAction
+		$aArray[$A][4] = $aAssociations[$A][1]
+		$aArray[$A][5] = $aAssociations[$A][3] & "|" & $aAssociations[$A][4] & "|" & $aAssociations[$A][5] & "|" & $aAssociations[$A][6]
+	Next
+
+	Return $aArray
+EndFunc   ;==>__ProfileToArray
+
+Func __ArrayToCSV($aArray, $sDestination)
+	#cs
+		Description: Write An Array Of Associations To CSV File.
+		Returns: 1
+	#ce
+	Local $hFileOpen, $sString = "NAME, RULES, ACTION, DESTINATION, EXTRA" & @CRLF
+
+	For $A = 1 To $aArray[0][0]
+		For $B = 1 To 5
+			$sString &= '"' & $aArray[$A][$B] & '"'
+			If $B < 5 Then
+				$sString &= ', '
+			EndIf
+		Next
+		$sString &= @CRLF
+	Next
+
+	$hFileOpen = FileOpen($sDestination, 2 + 8 + 128)
+	FileWrite($hFileOpen, $sString)
+	FileClose($hFileOpen)
+
+	If @error Then
+		Return SetError(1, 0, 0)
+	EndIf
+
+	Return 1
+EndFunc   ;==>__ArrayToCSV
+
 Func __IsProfileUnique($sProfile, $sShowMessage = 0, $hHandle = -1)
 	#cs
 		Description: Check If A Profile Name Is Unique.
 		Returns: True = ProfileName & False = @error
 	#ce
 	Local $aProfileList = __ProfileList_Get() ; Get Array Of All Profiles.
-	Local $iStringCompare
 	$sProfile = StringReplace(StringStripWS($sProfile, 7), " ", "_")
 
 	For $A = 1 To $aProfileList[0] ; Check If the Profile Name Already Exists.
 		$aProfileList[$A] = StringReplace(StringStripWS($aProfileList[$A], 7), " ", "_")
-		$iStringCompare = StringCompare($aProfileList[$A], $sProfile, 0)
-		If $iStringCompare = 0 Then
+		If StringCompare($aProfileList[$A], $sProfile, 0) = 0 Then
 			If $sShowMessage Then
 				MsgBox(0x40, __GetLang('PROFILEUNIQUE_MSGBOX_0', 'Name not available'), __GetLang('PROFILEUNIQUE_MSGBOX_1', 'This profile name already exists.'), 0, __OnTop($hHandle))
 			EndIf

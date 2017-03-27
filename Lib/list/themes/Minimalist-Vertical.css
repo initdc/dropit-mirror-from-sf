@@ -3,6 +3,8 @@
 /* Author: tpr
 /* ---------------------------------------------------------- */
 
+span.highlighted { color: #000; background-color: #FFFF96; }
+
 #dropitList { color: #669; font-family: Georgia; font-size: 12px;}
 
 #dropitList a { color: #039; }

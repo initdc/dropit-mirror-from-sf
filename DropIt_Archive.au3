@@ -19,12 +19,10 @@ Func __7ZipCommands($cType, $cDestinationFilePath = -1, $cDefault = 0, $cDuplica
 		Returns: Needed Commands
 	#ce
 	Local $cCommand = "a "
-	If FileExists($cDestinationFilePath) Then
-		If $cType = 3 Then ; Update Archive.
-			$cCommand = "u "
-		Else ; Create New Archive.
-			FileDelete($cDestinationFilePath)
-		EndIf
+	If $cType = 3 Then ; Update Archive.
+		$cCommand = "u -ux2y2z2 "
+	ElseIf $cType = 0 And FileExists($cDestinationFilePath) Then ; Create New Archive.
+		FileDelete($cDestinationFilePath)
 	EndIf
 
 	If ($cType = 0 Or $cType = 3) And $cDefault = 1 Then ; Compress With Default Parameters.
@@ -50,11 +48,11 @@ Func __7ZipCommands($cType, $cDestinationFilePath = -1, $cDefault = 0, $cDuplica
 
 	If $cType = 1 Then ; Extract.
 		Switch $cDuplicateMode
-			Case 1 ; Overwrite Duplicates.
+			Case 1 ; Overwrite.
 				$cDuplicateMode = "-aoa "
-			Case 2 ; Skip Duplicates.
+			Case 2 ; Skip.
 				$cDuplicateMode = "-aos "
-			Case 3 ; Rename Duplicates (Only "name_1.txt").
+			Case 3 ; Rename (Only "name_1.txt").
 				$cDuplicateMode = "-aou "
 			Case Else
 				$cDuplicateMode = "-y "
@@ -92,21 +90,24 @@ Func __7ZipRun($rSourceFilePath, $rDestinationFilePath, $rType = 0, $rDefault = 
 		Description: Compress/Extract/Check Using 7-Zip.
 		Returns: Output FilePath [C:\Test.7z]
 	#ce
-	Local $rCommand, $rProcess, $7Zip = @ScriptDir & "\Lib\7z\7z.exe"
-	If FileExists($7Zip) = 0 Or $rSourceFilePath = "" Or $rDestinationFilePath = "" Then
+	Local $rCommand, $rProcess, $rReady, $7Zip = @ScriptDir & "\Lib\7z\7z.exe"
+	If FileExists($7Zip) = 0 Or $rSourceFilePath = "" Or ($rDestinationFilePath = "" And $rType <> 2) Then
 		Return SetError(1, 0, 0)
 	EndIf
 
 	Switch $rType
-		Case 0, 3 ; Compress Modes (0 = Create, 3 = Update).
+		Case 0 ; Compress Mode.
 			$rCommand = '"' & $7Zip & '" ' & __7ZipCommands($rType, $rDestinationFilePath, $rDefault) & ' -- "' & $rSourceFilePath & '"'
+
+		Case 3 ; Compress List Mode.
+			$rCommand = '"' & $7Zip & '" ' & __7ZipCommands($rType, $rDestinationFilePath, $rDefault) & ' -- @"' & $rSourceFilePath & '"'
 
 		Case 1 ; Extract Mode.
 			$rCommand = '"' & $7Zip & '" ' & __7ZipCommands($rType, -1, 0, $rDuplicateMode, $rPassword) & ' -o"' & $rDestinationFilePath & '" -- "' & $rSourceFilePath & '"'
 
 		Case 2 ; Check Mode.
 			$rCommand = '"' & $7Zip & '" l -slt -- "' & $rSourceFilePath & '"'
-			$rNotWait = 1
+			$rNotWait = 1 ; Force To Not Wait.
 
 		Case Else
 			Return SetError(1, 0, 0)
@@ -117,6 +118,10 @@ Func __7ZipRun($rSourceFilePath, $rDestinationFilePath, $rType = 0, $rDefault = 
 		If @error Then
 			Return SetError(1, 0, 0)
 		EndIf
+		Do
+			$rReady = ProcessExists($rProcess)
+			Sleep(10)
+		Until $rReady <> 0
 	Else
 		$rProcess = RunWait($rCommand, "", @SW_HIDE)
 		If FileExists($rDestinationFilePath) = 0 Then

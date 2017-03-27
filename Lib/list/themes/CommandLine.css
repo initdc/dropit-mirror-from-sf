@@ -4,6 +4,8 @@
 /* ---------------------------------------------------------- */
 
 html { background-color: #000; }
+span.highlighted { color: #b00; }
+
 #dropitList { background-color: #000; color: #ccc; font: normal 12px/1.3 Terminal, Courier, monospace; text-transform: uppercase; }
 
 ::-moz-selection { background-color: #ccc; color: #000; }

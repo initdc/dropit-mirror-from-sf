@@ -3,6 +3,8 @@
 /* Author: tpr
 /* ---------------------------------------------------------- */
 
+span.highlighted { color: #000; background-color: #FFFF96; }
+
 #dropitList { color: #141414; }
 
 #dropitList a { color: #474778; }

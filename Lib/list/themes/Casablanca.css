@@ -4,6 +4,8 @@
 /* based on Casablanca table style by Rodrigo Castilho Galvao Ferreira
 /* ---------------------------------------------------------- */
 
+span.highlighted { color: #000; background-color: #FFA593; }
+
 #dropitList { color: #666666; font-family: "Trebuchet MS", "Verdana", sans-serif; }
 
 #dropitList a { color: #C30; text-decoration: none; font-weight: bold; border-bottom: 1px dotted #E63C1E; }

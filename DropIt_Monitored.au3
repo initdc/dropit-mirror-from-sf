@@ -25,7 +25,8 @@ Func __Monitored_Edit_GUI($mHandle, $mINI, $mListView, $mIndex = -1, $mFolder = 
 	$mGUI = GUICreate(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), 300, 125, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
 	$mInput_Folder = GUICtrlCreateInput($mFolder, 10, 15 + 2, 240, 22)
-	GUICtrlSetTip($mInput_Folder, __GetLang('MONITORED_FOLDER_TIP_0', 'Select the folder that will be monitored.'))
+	GUICtrlSetTip($mInput_Folder, __GetLang('MONITORED_FOLDER_TIP_0', 'Drag and drop the folder that will be monitored.'))
+	GUICtrlSetState($mInput_Folder, $GUI_DROPACCEPTED)
 	$mButton_Folder = GUICtrlCreateButton("S", 10 + 244, 15, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Folder, __GetLang('SEARCH', 'Search'))
 	GUICtrlSetImage($mButton_Folder, @ScriptFullPath, -8, 0)

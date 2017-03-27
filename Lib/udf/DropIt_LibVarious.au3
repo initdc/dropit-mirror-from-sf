@@ -6,6 +6,39 @@
 #include <GUIConstantsEx.au3>
 #include "WinAPIEx.au3"
 
+Func _ArraySort_MultiColumn(ByRef $aSort, ByRef $aIndices, $oDir = 0, $iDir = 0) ; Taken From: http://www.autoitscript.com/forum/topic/123874-multiple-sort-solved/#entry860248
+    Local $1st, $2nd
+    If Not IsArray($aIndices) Or Not IsArray($aSort) Then Return SetError(1, 0, 0) ;checks if $aIndices is an array
+    If UBound($aIndices) > UBound($aSort, 2) Then Return SetError(2, 0, 0) ;check if $aIndices array is greater the $aSort array
+    Local $x
+    For $x = 0 To UBound($aIndices) - 1 ;check if array content makes sense
+        If Not IsInt($aIndices[$x]) Then Return SetError(3, 0, 0) ;array content is not numeric
+    Next
+    If UBound($aIndices) = 1 Then Return _ArraySort($aSort, $oDir, 0, 0, $aIndices[0]) ;check if only one index is given
+    Local $j, $k, $l = 0
+    _ArraySort($aSort, $oDir, 0, 0, $aIndices[0])
+    Do
+        $1st = $aIndices[$l]
+        $2nd = $aIndices[$l + 1]
+        $j = 0
+        $k = 1
+        While $k < UBound($aSort)
+            If $aSort[$j][$1st] <> $aSort[$k][$1st] Then
+                If $k - $j > 1  Then
+                    _ArraySort($aSort, $iDir , $j, $k - 1, $2nd)
+                    $j = $k
+                Else
+                    $j = $k
+                EndIf
+            EndIf
+            $k += 1
+        WEnd
+        If $k - $j > 1 Then _ArraySort($aSort, $oDir, $j, $k, $2nd)
+        $l += 1
+    Until $l = UBound($aIndices) - 1
+    Return 1
+EndFunc
+
 Func __CmdLineRaw($sString) ; Taken From: http://www.autoitscript.com/forum/topic/121034-stringsplit-cmdlineraw/page__p__840768#entry840768
 	Local $aError[2] = [1, $sString]
 
@@ -43,15 +76,16 @@ Func __GetOSLanguage()
 		Description: Get The OS Language.
 		Returns: Language [Italian]
 	#ce
-	Local $aString[20] = [19, "0409 0809 0c09 1009 1409 1809 1c09 2009 2409 2809 2c09 3009 3409", "0404 0804 0c04 1004 0406", "0406", "0413 0813", "0425", _
-			"040b", "040c 080c 0c0c 100c 140c 180c", "0407 0807 0c07 1007 1407", "040e", "0410 0810", "0411", "0414 0814", "0415", "0416 0816", "0418", _
-			"0419", "081a 0c1a", "040a 080a 0c0a 100a 140a 180a 1c0a 200a 240a 280a 2c0a 300a 340a 380a 3c0a 400a 440a 480a 4c0a 500a", "041d 081d"]
+	Local $aString[22] = [21, '0409 0809 0c09 1009 1409 1809 1c09 2009 2409 2809 2c09 3009 3409', '0404 0804 0c04 1004 0406', '0406', '0413 0813', '0425', _
+			'040b', '040c 080c 0c0c 100c 140c 180c', '0407 0807 0c07 1007 1407', '408', '040e', _
+			'0410 0810', '0411', '0414 0814', '0415', '0816', '0416', _
+			'0418', '0419', '081a 0c1a', '040a 080a 0c0a 100a 140a 180a 1c0a 200a 240a 280a 2c0a 300a 340a 380a 3c0a 400a 440a 480a 4c0a 500a', '041d 081d']
 
-	Local $aLanguage[20] = [19, "English", "Chinese", "Danish", "Dutch", "Estonian", "Finnish", "French", "German", "Hungarian", "Italian", _
-			"Japanese", "Norwegian", "Polish", "Portuguese", "Romanian", "Russian", "Serbian", "Spanish", "Swedish"]
-	For $A = 1 To $aString[0]
-		If StringInStr($aString[$A], @OSLang) Then
-			Return $aLanguage[$A]
+	Local $aLanguage[22] = [21, 'English', 'Chinese', 'Danish', 'Dutch', 'Estonian', 'Finnish', 'French', 'German', 'Greek', 'Hungarian', _
+			'Italian', 'Japanese', 'Norwegian', 'Polish', 'Portuguese', 'Brazilian Portuguese', 'Romanian', 'Russian', 'Serbian', 'Spanish', 'Swedish']
+	For $i = 1 To $aString[0]
+		If StringInStr($aString[$i], @OSLang) Then
+			Return $aLanguage[$i]
 		EndIf
 	Next
 	Return $aLanguage[1]
@@ -95,7 +129,7 @@ Func __GUIInBounds($hHandle) ; Original Idea By wraithdu, Modified By guinness.
 	Return 1
 EndFunc   ;==>__GUIInBounds
 
-Func __IniReadSection($iFile, $iSection) ; Modified From: http://www.autoitscript.com/forum/topic/32004-iniex-functions-exceed-32kb-limit/page__view__findpost__p__229487
+Func __IniReadSection($iFile, $iSection) ; Modified From: http://www.autoitscript.com/forum/topic/32004-iniex-functions-exceed-32kb-limit/
 	#cs
 		Description: Read A Section From A Standard Format INI File.
 		Returns: $Array[?] - Array Contains Unlimited Number Of Items.
@@ -105,7 +139,7 @@ Func __IniReadSection($iFile, $iSection) ; Modified From: http://www.autoitscrip
 		[A][1] - Value [Test]
 	#ce
 	Local $iSize = FileGetSize($iFile) / 1024
-	If $iSize <= 31 Then
+	If $iSize < 32 Then
 		Local $iRead = IniReadSection($iFile, $iSection)
 		If @error Then
 			Return SetError(@error, 0, 0)

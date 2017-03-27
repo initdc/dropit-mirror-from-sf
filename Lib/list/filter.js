@@ -88,6 +88,7 @@ function clearSearch(focus) {
 
 function filterTable(term, table) {
     'use strict';
+	dehighlight(table);
 	var terms = term.value.toLowerCase().split(" ");
     var counter = 0, i, r, display, rowCount = 0;
 	for (r = 1; r < table.rows.length; r += 1) {
@@ -96,6 +97,8 @@ function filterTable(term, table) {
 		for (i = 0; i < terms.length; i += 1) {
 			if (table.rows[r].innerHTML.replace(/<[^>]+>/g, "").toLowerCase().indexOf(terms[i]) < 0) {
 				display = 'none';
+			} else {
+			    if (terms[i].length) highlight(terms[i], table.rows[r]);
 			}
 			table.rows[r].style.display = display;
 		}
@@ -126,6 +129,53 @@ function filterTable(term, table) {
 	}
 
 	clearFilterButton.style.display = (input.value !== '' && input.value !== searchFieldText) ? 'block' : 'none';
+}
+
+function dehighlight(container) {
+    for (var i = 0; i < container.childNodes.length; i++) {
+        var node = container.childNodes[i];
+
+        if (node.attributes && node.attributes['class']
+            && node.attributes['class'].value == 'highlighted') {
+            node.parentNode.parentNode.replaceChild(document.createTextNode(node.parentNode.innerHTML.replace(/<[^>]+>/g, "")), node.parentNode);
+            return;
+        } else if (node.nodeType != 3) {
+            dehighlight(node);
+        }
+    }
+}
+
+function highlight(term, container) {
+    for (var i = 0; i < container.childNodes.length; i++) {
+        var node = container.childNodes[i];
+
+        if (node.nodeType == 3) {
+            var data = node.data;
+            var data_low = data.toLowerCase();
+            if (data_low.indexOf(term) >= 0) {
+                var new_node = document.createElement('span');
+                node.parentNode.replaceChild(new_node, node);
+                var result;
+                while ((result = data_low.indexOf(term)) != -1) {
+                    new_node.appendChild(document.createTextNode(data.substr(0, result)));
+                    new_node.appendChild(create_node(document.createTextNode(data.substr(result, term.length))));
+                    data = data.substr(result + term.length);
+                    data_low = data_low.substr(result + term.length);
+                }
+                new_node.appendChild(document.createTextNode(data));
+            }
+        } else {
+            highlight(term, node);
+        }
+    }
+}
+
+function create_node(child) {
+    var node = document.createElement('span');
+    node.setAttribute('class', 'highlighted');
+    node.attributes['class'].value = 'highlighted';
+    node.appendChild(child);
+    return node;
 }
 
 addLoadEvent(function() {

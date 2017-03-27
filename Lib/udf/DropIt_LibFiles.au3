@@ -159,47 +159,55 @@ Func __GetParentFolder($sFilePath)
 	Return _WinAPI_PathRemoveFileSpec($sFilePath)
 EndFunc   ;==>__GetParentFolder
 
-Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gLocalNumeration = 0) ; Modified Version Of A Melba23's Function - http://www.autoitscript.com/forum/topic/109450-file-properties/
+Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gMode = 0) ; Modified Version Of A Melba23's Function - http://www.autoitscript.com/forum/topic/109450-file-properties/
 	#cs
 		Description: Get The Defined File Property.
 		Returns: Defined Property E.G. File Name [FileName.txt]
 
+		Modes:
+		0 = Get File Property Value Using Global Numeration,
+		1 = Get File Property Value Using System Numeration,
+		2 = Get File Property Name And Value Using System Numeration.
+
 		Supported Global Numeration:
-		0 Name, 1 Size, 2 Type, 3 Date Modified, 4 Date Created, 5 Date Opened, 6 Attributes, 7 Status, 8 Owner,
-		9 Date Taken, 10 Dimensions, 11 Camera Model, 12 Authors, 13 Artists, 14 Title, 15 Album, 16 Genre,
-		17 Year, 18 Track Number, 19 Subject, 20 Categories, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate.
-		This Numeration Is Automatically Converted For WinXP, WinVista, Win7, Win8.
+		0 Name, 1 Size, 2 Type, 3 Date Modified, 4 Date Created, 5 Date Opened, 6 Attributes, 7 Status, 8 Owner, 9 Date Taken,
+		10 Dimensions, 11 Camera Model, 12 Authors, 13 Artists, 14 Title, 15 Album, 16 Genre, 17 Year, 18 Track Number,
+		19 Subject, 20 Category, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate, 25 Camera Maker, 26 Company.
+		This Numeration Is Automatically Converted For Win2000, WinXP, Win2003, WinVista, Win7, Win8.
 		More Properties And Relative Numeration Are Reported At The AutoIt Webpage.
 	#ce
-	Local $gDir_Name = StringRegExpReplace($gFilePath, "(^.*\\)(.*)", "\1")
-	Local $gFile_Name = StringRegExpReplace($gFilePath, "^.*\\", "")
-	Local $gDOS_Dir = FileGetShortName($gDir_Name, 1)
-	Local $gArrayWinXP[25] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 25, 26, 24, 9, 16, 10, 17, 20, 18, 19, 11, 12, 14, 15, 21, 22]
-	Local $gArrayWinVista[25] = [0, 1, 2, 3, 4, 5, 6, 7, 10, 12, 31, 30, 20, 13, 21, 14, 16, 15, 26, 22, 23, 24, 25, 27, 28]
+	Local $gFileName, $gFileDir, $gObjShell, $gObjFolder, $gObjFile, $gFileProperty, $gFileProperties[2]
 
-	If $gLocalNumeration = 0 Then
-		If @OSVersion == "WIN_XP" Or @OSVersion == "WIN_XPe" Then
+	If $gMode = 0 Then
+		Local $gArrayWin2000[27] = [0, 1, 2, 3, 6, 7, 4, 100, 8, 100, 100, 100, 10, 100, 11, 100, 100, 100, 100, 12, 13, 5, 15, 33, 30, 100, 100]
+		Local $gArrayWinXP[27] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 25, 26, 24, 9, 16, 10, 17, 20, 18, 19, 11, 12, 14, 15, 21, 22, 100, 100]
+		Local $gArrayWin7[27] = [0, 1, 2, 3, 4, 5, 6, 7, 10, 12, 31, 30, 20, 13, 21, 14, 16, 15, 26, 22, 23, 24, 25, 27, 28, 32, 33]
+		If @OSVersion == "WIN_XP" Or @OSVersion == "WIN_XPe" Or @OSVersion == "WIN_2003" Then
 			$gPropertyNumber = $gArrayWinXP[$gPropertyNumber]
-		ElseIf @OSVersion == "WIN_VISTA" Or @OSVersion == "WIN_7" Or @OSVersion == "WIN_8" Then
-			$gPropertyNumber = $gArrayWinVista[$gPropertyNumber]
+		ElseIf @OSVersion == "WIN_2000" Then
+			$gPropertyNumber = $gArrayWin2000[$gPropertyNumber]
+		Else
+			$gPropertyNumber = $gArrayWin7[$gPropertyNumber]
 		EndIf
 	EndIf
 
-	Local $gShellApp = ObjCreate("Shell.Application")
-	If IsObj($gShellApp) Then
-		Local $gObjectFolder = $gShellApp.NameSpace($gDOS_Dir)
-		If IsObj($gObjectFolder) Then
-			; Local $gFile = $gObjectFolder.Parsename($gFile_Name)
-			; If IsObj($gFile) Then
-			;	Local $gFile_Property = $gObjectFolder.GetDetailsOf($gFile, $gPropertyNumber)
-			;	Return $gFile_Property
-			; EndIf
-			For $gObjectItem In $gObjectFolder.Items
-				If $gObjectFolder.GetDetailsOf($gObjectItem, 0) = $gFile_Name Then
-					Local $gFile_Property = $gObjectFolder.GetDetailsOf($gObjectItem, $gPropertyNumber)
-					Return $gFile_Property
+	$gObjShell = ObjCreate("Shell.Application")
+	If IsObj($gObjShell) Then
+		$gFileDir = FileGetShortName(StringRegExpReplace($gFilePath, "(^.*\\)(.*)", "\1"), 1)
+		$gObjFolder = $gObjShell.NameSpace($gFileDir)
+		If IsObj($gObjFolder) Then
+			$gFileName = StringRegExpReplace($gFilePath, "^.*\\", "")
+			$gObjFile = $gObjFolder.Parsename($gFileName)
+			If IsObj($gObjFile) Then
+				If $gMode = 2 Then
+					$gFileProperties[0] = $gObjFolder.GetDetailsOf($gObjFolder.Items, $gPropertyNumber)
+					$gFileProperties[1] = $gObjFolder.GetDetailsOf($gObjFile, $gPropertyNumber)
+					Return $gFileProperties
+				Else
+					$gFileProperty = $gObjFolder.GetDetailsOf($gObjFile, $gPropertyNumber)
+					Return $gFileProperty
 				EndIf
-			Next
+			EndIf
 		EndIf
 	EndIf
 
@@ -245,15 +253,15 @@ Func __IsReadOnly($sFilePath)
 	Return StringInStr(FileGetAttrib($sFilePath), "R") > 0
 EndFunc   ;==>__IsReadOnly
 
-Func __IsValidFileType($sFilePath, $sList = "bat;cmd;exe") ; Taken From: http://www.autoitscript.com/forum/topic/123674-isvalidtype/
+Func __IsValidFileType($sFilePath, $sList = 'bat;cmd;exe') ; Taken From: http://www.autoitscript.com/forum/topic/123674-isvalidtype/
 	#cs
 		Description: Check If A File Is Supported.
 		Returns: 1 = True Or 0 = False
 	#ce
-	If StringRegExp($sList, "[\\/:<>|]") Then
-		Return SetError(1, 0, -1)
+	If StringStripWS($sList, $STR_STRIPALL) = '' Then
+		$sList = '*'
 	EndIf
-	Return StringRegExp($sFilePath, "\.(?i:\Q" & StringReplace($sList, ";", "\E|\Q") & "\E)\z")
+	Return _WinAPI_PathMatchSpec($sFilePath, StringReplace(';' & $sList, ';', ';*.'))
 EndFunc   ;==>__IsValidFileType
 
 Func __Locale_MonthName($Month, $Abbrev = False, $LCID = "")

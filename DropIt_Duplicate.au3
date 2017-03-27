@@ -8,51 +8,49 @@
 #include "Lib\udf\DropIt_LibVarious.au3"
 #include "Lib\udf\WinAPIEx.au3"
 
-Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo)
+Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 0)
 	Local $dGUI, $dButtonOverwrite, $dButtonRename, $dButtonSkip, $dCheckForAll, $dValue
 
 	If $dInfo[0] = "-" Then
 		$dSourceDir = "-"
 	EndIf
 
-	$dGUI = GUICreate(__GetLang('POSITIONPROCESS_DUPLICATE_0', 'Item already exists'), 440, 205, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
-	GUICtrlCreateGraphic(0, 0, 440, 68)
-	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlSetColor(-1, 0xffffff)
+	$dGUI = GUICreate(__GetLang('POSITIONPROCESS_DUPLICATE_0', 'Item already exists'), 460, 230, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
 
-	GUICtrlCreateLabel(__GetLang('POSITIONPROCESS_DUPLICATE_1', 'This item already exists in destination folder:'), 12, 12, 400, 18)
-	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlCreateLabel($dItem, 12, 12 + 18, 416, 36)
-	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlSetFont(-1, -1, 800)
+	GUICtrlCreateLabel(__GetLang('POSITIONPROCESS_DUPLICATE_1', 'This item already exists in destination folder:'), 10, 10, 440, 20)
+	GUICtrlCreateEdit($dItem, 10, 30, 440, 50, $ES_READONLY + $WS_VSCROLL)
 
-	GUICtrlCreateLabel(__GetLang('FROM', 'From') & ":", 12, 76, 80, 18)
+	GUICtrlCreateLabel(__GetLang('FROM', 'From') & ":", 10, 95, 80, 20)
 	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel(_WinAPI_PathCompactPathEx($dSourceDir, 23), 12 + 80, 76, 130, 18)
+	GUICtrlCreateLabel(_WinAPI_PathCompactPathEx($dSourceDir, 23), 10 + 80, 95, 130, 20)
 	GUICtrlSetTip(-1, $dSourceDir)
-	GUICtrlCreateLabel(__GetLang('SIZE', 'Size') & ":", 12, 76 + 20, 80, 18)
+	GUICtrlCreateLabel(__GetLang('SIZE', 'Size') & ":", 10, 95 + 20, 80, 20)
 	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel($dInfo[0], 12 + 80, 76 + 20, 130, 18)
-	GUICtrlCreateLabel(__GetLang('ENV_VAR_TAB_7', 'Modified') & ":", 12, 76 + 40, 80, 18)
+	GUICtrlCreateLabel($dInfo[0], 10 + 80, 95 + 20, 130, 20)
+	GUICtrlCreateLabel(__GetLang('ENV_VAR_TAB_7', 'Modified') & ":", 10, 95 + 40, 80, 20)
 	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel($dInfo[1], 12 + 80, 76 + 40, 130, 18)
+	GUICtrlCreateLabel($dInfo[1], 10 + 80, 95 + 40, 130, 20)
 
-	GUICtrlCreateLabel(__GetLang('TO', 'To') & ":", 12 + 220, 76, 80, 18)
+	GUICtrlCreateLabel(__GetLang('TO', 'To') & ":", 10 + 220, 95, 80, 20)
 	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel(_WinAPI_PathCompactPathEx($dDestinationDir, 23), 12 + 220 + 80, 76, 130, 18)
+	GUICtrlCreateLabel(_WinAPI_PathCompactPathEx($dDestinationDir, 23), 10 + 220 + 80, 95, 130, 20)
 	GUICtrlSetTip(-1, $dDestinationDir)
-	GUICtrlCreateLabel(__GetLang('SIZE', 'Size') & ":", 12 + 220, 76 + 20, 80, 18)
+	GUICtrlCreateLabel(__GetLang('SIZE', 'Size') & ":", 10 + 220, 95 + 20, 80, 20)
 	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel($dInfo[2], 12 + 220 + 80, 76 + 20, 130, 18)
-	GUICtrlCreateLabel(__GetLang('ENV_VAR_TAB_7', 'Modified') & ":", 12 + 220, 76 + 40, 80, 18)
+	GUICtrlCreateLabel($dInfo[2], 10 + 220 + 80, 95 + 20, 130, 20)
+	GUICtrlCreateLabel(__GetLang('ENV_VAR_TAB_7', 'Modified') & ":", 10 + 220, 95 + 40, 80, 20)
 	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel($dInfo[3], 12 + 220 + 80, 76 + 40, 130, 18)
+	GUICtrlCreateLabel($dInfo[3], 10 + 220 + 80, 95 + 40, 130, 20)
 
-	$dButtonOverwrite = GUICtrlCreateButton(__GetLang('DUPLICATE_MODE_0', 'Overwrite'), 220 - 70 - 94, 147, 94, 25)
-	$dButtonRename = GUICtrlCreateButton(__GetLang('DUPLICATE_MODE_2', 'Rename'), 220 - 47, 147, 94, 25)
-	$dButtonSkip = GUICtrlCreateButton(__GetLang('DUPLICATE_MODE_6', 'Skip'), 220 + 70, 147, 94, 25)
+	$dValue = __GetLang('DUPLICATE_MODE_0', 'Overwrite')
+	If $dMerge Then ; Compress Action Supports To Merge Archives.
+		$dValue = __GetLang('DUPLICATE_MODE_8', 'Merge')
+	EndIf
+	$dButtonOverwrite = GUICtrlCreateButton($dValue, 230 - 80 - 100, 170, 100, 26)
+	$dButtonRename = GUICtrlCreateButton(__GetLang('DUPLICATE_MODE_2', 'Rename'), 230 - 50, 170, 100, 26)
+	$dButtonSkip = GUICtrlCreateButton(__GetLang('DUPLICATE_MODE_6', 'Skip'), 230 + 80, 170, 100, 26)
 	GUICtrlSetState($dButtonSkip, $GUI_DEFBUTTON)
-	$dCheckForAll = GUICtrlCreateCheckbox(__GetLang('POSITIONPROCESS_DUPLICATE_2', 'Apply to all duplicates of this drop'), 14, 180, 400, 20)
+	$dCheckForAll = GUICtrlCreateCheckbox(__GetLang('POSITIONPROCESS_DUPLICATE_2', 'Apply to all duplicates of this drop'), 14, 205, 420, 20)
 	GUISetState(@SW_SHOW)
 
 	While 1
@@ -106,89 +104,82 @@ Func __Duplicate_GetInfo($dSourcePath, $dDestinationPath, $dInfo, $dSameInfo = 0
 	Return $dInfo
 EndFunc   ;==>__Duplicate_GetInfo
 
-Func __Duplicate_Process($dProfile, $dSourcePath, $dDestinationPath)
-	Local $dINI, $dIsDirectory, $dFileName, $dSameInfo, $dInfo[4], $dDupMode = "Skip"
+Func __Duplicate_GetMode($dProfile, $dOnlineProtocol = 0)
+	Local $dINI, $dDupMode = "None"
+
+	If __Is("AutoDup", -1, "False", $dProfile) Then
+		$dINI = __IsProfile($dProfile, 1) ; Get Profile Path Of Selected Profile.
+		If IniRead($dINI, "General", "AutoDup", "Default") == "Default" Then
+			$dINI = __IsSettingsFile() ; Get Default Settings INI File.
+		EndIf
+		$dDupMode = IniRead($dINI, "General", "DupMode", "Skip")
+	ElseIf $G_Global_DuplicateMode <> "" Then
+		$dDupMode = $G_Global_DuplicateMode
+	EndIf
+	If StringInStr($dDupMode, 'Overwrite2') And $dOnlineProtocol == "SFTP" Then
+		MsgBox(0x40, __GetLang('DUPLICATE_MSGBOX_0', 'Manual selection needed'), __GetLang('DUPLICATE_MSGBOX_1', 'SFTP protocol currently does not support "Overwrite if newer".') & @LF & __GetLang('DUPLICATE_MSGBOX_2', 'You need to manually select how to manage this duplicate.'), 0, __OnTop())
+		$dDupMode = "None"
+	EndIf
+
+	Return $dDupMode
+EndFunc   ;==>__Duplicate_GetMode
+
+Func __Duplicate_Process($dProfile, $dSourcePath, $dDestinationPath, $dMerge = 0)
+	Local $dIsDirectory, $dSameInfo, $dInfo[4], $dDupMode
 
 	If $dSourcePath = -1 Then ; New Output Creation.
 		$dSourcePath = $dDestinationPath
 		$dSameInfo = 1
 	EndIf
-	If _WinAPI_PathIsDirectory($dDestinationPath) Then
-		$dIsDirectory = 1
-	EndIf
-	$dFileName = __GetFileName($dDestinationPath)
 
-	If __Is("AutoDup", -1, "False", $dProfile) Then
-		$dINI = __IsProfile($dProfile, 1) ; Get Profile Path Of Selected Profile.
-		If IniRead($dINI, "General", "AutoDup", "Default") == "Default" Then
-			$dINI = __IsSettingsFile() ; Get Default Settings INI File.
-		EndIf
-		$dDupMode = IniRead($dINI, "General", "DupMode", "Skip")
-	Else
-		If $G_Global_DuplicateMode <> "" Then
-			$dDupMode = $G_Global_DuplicateMode
-		Else
-			$dInfo = __Duplicate_GetInfo($dSourcePath, $dDestinationPath, $dInfo, $dSameInfo)
-			__ExpandEventMode(0) ; Disable The Abort Button.
-			$dDupMode = __Duplicate_Alert($dFileName, __GetParentFolder($dSourcePath), __GetParentFolder($dDestinationPath), $dInfo)
-			__ExpandEventMode(1) ; Enable The Abort Button.
-		EndIf
+	$dDupMode = __Duplicate_GetMode($dProfile)
+	If $dDupMode == "None" Then
+		$dInfo = __Duplicate_GetInfo($dSourcePath, $dDestinationPath, $dInfo, $dSameInfo)
+		__ExpandEventMode(0) ; Disable Event Buttons.
+		$dDupMode = __Duplicate_Alert(__GetFileName($dDestinationPath), __GetParentFolder($dSourcePath), __GetParentFolder($dDestinationPath), $dInfo, $dMerge)
+		__ExpandEventMode(1) ; Enable Event Buttons.
 	EndIf
 
 	If StringInStr($dDupMode, 'Skip') Or (StringInStr($dDupMode, 'Overwrite2') And __FileCompareDate($dSourcePath, $dDestinationPath) <> 1) Or (StringInStr($dDupMode, 'Overwrite3') And __FileCompareSize($dSourcePath, $dDestinationPath) = 0) Then
-		Return SetError(1, 0, $dFileName) ; Error Needed To Skip.
-	EndIf
-	If StringInStr($dDupMode, 'Overwrite') Then
-		Return SetError(2, 0, $dFileName) ; Error Needed To Overwrite.
-	EndIf
-	If StringInStr($dDupMode, 'Rename') Then
-		$dFileName = __Duplicate_Rename($dFileName, __GetParentFolder($dDestinationPath), $dIsDirectory, StringRight($dDupMode, 1))
+		Return SetError(2, 0, $dDestinationPath) ; 2 = Skip.
+	ElseIf StringInStr($dDupMode, 'Overwrite') Then
+		Return SetError(1, 0, $dDestinationPath) ; 1 = Overwrite.
+	ElseIf StringInStr($dDupMode, 'Rename') Then
+		If _WinAPI_PathIsDirectory($dDestinationPath) Then
+			$dIsDirectory = 1
+		EndIf
+		$dDestinationPath = __GetParentFolder($dDestinationPath) & "\" & __Duplicate_Rename(__GetFileName($dDestinationPath), __GetParentFolder($dDestinationPath), $dIsDirectory, StringRight($dDupMode, 1))
 	EndIf
 
-	Return $dFileName
+	Return $dDestinationPath
 EndFunc   ;==>__Duplicate_Process
 
-Func __Duplicate_ProcessOnline($dProfile, $dSourcePath, $dDestinationDir, $dRemoteDate, $dRemoteSize, $dListArray, $dProtocol = "FTP")
-	Local $dINI, $dFileName, $dIsDirectory, $dInfo[4], $dDupMode = ""
+Func __Duplicate_ProcessOnline($dProfile, $dSourcePath, $dDestinationHost, $dDestinationDir, $dRemoteDate, $dRemoteSize, $dListArray, $dProtocol = "FTP")
+	Local $dFileName, $dDestinationPath, $dIsDirectory, $dInfo[4], $dDupMode
 
-	If _WinAPI_PathIsDirectory($dSourcePath) Then
-		$dIsDirectory = 1
-	EndIf
 	$dFileName = __GetFileName($dSourcePath)
+	$dDestinationPath = $dDestinationDir & "/" & $dFileName
 
-	If __Is("AutoDup", -1, "False", $dProfile) Then
-		$dINI = __IsProfile($dProfile, 1) ; Get Profile Path Of Selected Profile.
-		If IniRead($dINI, "General", "AutoDup", "Default") == "Default" Then
-			$dINI = __IsSettingsFile() ; Get Default Settings INI File.
-		EndIf
-		$dDupMode = IniRead($dINI, "General", "DupMode", "Skip")
-	EndIf
-	If StringInStr($dDupMode, 'Overwrite2') And $dProtocol = "SFTP" Then
-		MsgBox(0x40, __GetLang('DUPLICATE_MSGBOX_0', 'Manual selection needed'), __GetLang('DUPLICATE_MSGBOX_1', 'SFTP protocol currently does not support "Overwrite if newer".') & @LF & __GetLang('DUPLICATE_MSGBOX_2', 'You need to manually select how to manage this duplicate.'), 0, __OnTop())
-		$dDupMode = ""
-	EndIf
-
-	If $dDupMode = "" Then
-		If $G_Global_DuplicateMode <> "" Then
-			$dDupMode = $G_Global_DuplicateMode
-		Else
-			$dInfo = __Duplicate_GetInfo($dSourcePath, -1, $dInfo)
-			$dInfo[2] = $dRemoteSize
-			$dInfo[3] = $dRemoteDate
-			__ExpandEventMode(0) ; Disable The Abort Button.
-			$dDupMode = __Duplicate_Alert($dFileName, __GetParentFolder($dSourcePath), $dDestinationDir, $dInfo)
-			__ExpandEventMode(1) ; Enable The Abort Button.
-		EndIf
+	$dDupMode = __Duplicate_GetMode($dProfile, $dProtocol)
+	If $dDupMode == "None" Then
+		$dInfo = __Duplicate_GetInfo($dSourcePath, -1, $dInfo)
+		$dInfo[2] = __ByteSuffix($dRemoteSize)
+		$dInfo[3] = $dRemoteDate
+		__ExpandEventMode(0) ; Disable Event Buttons.
+		$dDupMode = __Duplicate_Alert($dFileName, __GetParentFolder($dSourcePath), $dDestinationHost & $dDestinationDir, $dInfo)
+		__ExpandEventMode(1) ; Enable Event Buttons.
 	EndIf
 
 	If StringInStr($dDupMode, 'Skip') Or (StringInStr($dDupMode, 'Overwrite2') And __FileCompareDate($dSourcePath, $dRemoteDate, 1) <> 1) Or (StringInStr($dDupMode, 'Overwrite3') And __FileCompareSize($dSourcePath, $dRemoteSize, 1) = 0) Then
-		Return SetError(1, 0, $dFileName) ; Error Needed To Skip.
-	EndIf
-	If StringInStr($dDupMode, 'Rename') Then
-		$dFileName = __Duplicate_Rename($dFileName, $dListArray, $dIsDirectory, StringRight($dDupMode, 1))
+		Return SetError(2, 0, $dDestinationPath) ; 2 = Skip.
+	ElseIf StringInStr($dDupMode, 'Rename') Then
+		If _WinAPI_PathIsDirectory($dSourcePath) Then
+			$dIsDirectory = 1
+		EndIf
+		$dDestinationPath = $dDestinationDir & "/" & __Duplicate_Rename($dFileName, $dListArray, $dIsDirectory, StringRight($dDupMode, 1))
 	EndIf
 
-	Return $dFileName
+	Return $dDestinationPath
 EndFunc   ;==>__Duplicate_ProcessOnline
 
 Func __Duplicate_Rename($dFileName, $dDestination, $dIsDirectory = 0, $dStyle = 1)
@@ -212,11 +203,7 @@ Func __Duplicate_Rename($dFileName, $dDestination, $dIsDirectory = 0, $dStyle = 
 	EndIf
 
 	While 1
-		If $A < 10 Then
-			$dNumber = 0 & $A ; Create 01, 02, 03, 04, 05 Till 09.
-		Else
-			$dNumber = $A ; Create 10, 11, 12, 13, 14, Etc.
-		EndIf
+		$dNumber = StringFormat("%02d", $A)
 		Switch $dStyle
 			Case 2
 				$dFileName = $sFileString & "_" & $dNumber

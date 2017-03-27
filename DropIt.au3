@@ -17,9 +17,9 @@
 #AutoIt3Wrapper_Icon=Lib\img\Logo.ico
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
-#AutoIt3Wrapper_Res_Description=DropIt - Sort your files with a drop
-#AutoIt3Wrapper_Res_Fileversion=4.7.0.0
-#AutoIt3Wrapper_Res_ProductVersion=4.7.0.0
+#AutoIt3Wrapper_Res_Description=DropIt - Process your files with a drop
+#AutoIt3Wrapper_Res_Fileversion=5.0.0.0
+#AutoIt3Wrapper_Res_ProductVersion=5.0.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Lupo PenSuite Team
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://dropit.sourceforge.net
@@ -42,6 +42,9 @@
 #AutoIt3Wrapper_Res_Icon_Add=Lib\img\Pause.ico
 #AutoIt3Wrapper_Res_Icon_Add=Lib\img\Resume.ico
 #AutoIt3Wrapper_Res_Icon_Add=Lib\img\Server.ico
+#AutoIt3Wrapper_Res_Icon_Add=Lib\img\More.ico
+#AutoIt3Wrapper_Res_Icon_Add=Lib\img\Less.ico
+#AutoIt3Wrapper_Res_Icon_Add=Lib\img\Done.ico
 #AutoIt3Wrapper_Res_File_Add=Images\Default.png, 10, IMAGE
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Associations.png, 10, ASSO
 #AutoIt3Wrapper_Res_File_Add=Lib\img\About.png, 10, ABOUT
@@ -49,8 +52,11 @@
 #AutoIt3Wrapper_Res_File_Add=Lib\img\CopyTo.png, 10, COPYTO
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Custom.png, 10, CUST
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Delete.png, 10, DEL
+#AutoIt3Wrapper_Res_File_Add=Lib\img\Duplicate.png, 10, DUPLICATE
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Edit.png, 10, EDIT
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Example.png, 10, EXAMP
+#AutoIt3Wrapper_Res_File_Add=Lib\img\Export.png, 10, EXPORT
+#AutoIt3Wrapper_Res_File_Add=Lib\img\Flags.png, 10, FLAGS
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Guide.png, 10, GUIDE
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Help.png, 10, HELP
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Hide.png, 10, HIDE
@@ -62,6 +68,7 @@
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Progress.png, 10, PROG
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Readme.png, 10, READ
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Show.png, 10, SHOW
+#AutoIt3Wrapper_Res_File_Add=Lib\img\Skip.png, 10, SKIP
 #AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6 -w 7
 #AutoIt3Wrapper_Run_Obfuscator=Y
 #Obfuscator_Parameters=/SF /SV /OM /CF=0 /CN=0 /CS=0 /CV=0
@@ -74,19 +81,6 @@
 #include <ComboConstants.au3>
 #include <Date.au3>
 #include <DateTimeConstants.au3>
-#include <DropIt_Archive.au3>
-#include <DropIt_Association.au3>
-#include <DropIt_Duplicate.au3>
-#include <DropIt_General.au3>
-#include <DropIt_Global.au3>
-#include <DropIt_Image.au3>
-#include <DropIt_Instance.au3>
-#include <DropIt_List.au3>
-#include <DropIt_Modifier.au3>
-#include <DropIt_Monitored.au3>
-#include <DropIt_ProfileList.au3>
-#include <DropIt_Update.au3>
-#include <DropIt_Upload.au3>
 #include <EditConstants.au3>
 #include <Excel.au3>
 #include <FTPEx.au3>
@@ -97,13 +91,31 @@
 #include <GUIListView.au3>
 #include <GUIMenu.au3>
 #include <GUIToolTip.au3>
+#include <Misc.au3>
+#include <StaticConstants.au3>
+#include <String.au3>
+#include <WindowsConstants.au3>
+
+#include "DropIt_Archive.au3"
+#include "DropIt_Association.au3"
+#include "DropIt_Duplicate.au3"
+#include "DropIt_General.au3"
+#include "DropIt_Global.au3"
+#include "DropIt_Image.au3"
+#include "DropIt_Instance.au3"
+#include "DropIt_List.au3"
+#include "DropIt_Modifier.au3"
+#include "DropIt_Monitored.au3"
+#include "DropIt_Playlist.au3"
+#include "DropIt_ProfileList.au3"
+#include "DropIt_Update.au3"
+#include "DropIt_Upload.au3"
 #include "Lib\udf\7ZipRead.au3"
 #include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\Copy.au3"
 #include "Lib\udf\DropIt_LibCSV.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibImages.au3"
-#include "Lib\udf\DropIt_LibPlaylists.au3"
 #include "Lib\udf\DropIt_LibSecureDelete.au3"
 #include "Lib\udf\DropIt_LibTrayIcon.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
@@ -114,24 +126,20 @@
 #include "Lib\udf\SMTPMailer.au3"
 #include "Lib\udf\Startup.au3"
 #include "Lib\udf\WinAPIEx.au3"
-#include <Misc.au3>
-#include <StaticConstants.au3>
-#include <String.au3>
-#include <WindowsConstants.au3>
 
 Opt("TrayMenuMode", 3)
 Opt("TrayOnEventMode", 1)
 
 Global $Global_GUI_1, $Global_GUI_2, $Global_Icon_1, $Global_GUI_State = 1 ; ImageList & GUI Handles & Icons Handle & GUI State.
-Global $Global_ContextMenu[15][2] = [[14, 2]], $Global_TrayMenu[14][2] = [[13, 2]], $Global_MenuDisable = 0 ; ContextMenu & TrayMenu.
-Global $Global_ListViewIndex = -1, $Global_ListViewFolders, $Global_ListViewProfiles, $Global_ListViewRules ; ListView Variables.
+Global $Global_ContextMenu[16][2] = [[15, 2]], $Global_TrayMenu[15][2] = [[14, 2]], $Global_MenuDisable = 0 ; ContextMenu & TrayMenu.
+Global $Global_ListViewIndex = -1, $Global_ListViewFolders, $Global_ListViewProfiles, $Global_ListViewRules, $Global_ListViewProcess ; ListView Variables.
 Global $Global_ListViewProfiles_Enter, $Global_ListViewProfiles_New, $Global_ListViewProfiles_Delete, $Global_ListViewProfiles_Duplicate ; ListView Variables.
-Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New ; ListView Variables.
-Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1 ; ListView Variables.
-Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
-Global $Global_Timer, $Global_Action, $Global_MainDir, $Global_Clipboard, $Global_Wheel, $Global_ScriptRefresh, $Global_ScriptRestart ; Misc.
-Global $Global_DroppedFiles[1], $Global_OpenedFiles[1][2], $Global_PriorityActions[1] ; Misc.
-Global $Global_AbortButton, $Global_PauseButton, $Global_DoingLabel ; Sorting GUI.
+Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Export, $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New ; ListView Variables.
+Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1, $Global_ListViewProcess_Info, $Global_ListViewProcess_Skip ; ListView Variables.
+Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
+Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_Clipboard, $Global_UserInput, $Global_Wheel, $Global_ScriptRefresh, $Global_ScriptRestart ; Misc.
+Global $Global_DroppedFiles[1], $Global_PriorityActions[1] ; Misc.
+Global $Global_AbortButton, $Global_PauseButton, $Global_ExtendButton ; Process GUI.
 Global $Global_ResizeWidth, $Global_ResizeHeight ; Windows Size For Resizing.
 Global $Global_Slider, $Global_SliderLabel ; _Customize_GUI_Edit.
 
@@ -154,7 +162,7 @@ _Main()
 #Region >>>>> Manage Functions <<<<<
 Func _Manage_GUI($mINI = -1, $mHandle = -1)
 	Local $mGUI, $mListView, $mListView_Handle, $mMsg, $A, $mNew, $mClose, $mProfileCombo, $mProfileCombo_Handle, $mName, $mText, $mAction, $mState, $mDestination
-	Local $mIndex_Selected, $mAssociate, $mUpdateList, $mNumber, $mProfileName, $mProfileString, $mProfileText, $mCopyToDummy, $mDeleteDummy, $mEnterDummy, $mNewDummy
+	Local $mIndex_Selected, $mAssociate, $mUpdateList, $mNumber, $mProfileName, $mProfileString, $mProfileText, $mCopyToDummy, $mDuplicateDummy, $mDeleteDummy, $mEnterDummy, $mNewDummy
 
 	Local $mProfile = __IsProfile(-1, 0) ; Get Array Of Current Profile.
 	Local $mSize = __GetCurrentSize("SizeManage") ; 460 x 260.
@@ -167,7 +175,6 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 
 	$mListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('RULES', 'Rules') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination'), 0, 0, $mSize[0], $mSize[1] - 35, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
 	$mListView_Handle = GUICtrlGetHandle($mListView)
-
 	$Global_ListViewRules = $mListView_Handle
 	GUICtrlSetResizing($mListView, $GUI_DOCKBORDERS)
 
@@ -183,10 +190,12 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 		_GUIToolTip_SetDelayTime($mToolTip, 3, 60) ; Speed Up InfoTip Appearance.
 	EndIf
 
-	_Manage_Update($mListView_Handle, $mProfile[1]) ; Add/Update The ListView With The Custom Associations.
+	_Manage_Populate($mListView_Handle, $mProfile[1]) ; Add/Update The ListView With The Custom Associations.
 
 	$mCopyToDummy = GUICtrlCreateDummy()
 	$Global_ListViewRules_CopyTo = $mCopyToDummy
+	$mDuplicateDummy = GUICtrlCreateDummy()
+	$Global_ListViewRules_Duplicate = $mDuplicateDummy
 	$mDeleteDummy = GUICtrlCreateDummy()
 	$Global_ListViewRules_Delete = $mDeleteDummy
 	$mEnterDummy = GUICtrlCreateDummy()
@@ -251,13 +260,13 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 			Case $mNew, $mNewDummy
 				$mAssociate = _Manage_Edit_GUI($mProfile[1], -1, -1, -1, -1, -1, $mGUI, 1) ; Show Manage Edit GUI For New Association.
 				If $mAssociate = 1 Then
-					$mProfile = _Manage_Update($mListView_Handle, $mProfile) ; Add/Update The ListView With The Custom Associations.
+					$mProfile = _Manage_Populate($mListView_Handle, $mProfile) ; Add/Update The ListView With The Custom Associations.
 				EndIf
 
 			Case $mDeleteDummy
 				_Manage_Delete($mListView_Handle, $mIndex_Selected, $mProfile[0], $mGUI) ; Delete Selected Association From Current Profile & ListView.
 
-			Case $mEnterDummy, $mCopyToDummy
+			Case $mEnterDummy, $mCopyToDummy, $mDuplicateDummy
 				If Not _GUICtrlListView_GetItemState($mListView_Handle, $mIndex_Selected, $LVIS_SELECTED) Then
 					ContinueLoop
 				EndIf
@@ -275,15 +284,17 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 					EndIf
 					$mUpdateList = 1
 				Else
-					$mProfileName = __ProfileList_GUI() ; Show Profile Selection GUI To Select A Profile From The Profile List.
-					If @error Then
-						ContinueLoop
+					$mProfileName = $mProfile[1]
+					If $mMsg = $mCopyToDummy Then
+						$mProfileName = __ProfileList_GUI() ; Show Profile Selection GUI To Select A Profile From The Profile List.
+						If @error Then
+							ContinueLoop
+						EndIf
 					EndIf
 					$mProfileString = __GetAssociationString($mAction, $mText) ; Profile INI Key [*.txt$1].
 					$mProfileText = IniRead($mProfile[0], "Associations", $mProfileString, "") ; Profile INI Value [C:\Destination|Example|1<20MB;0>d;0>d;0>d|Disabled|0;1;2;3;9;13|Host;Port;User;Password].
 
-					; Support To Duplicate Associations In A Profile:
-					If $mProfileName == $mProfile[1] Then
+					If $mProfileName == $mProfile[1] Then ; Update Rules To Support Duplicates.
 						$mState = "*"
 						If StringInStr($mProfileString, "**") Then
 							$mState = "*" & $mState
@@ -309,7 +320,7 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 					$Global_ListViewRules_ComboBoxChange = 1 ; To Load $mProfile Array Of Currently Visible Profile.
 				EndIf
 				If $mUpdateList Then
-					_Manage_Update($mListView_Handle, $mProfile) ; Add/Update The ListView With The Custom Associations.
+					_Manage_Populate($mListView_Handle, $mProfile) ; Add/Update The ListView With The Custom Associations.
 					_GUICtrlListView_SetItemSelected($mListView_Handle, $mIndex_Selected, True, True)
 				EndIf
 
@@ -332,7 +343,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileExtension = -1,
 	Local $mGUI, $mMsgBox, $mFolder, $mSave, $mCancel, $mCurrentActionString, $mAbbreviation, $mListType, $mFilters[10][3], $mChanged = 0
 	Local $mInput_Name, $mInput_NameRead, $mInput_Rules, $mInput_RulesRead, $mButton_Rules, $mButton_Filters, $mButton_Abbreviations, $mCombo_Action, $mInput_Ignore
 	Local $mLabel_Destination, $mInput_Destination, $mInput_DestinationRead, $mButton_Destination, $mCombo_Delete, $mRename, $mInput_Rename, $mClipboard, $mInput_Clipboard
-	Local $mSite, $mInput_Site, $mButton_Site, $mSiteSettings, $mList, $mInput_List, $mButton_List, $mListName, $mListProperties, $mInput_Current
+	Local $mSite, $mInput_Site, $mButton_Site, $mSiteSettings, $mList, $mInput_List, $mButton_List, $mListName, $mListProperties, $mHTMLTheme, $mInput_Current
 	Local $mButton_Change, $mFileProperties, $mButton_Mail, $mMailSettings, $mStringSplit, $mAllOthers
 
 	Local $mAssociationType = __GetLang('MANAGE_ASSOCIATION_NEW', 'New Association')
@@ -398,6 +409,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileExtension = -1,
 	EndIf
 	If $mInitialAction == __GetLang('ACTION_LIST', 'Create List') Then
 		$mListProperties = __GetAssociationField($mProfile[0], $mInitialAction, $mInput_RuleData, 5)
+		$mHTMLTheme = __GetAssociationField($mProfile[0], $mInitialAction, $mInput_RuleData, 6)
 		$mList = $mDestination
 		$mDestination = "-"
 	Else
@@ -703,7 +715,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileExtension = -1,
 						EndIf
 					Case "$8" ; List.
 						$mInput_DestinationRead = GUICtrlRead($mInput_List)
-						If __IsValidFileType($mInput_DestinationRead, "html;htm;txt;csv;xml") = 0 Then
+						If __IsValidFileType($mInput_DestinationRead, "html;htm;pdf;xls;csv;txt;xml") = 0 Then
 							MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_0', 'Destination Error'), __GetLang('MANAGE_EDIT_MSGBOX_1', 'You must specify a valid destination.'), 0, __OnTop($mGUI))
 							ContinueLoop
 						EndIf
@@ -794,7 +806,9 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileExtension = -1,
 							$mListProperties = "0;1;2;3;9;13"
 						EndIf
 						$mInput_DestinationRead &= "|" & $mListProperties
-						If $mCurrentActionString <> "$C" Then
+						If $mCurrentActionString == "$8" Then
+							$mSiteSettings = $mHTMLTheme
+						ElseIf $mCurrentActionString <> "$C" Then
 							$mSiteSettings = ""
 						EndIf
 						$mInput_DestinationRead &= "|" & $mSiteSettings
@@ -812,19 +826,19 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileExtension = -1,
 				EndIf
 
 			Case $mButton_Filters
-				$mFilters = _Manage_Filters($mFilters, $mGUI)
+				_Manage_Filters($mFilters, $mGUI)
 
 			Case $mButton_List
-				$mListProperties = _Manage_List($mListProperties, $mGUI)
+				_Manage_List($mListProperties, $mHTMLTheme, $mGUI) ; ByRef: $mListProperties, $mHTMLTheme.
 
 			Case $mButton_Site
-				$mSiteSettings = _Manage_Site($mSiteSettings, $mGUI)
+				_Manage_Site($mSiteSettings, $mGUI) ; ByRef: $mSiteSettings.
 
 			Case $mButton_Change
-				$mFileProperties = _Manage_Properties($mFileProperties, $mGUI)
+				_Manage_Properties($mFileProperties, $mGUI) ; ByRef: $mFileProperties.
 
 			Case $mButton_Mail
-				$mMailSettings = _Manage_Mail($mMailSettings, $mGUI)
+				_Manage_Mail($mMailSettings, $mGUI) ; ByRef: $mMailSettings.
 
 			Case $mButton_Destination
 				$mInput_Current = $mInput_Destination
@@ -843,17 +857,21 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mFileName = -1, $mFileExtension = -1,
 						Switch __GetFileExtension($mFolder)
 							Case "html", "htm"
 								$mListType = 1
-							Case "txt"
+							Case "pdf"
 								$mListType = 2
-							Case "csv"
+							Case "xls"
 								$mListType = 3
-							Case "xml"
+							Case "csv"
 								$mListType = 4
+							Case "txt"
+								$mListType = 5
+							Case "xml"
+								$mListType = 6
 							Case Else
 								$mListType = 1
 								$mListName = __GetLang('MANAGE_DESTINATION_FILE_NAME', 'DropIt List')
 						EndSwitch
-						$mListName = _WinAPI_GetSaveFileName(__GetLang('MANAGE_DESTINATION_FILE_SELECT', 'Choose a destination file:'), "HTML - " & __GetLang('MANAGE_DESTINATION_FORMAT_0', 'HyperText Markup Language file') & " (*.html;*.htm)|TXT - " & __GetLang('MANAGE_DESTINATION_FORMAT_1', 'Normal text file') & " (*.txt)|CSV - " & __GetLang('MANAGE_DESTINATION_FORMAT_2', 'Comma-Separated Values file') & " (*.csv)|XML - " & __GetLang('MANAGE_DESTINATION_FORMAT_3', 'eXtensible Markup Language file') & " (*.xml)", @DesktopDir, $mListName, "html", $mListType, 0, 0, $mGUI)
+						$mListName = _WinAPI_GetSaveFileName(__GetLang('MANAGE_DESTINATION_FILE_SELECT', 'Choose a destination file:'), "HTML - " & __GetLang('MANAGE_DESTINATION_FORMAT_0', 'HyperText Markup Language file') & " (*.html;*.htm)|PDF - " & __GetLang('MANAGE_DESTINATION_FORMAT_11', 'Portable Document Format file') & " (*.pdf)|XLS - " & __GetLang('MANAGE_DESTINATION_FORMAT_12', 'Microsoft Excel file') & " (*.xls)|CSV - " & __GetLang('MANAGE_DESTINATION_FORMAT_2', 'Comma-Separated Values file') & " (*.csv)|TXT - " & __GetLang('MANAGE_DESTINATION_FORMAT_1', 'Normal text file') & " (*.txt)|XML - " & __GetLang('MANAGE_DESTINATION_FORMAT_3', 'eXtensible Markup Language file') & " (*.xml)", @DesktopDir, $mListName, "html", $mListType, 0, 0, $mGUI)
 						If $mListName[0] = 2 Then
 							If _WinAPI_PathIsDirectory($mListName[1]) Then
 								$mFolder = $mListName[1] & "\" & $mListName[2]
@@ -983,7 +1001,7 @@ Func _Manage_Paste($mProfilePath, $mProfileString, $mProfileText, $mHandle = -1)
 	Return 0
 EndFunc   ;==>_Manage_Paste
 
-Func _Manage_Update($mListView, $mProfileName)
+Func _Manage_Populate($mListView, $mProfileName)
 	Local $mAssociations, $mFileRules_Association, $mFileRules_Shown, $mAction, $mStringSplit
 
 	$mAssociations = __GetAssociations($mProfileName) ; Get Associations Array For The Current Profile.
@@ -1033,7 +1051,7 @@ Func _Manage_Update($mListView, $mProfileName)
 		Return SetError(1, 0, 0)
 	EndIf
 	Return $mProfileName
-EndFunc   ;==>_Manage_Update
+EndFunc   ;==>_Manage_Populate
 
 Func _Manage_ExtractFilters($mProfile, $mAssociation, $mAction)
 	Local $mAssociationSplit, $mStringSplit, $mFilters[10][3], $mNumberFields = $G_Global_NumberFields
@@ -1056,7 +1074,7 @@ Func _Manage_ExtractFilters($mProfile, $mAssociation, $mAction)
 	Return $mFilters
 EndFunc   ;==>_Manage_ExtractFilters
 
-Func _Manage_Filters($mFilters, $mHandle = -1)
+Func _Manage_Filters(ByRef $mFilters, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mState, $mText, $mNumbers, $mGUI_Items[10][4]
 	Local $mCheckText[10] = [ _
 			__GetLang('SIZE', 'Size'), _
@@ -1256,19 +1274,26 @@ Func _Manage_Filters($mFilters, $mHandle = -1)
 	WEnd
 	GUIDelete($mGUI)
 
-	Return $mFilters
+	Return 1
 EndFunc   ;==>_Manage_Filters
 
-Func _Manage_List($mProperties, $mHandle = -1)
+Func _Manage_List(ByRef $mProperties, ByRef $mTheme, $mHandle = -1)
 	Local $mGUI, $mAdd, $mRemove, $mUp, $mDown, $mSave, $mCancel
+	Local $mThemeCombo, $mThemePreview, $mNoPreview, $mThemeCurrent = $mTheme
 	Local $mList_Available, $mList_Listed, $mIndex, $mString, $mStringSplit, $mNewProperties
 	Local $mNumberProperties = $G_List_NumberProperties
+	Local $mThemeFolder = @ScriptDir & "\Lib\list\themes\"
+	Local $mThemeGroup = __ThemeList_Combo()
 
-	$mGUI = GUICreate(__GetLang('LIST_SELECT_0', 'Select Properties'), 370, 240, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
+	If $mThemeCurrent = "" Or StringInStr($mThemeGroup, $mThemeCurrent) = 0 Then
+		$mThemeCurrent = "Default"
+	EndIf
+
+	$mGUI = GUICreate(__GetLang('LIST_SELECT_0', 'Select Properties'), 380, 410, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 	GUICtrlCreateLabel(__GetLang('LIST_SELECT_1', 'Available Properties') & ":", 15, 10, 140, 20)
-	GUICtrlCreateLabel(__GetLang('LIST_SELECT_2', 'Used Properties') & ":", 15 + 205, 10, 140, 20)
-	$mList_Available = GUICtrlCreateList("", 10, 30, 150, 170, 0x00210000) ; $LBS_NOTIFY + $WS_VSCROLL.
-	$mList_Listed = GUICtrlCreateList("", 10 + 200, 30, 150, 170, 0x00210000) ; $LBS_NOTIFY + $WS_VSCROLL.
+	GUICtrlCreateLabel(__GetLang('LIST_SELECT_2', 'Used Properties') & ":", 15 + 210, 10, 140, 20)
+	$mList_Available = GUICtrlCreateList("", 10, 30, 155, 170, BitOR($WS_VSCROLL, $LBS_NOTIFY, $LBS_SORT))
+	$mList_Listed = GUICtrlCreateList("", 10 + 205, 30, 155, 170, BitOR($WS_VSCROLL, $LBS_NOTIFY))
 
 	If $mProperties = "" Then
 		$mStringSplit = StringSplit("0;1;2;3;9;13", ";")
@@ -1286,33 +1311,64 @@ Func _Manage_List($mProperties, $mHandle = -1)
 		If @error = 0 Then ; Supported Number.
 			$mIndex = _GUICtrlListBox_FindString($mList_Listed, $mString, True)
 			If $mIndex = -1 Then
-				_GUICtrlListBox_InsertString($mList_Available, $mString)
+				_GUICtrlListBox_AddString($mList_Available, $mString)
 			EndIf
 		EndIf
 	Next
 
-	$mAdd = GUICtrlCreateButton("+", 185 - 13, 40, 26, 26, $BS_ICON)
+	$mAdd = GUICtrlCreateButton("+", 190 - 13, 40, 26, 26, $BS_ICON)
 	GUICtrlSetTip($mAdd, __GetLang('OPTIONS_BUTTON_4', 'Add'))
 	GUICtrlSetImage($mAdd, @ScriptFullPath, -12, 0)
-	$mRemove = GUICtrlCreateButton("-", 185 - 13, 40 + 36, 26, 26, $BS_ICON)
+	$mRemove = GUICtrlCreateButton("-", 190 - 13, 40 + 36, 26, 26, $BS_ICON)
 	GUICtrlSetTip($mRemove, __GetLang('OPTIONS_BUTTON_3', 'Remove'))
 	GUICtrlSetImage($mRemove, @ScriptFullPath, -13, 0)
-	$mUp = GUICtrlCreateButton("U", 185 - 13, 40 + 36 * 2, 26, 26, $BS_ICON)
+	$mUp = GUICtrlCreateButton("U", 190 - 13, 40 + 36 * 2, 26, 26, $BS_ICON)
 	GUICtrlSetTip($mUp, __GetLang('OPTIONS_BUTTON_6', 'Up'))
 	GUICtrlSetImage($mUp, @ScriptFullPath, -14, 0)
-	$mDown = GUICtrlCreateButton("D", 185 - 13, 40 + 36 * 3, 26, 26, $BS_ICON)
+	$mDown = GUICtrlCreateButton("D", 190 - 13, 40 + 36 * 3, 26, 26, $BS_ICON)
 	GUICtrlSetTip($mDown, __GetLang('OPTIONS_BUTTON_7', 'Down'))
 	GUICtrlSetImage($mDown, @ScriptFullPath, -15, 0)
 
-	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 185 - 40 - 85, 205, 85, 24)
-	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 185 + 40, 205, 85, 24)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_17', 'HTML Theme'), 10, 202, 360, 162)
+	$mThemeCombo = GUICtrlCreateCombo("", 25, 202 + 15 + 3, 330, 20, $WS_VSCROLL + $CBS_DROPDOWNLIST)
+	$mThemePreview = GUICtrlCreatePic("", 25, 202 + 15 + 35, 330, 100)
+	$mNoPreview = GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_18', 'Preview Not Available'), 25 + 85, 202 + 15 + 75, 130, 40)
+	GUICtrlSetState($mNoPreview, $GUI_HIDE)
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+
+	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 190 - 40 - 85, 375, 85, 24)
+	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 190 + 40, 375, 85, 24)
 	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
 	GUISetState(@SW_SHOW)
+
+	If FileExists($mThemeFolder & $mThemeCurrent & ".jpg") Then
+		GUICtrlSetImage($mThemePreview, $mThemeFolder & $mThemeCurrent & ".jpg")
+		GUICtrlSetState($mThemePreview, $GUI_SHOW)
+		GUICtrlSetState($mNoPreview, $GUI_HIDE)
+	Else
+		GUICtrlSetState($mThemePreview, $GUI_HIDE)
+		GUICtrlSetState($mNoPreview, $GUI_SHOW)
+	EndIf
+	GUICtrlSetData($mThemeCombo, $mThemeGroup, $mThemeCurrent)
 
 	Local $mHotKeys[5][2] = [["{RIGHT}", $mAdd],["{LEFT}", $mRemove],["{UP}", $mUp],["{DOWN}", $mDown],["{DELETE}", $mRemove]]
 	GUISetAccelerators($mHotKeys)
 
 	While 1
+
+		; Update Image Preview If Theme Changes:
+		If GUICtrlRead($mThemeCombo) <> $mThemeCurrent And Not _GUICtrlComboBox_GetDroppedState($mThemeCombo) Then
+			$mThemeCurrent = GUICtrlRead($mThemeCombo)
+			If FileExists($mThemeFolder & $mThemeCurrent & ".jpg") Then
+				GUICtrlSetImage($mThemePreview, $mThemeFolder & $mThemeCurrent & ".jpg")
+				GUICtrlSetState($mThemePreview, $GUI_SHOW)
+				GUICtrlSetState($mNoPreview, $GUI_HIDE)
+			Else
+				GUICtrlSetState($mThemePreview, $GUI_HIDE)
+				GUICtrlSetState($mNoPreview, $GUI_SHOW)
+			EndIf
+		EndIf
+
 		Switch GUIGetMsg()
 			Case $GUI_EVENT_CLOSE, $mCancel
 				ExitLoop
@@ -1334,7 +1390,7 @@ Func _Manage_List($mProperties, $mHandle = -1)
 				If $mIndex <> -1 Then
 					$mString = _GUICtrlListBox_GetText($mList_Listed, $mIndex)
 					_GUICtrlListBox_DeleteString($mList_Listed, $mIndex)
-					_GUICtrlListBox_InsertString($mList_Available, $mString)
+					_GUICtrlListBox_AddString($mList_Available, $mString)
 					If $mIndex = _GUICtrlListBox_GetCount($mList_Listed) Then
 						$mIndex -= 1
 					EndIf
@@ -1362,26 +1418,29 @@ Func _Manage_List($mProperties, $mHandle = -1)
 			Case $mSave
 				For $A = 0 To _GUICtrlListBox_GetCount($mList_Listed) - 1
 					$mString = _GUICtrlListBox_GetText($mList_Listed, $A)
-					For $B = 0 To $mNumberProperties
-						If $mString == __List_GetProperty($B) Then
-							$mNewProperties &= $B & ";"
-						EndIf
-					Next
+					$mNewProperties &= $mString & ";"
 				Next
-				$mNewProperties = StringTrimRight($mNewProperties, 1) ; To Remove The Last ";" Character.
+				For $B = 0 To $mNumberProperties
+					$mString = __List_GetProperty($B)
+					If StringInStr($mNewProperties, $mString) Then
+						$mNewProperties = StringReplace($mNewProperties, $mString, $B)
+					EndIf
+				Next
+				;$mNewProperties = StringReplace(StringRegExpReplace($mNewProperties, "[:alpha:]", ""), ";;", ";")
 				If $mNewProperties <> "" Then
-					$mProperties = $mNewProperties
+					$mProperties = StringTrimRight($mNewProperties, 1) ; To Remove The Last ";" Character.
 				EndIf
+				$mTheme = $mThemeCurrent
 				ExitLoop
 
 		EndSwitch
 	WEnd
 	GUIDelete($mGUI)
 
-	Return $mProperties
+	Return 1 ; ByRef: $mProperties, $mTheme.
 EndFunc   ;==>_Manage_List
 
-Func _Manage_Properties($mProperties, $mHandle = -1)
+Func _Manage_Properties(ByRef $mProperties, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mStringSplit, $mState, $mText, $B, $mDates[3][8], $mAttributes[5][2]
 	Local $DTM_SETFORMAT_ = 0x1032 ; $DTM_SETFORMATW
 	Local $mTitles[8] = [ _
@@ -1584,10 +1643,10 @@ Func _Manage_Properties($mProperties, $mHandle = -1)
 	WEnd
 	GUIDelete($mGUI)
 
-	Return $mProperties
+	Return 1 ; ByRef: $mProperties.
 EndFunc   ;==>_Manage_Properties
 
-Func _Manage_Mail($mSettings, $mHandle = -1)
+Func _Manage_Mail(ByRef $mSettings, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mStringSplit, $mText, $mButton_Servers, $mSelected[6], $mInput_Array[13], $mPassword_Code = $G_Global_PasswordKey
 
 	$mStringSplit = StringSplit($mSettings, ";") ; 1 = Server, 2 = Port, 3 = SSL, 4 = Name, 5 = FromEmail, 6 = User, 7 = Password, 8 = ToEmail, 9 = Cc, 10 = Bcc, 11 = Subject, 12 = Body.
@@ -1725,10 +1784,10 @@ Func _Manage_Mail($mSettings, $mHandle = -1)
 	WEnd
 	GUIDelete($mGUI)
 
-	Return $mSettings
+	Return 1 ; ByRef: $mSettings.
 EndFunc   ;==>_Manage_Mail
 
-Func _Manage_Site($mSettings, $mHandle = -1)
+Func _Manage_Site(ByRef $mSettings, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mStringSplit, $mPassword, $mPassword_Code = $G_Global_PasswordKey
 	Local $mInput_Host, $mInput_Port, $mInput_User, $mInput_Password, $mCombo_Protocol, $mCurrentProtocol
 	Local $mString_FTP = "FTP - File Transfer Protocol", $mString_SFTP = "SFTP - SSH File Transfer Protocol"
@@ -1824,7 +1883,7 @@ Func _Manage_Site($mSettings, $mHandle = -1)
 	WEnd
 	GUIDelete($mGUI)
 
-	Return $mSettings
+	Return 1 ; ByRef: $mSettings.
 EndFunc   ;==>_Manage_Site
 
 Func _Manage_AddCustomAbbreviation($mMenuItem, $mCustomItem, $mNoCustom, $mINI, $mHandle = -1)
@@ -1933,29 +1992,40 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["ParentDir", __GetLang('ENV_VAR_13', 'directory of each loaded item') & ' ["C:\Docs"]'], _
 			["ParentDirName", __GetLang('ENV_VAR_29', 'directory name of each loaded item') & ' ["Docs"]'], _
 			["SubDir", __GetLang('ENV_VAR_21', 'recreate subdirectory structure') & ' ["\SubFolder"]']]
-	Local $mGroupInfo[7][3] = [ _
-			[6, 0, 0], _
+	Local $mGroupInfo[10][3] = [ _
+			[9, 0, 0], _
 			["Attributes", __GetLang('ENV_VAR_74', 'file attributes') & ' ["RA"]'], _
 			["Authors", __GetLang('ENV_VAR_8', 'file authors') & ' ["Lupo Team"]'], _
+			["Category", __GetLang('ENV_VAR_84', 'file category') & ' ["Personal"]'], _
 			["Comments", __GetLang('ENV_VAR_75', 'file comments') & ' ["Comment example"]'], _
+			["Company", __GetLang('ENV_VAR_85', 'file company') & ' ["Sourceforge"]'], _
 			["Copyright", __GetLang('ENV_VAR_76', 'file copyright') & ' ["Lupo PenSuite"]'], _
 			["FileType", __GetLang('ENV_VAR_12', 'file type') & ' ["Text document"]'], _
-			["Owner", __GetLang('ENV_VAR_77', 'file owner') & ' ["Lupo"]']]
-	Local $mGroupMusic[7][3] = [ _
-			[6, 0, 0], _
+			["Owner", __GetLang('ENV_VAR_77', 'file owner') & ' ["Lupo"]'], _
+			["Subject", __GetLang('ENV_VAR_86', 'file subject') & ' ["Examples"]']]
+	Local $mGroupImage[12][3] = [ _
+			[11, 0, 0], _
+			["Brightness", __GetLang('ENV_VAR_87', 'image brightness') & ' ["1.24"]'], _
+			["CameraMaker", __GetLang('ENV_VAR_88', 'image camera maker') & ' ["SONY"]'], _
+			["CameraModel", __GetLang('ENV_VAR_63', 'image camera model') & ' ["NEX-7"]'], _
+			["Dimensions", __GetLang('ENV_VAR_64', 'image dimensions') & ' ["3072 x 2304"]'], _
+			["ExposureBias", __GetLang('ENV_VAR_89', 'exposure value') & ' ["0.5"]'], _
+			["ExposureTime", __GetLang('ENV_VAR_90', 'exposure time') & ' ["0.00625"]'], _
+			["ExposureTimeFraction", __GetLang('ENV_VAR_91', 'exposure time fraction') & ' ["160"]'], _
+			["FNumber", __GetLang('ENV_VAR_92', 'camera aperture') & ' ["5.6"]'], _
+			["FocalLength", __GetLang('ENV_VAR_93', 'camera focal length') & ' ["35"]'], _
+			["ISO", __GetLang('ENV_VAR_94', 'image ISO') & ' ["400"]'], _
+			["Megapixels", __GetLang('ENV_VAR_67', 'image megapixels') & ' ["16"]']]
+	Local $mGroupMedia[9][3] = [ _
+			[8, 0, 0], _
+			["BitRate", __GetLang('ENV_VAR_68', 'audio bit rate') & ' ["192kbps"]'], _
+			["Duration", __GetLang('ENV_VAR_69', 'file duration') & ' ["01.34.26"]'], _
 			["SongAlbum", __GetLang('ENV_VAR_15', 'song album') & ' ["The Wall"]'], _
 			["SongArtist", __GetLang('ENV_VAR_16', 'song artist') & ' ["Pink Floyd"]'], _
 			["SongGenre", __GetLang('ENV_VAR_17', 'song genre') & ' ["Rock"]'], _
 			["SongNumber", __GetLang('ENV_VAR_18', 'song track number') & ' ["3"]'], _
 			["SongTitle", __GetLang('ENV_VAR_19', 'song title') & ' ["Hey You"]'], _
 			["SongYear", __GetLang('ENV_VAR_20', 'song year') & ' ["1979"]']]
-	Local $mGroupMedia[6][3] = [ _
-			[5, 0, 0], _
-			["BitRate", __GetLang('ENV_VAR_68', 'audio bit rate') & ' ["192kbps"]'], _
-			["CameraModel", __GetLang('ENV_VAR_63', 'image camera model') & ' ["u700"]'], _
-			["Dimensions", __GetLang('ENV_VAR_64', 'image dimensions') & ' ["3072 x 2304"]'], _
-			["Duration", __GetLang('ENV_VAR_69', 'file duration') & ' ["01.34.26"]'], _
-			["Megapixels", __GetLang('ENV_VAR_67', 'image megapixels') & ' ["7"]']]
 	Local $mGroupHash[5][3] = [ _
 			[4, 0, 0], _
 			["CRC", __GetLang('ENV_VAR_70', 'CRC Hash') & ' ["5E2860D3"]'], _
@@ -2033,18 +2103,20 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["Favorites", __GetLang('ENV_VAR_24', 'path to Favorites') & ' ["' & @FavoritesDir & '"]'], _
 			["FavoritesPublic", __GetLang('ENV_VAR_27', 'path to Public Favorites') & ' ["' & @FavoritesCommonDir & '"]'], _
 			["ProgramFiles", __GetLang('ENV_VAR_80', 'path to Program Files') & ' ["' & @ProgramFilesDir & '"]']]
-	Local $mGroupSystem[6][3] = [ _
-			[5, 0, 0], _
+	Local $mGroupOthers[8][3] = [ _
+			[7, 0, 0], _
 			["ComputerName", __GetLang('ENV_VAR_78', 'computer name') & ' ["' & @ComputerName & '"]'], _
+			["Counter", __GetLang('ENV_VAR_83', 'counter to enumerate files') & ' ["07"]'], _
 			["DefaultProgram", __GetLang('ENV_VAR_6', 'system default program') & ' [Notepad]'], _ ; Only By Open With.
-			["PortableDrive", __GetLang('ENV_VAR_14', 'drive letter of DropIt') & ' ["' & StringLeft(@AutoItExe, 2) & '"]'], _
+			["PortableDrive", __GetLang('ENV_VAR_14', 'drive letter of DropIt') & ' ["' & StringLeft(@ScriptFullPath, 2) & '"]'], _
 			["ProfileName", __GetLang('ENV_VAR_28', 'current DropIt profile name') & ' ["' & $mProfile & '"]'], _
-			["UserName", __GetLang('ENV_VAR_79', 'user name') & ' ["' & @UserName & '"]']]
+			["UserInput", __GetLang('ENV_VAR_82', 'custom input during process') & ' ["My photos"]'], _
+			["UserName", __GetLang('ENV_VAR_79', 'system user name') & ' ["' & @UserName & '"]']]
 	Local $mMenuGroup[15][3] = [ _
 			[14, 0, 0], _
 			[__GetLang('ENV_VAR_TAB_4', 'Paths'), $mGroupPaths], _
 			[__GetLang('ENV_VAR_TAB_3', 'Info'), $mGroupInfo], _
-			[__GetLang('ENV_VAR_TAB_2', 'Music'), $mGroupMusic], _
+			[__GetLang('ENV_VAR_TAB_16', 'Images'), $mGroupImage], _
 			[__GetLang('ENV_VAR_TAB_12', 'Media'), $mGroupMedia], _
 			[__GetLang('ENV_VAR_TAB_13', 'Hash'), $mGroupHash], _
 			[""], _ ; Separator.
@@ -2055,10 +2127,10 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			[__GetLang('ENV_VAR_TAB_9', 'Taken'), $mGroupTaken], _
 			[""], _ ; Separator.
 			[__GetLang('ENV_VAR_TAB_14', 'Folders'), $mGroupFolders], _
-			[__GetLang('ENV_VAR_TAB_10', 'System'), $mGroupSystem]]
+			[__GetLang('ENV_VAR_TAB_15', 'Others'), $mGroupOthers]]
 
 	Local $mNumberAbbreviations = $mGroupCurrent[0][0] + $mGroupCreated[0][0] + $mGroupModified[0][0] + $mGroupOpened[0][0] + $mGroupTaken[0][0] + _
-			$mGroupPaths[0][0] + $mGroupFolders[0][0] + $mGroupSystem[0][0] + $mGroupMusic[0][0] + $mGroupMedia[0][0] + $mGroupHash[0][0] + $mGroupInfo[0][0]
+			$mGroupPaths[0][0] + $mGroupFolders[0][0] + $mGroupOthers[0][0] + $mGroupImage[0][0] + $mGroupMedia[0][0] + $mGroupHash[0][0] + $mGroupInfo[0][0]
 	Local $mIndex, $mCurrentArray, $mMenuItem[$mNumberAbbreviations + 1][4] = [[$mNumberAbbreviations, 0, 0, 0]]
 	For $A = 1 To $mMenuGroup[0][0] ; Create The Unique Array.
 		If $mMenuGroup[$A][0] <> "" Then ; To Skip Separators.
@@ -2275,7 +2347,7 @@ Func _Manage_ContextMenu_Servers($mButton_Servers)
 EndFunc   ;==>_Manage_ContextMenu_Servers
 
 Func _Manage_ContextMenu_ListView($cmListView, $cmIndex, $cmSubItem)
-	Local Enum $cmItem1 = 1000, $cmItem2, $cmItem3, $cmItem4
+	Local Enum $cmItem1 = 1000, $cmItem2, $cmItem3, $cmItem4, $cmItem5
 
 	If IsHWnd($cmListView) = 0 Then
 		$cmListView = GUICtrlGetHandle($cmListView)
@@ -2285,13 +2357,15 @@ Func _Manage_ContextMenu_ListView($cmListView, $cmIndex, $cmSubItem)
 	If $cmIndex <> -1 And $cmSubItem <> -1 Then ; Won't Show These MenuItem(s) Unless An Item Is Selected.
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __GetLang('EDIT', 'Edit'), $cmItem1)
 		__SetItemImage("EDIT", $cmIndex, $cmContextMenu, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, "")
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __GetLang('DUPLICATE', 'Duplicate'), $cmItem5)
+		__SetItemImage("DUPLICATE", $cmIndex, $cmContextMenu, 2, 1)
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __GetLang('COPYTO', 'Copy to') & "...", $cmItem2)
 		__SetItemImage("COPYTO", $cmIndex, $cmContextMenu, 2, 1)
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, "")
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __GetLang('ACTION_DELETE', 'Delete'), $cmItem3)
 		__SetItemImage("DEL", $cmIndex, $cmContextMenu, 2, 1)
-	EndIf
-	If $cmIndex = -1 And $cmSubItem <> -1 Then ; Will Show These MenuItem(s) If No Item Is Selected.
+	ElseIf $cmIndex = -1 And $cmSubItem <> -1 Then ; Will Show These MenuItem(s) If No Item Is Selected.
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu, __GetLang('NEW', 'New'), $cmItem4) ; Will Show These MenuItem(s) Regardless.
 		__SetItemImage("NEW", $cmIndex, $cmContextMenu, 2, 1)
 	EndIf
@@ -2305,6 +2379,8 @@ Func _Manage_ContextMenu_ListView($cmListView, $cmIndex, $cmSubItem)
 			GUICtrlSendToDummy($Global_ListViewRules_Delete)
 		Case $cmItem4
 			GUICtrlSendToDummy($Global_ListViewRules_New)
+		Case $cmItem5
+			GUICtrlSendToDummy($Global_ListViewRules_Duplicate)
 	EndSwitch
 	_GUICtrlMenu_DestroyMenu($cmContextMenu)
 	Return 1
@@ -2314,7 +2390,7 @@ EndFunc   ;==>_Manage_ContextMenu_ListView
 #Region >>>>> Customize Functions <<<<<
 Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 	Local $cGUI, $cProfileDirectory, $cListView, $cListView_Handle, $cNew, $cClose, $cIndex_Selected, $cText, $cImage, $cSizeText, $cOpacity
-	Local $cDeleteDummy, $cDuplicateDummy, $cEnterDummy, $cNewDummy, $cImportDummy, $cOptionsDummy, $cExampleDummy
+	Local $cDeleteDummy, $cDuplicateDummy, $cEnterDummy, $cNewDummy, $cImportDummy, $cExportDummy, $cOptionsDummy, $cExampleDummy
 
 	$cProfileDirectory = __GetDefault(2) ; Get Default Profile Directory.
 	Local $cSize = __GetCurrentSize("SizeCustom") ; 320 x 200.
@@ -2333,7 +2409,6 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 
 	$cListView = GUICtrlCreateListView(__GetLang('PROFILE', 'Profile') & "|" & __GetLang('IMAGE', 'Image') & "|" & __GetLang('SIZE', 'Size') & "|" & __GetLang('OPACITY', 'Opacity'), 0, 0, $cSize[0], $cSize[1] - 35, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
 	$cListView_Handle = GUICtrlGetHandle($cListView)
-
 	$Global_ListViewProfiles = $cListView_Handle
 	GUICtrlSetResizing($cListView, $GUI_DOCKBORDERS)
 
@@ -2355,7 +2430,7 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 		_GUIToolTip_SetDelayTime($cToolTip, 3, 60) ; Speed Up InfoTip Appearance.
 	EndIf
 
-	_Customize_Update($cListView_Handle, $cProfileDirectory, $cProfileList) ; Add/Update Customise GUI With List Of Profiles.
+	_Customize_Populate($cListView_Handle, $cProfileDirectory, $cProfileList) ; Add/Update Customise GUI With List Of Profiles.
 	If @error Then
 		SetError(1, 0, 0) ; Exit Function If No Profiles.
 	EndIf
@@ -2370,6 +2445,8 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 	$Global_ListViewProfiles_Duplicate = $cDuplicateDummy
 	$cImportDummy = GUICtrlCreateDummy()
 	$Global_ListViewProfiles_Import = $cImportDummy
+	$cExportDummy = GUICtrlCreateDummy()
+	$Global_ListViewProfiles_Export = $cExportDummy
 	$cOptionsDummy = GUICtrlCreateDummy()
 	$Global_ListViewProfiles_Options = $cOptionsDummy
 	$cExampleDummy = GUICtrlCreateDummy()
@@ -2406,12 +2483,12 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 
 			Case $cNew, $cNewDummy
 				_Customize_Edit_GUI($cGUI, -1, -1, -1, -1, 1) ; Show Customize Edit GUI For New Profile.
-				_Customize_Update($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
+				_Customize_Populate($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
 
 			Case $cDuplicateDummy
 				$cText = _GUICtrlListView_GetItemText($cListView_Handle, $cIndex_Selected)
 				FileCopy($cProfileDirectory & $cText & ".ini", $cProfileDirectory & __Duplicate_Rename($cText & ".ini", $cProfileDirectory, 0, 2))
-				_Customize_Update($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
+				_Customize_Populate($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
 
 			Case $cDeleteDummy
 				_Customize_Delete($cListView_Handle, $cIndex_Selected, $cProfileDirectory, -1, $cGUI) ; Delete Profile From The Default Profile Directory & ListView.
@@ -2427,7 +2504,17 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 					MsgBox(0x30, __GetLang('CUSTOMIZE_MSGBOX_2', 'Importing Failed'), __GetLang('CUSTOMIZE_MSGBOX_3', 'Profile not imported. The source file might be not correctly structured.'), 0, __OnTop($cGUI))
 					ContinueLoop
 				EndIf
-				_Customize_Update($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
+				_Customize_Populate($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
+
+			Case $cExportDummy
+				If Not _GUICtrlListView_GetItemState($cListView_Handle, $cIndex_Selected, $LVIS_SELECTED) Then
+					ContinueLoop
+				EndIf
+				$cText = _GUICtrlListView_GetItemText($cListView_Handle, $cIndex_Selected)
+				_Customize_Export($cProfileDirectory, $cText, $cGUI)
+				If @error = 2 Then
+					MsgBox(0x30, __GetLang('CUSTOMIZE_MSGBOX_4', 'Exporting Failed'), __GetLang('CUSTOMIZE_MSGBOX_5', 'Profile not exported. An error occurs during this procedure.'), 0, __OnTop($cGUI))
+				EndIf
 
 			Case $cEnterDummy
 				If Not _GUICtrlListView_GetItemState($cListView_Handle, $cIndex_Selected, $LVIS_SELECTED) Then
@@ -2439,7 +2526,7 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 				$cSizeText = _GUICtrlListView_GetItemText($cListView_Handle, $cIndex_Selected, 2)
 				$cOpacity = _GUICtrlListView_GetItemText($cListView_Handle, $cIndex_Selected, 3)
 				_Customize_Edit_GUI($cGUI, $cText, $cImage, $cSizeText, $cOpacity, 0) ; Show Customize Edit GUI Of Selected Profile.
-				_Customize_Update($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
+				_Customize_Populate($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
 				_GUICtrlListView_SetItemSelected($cListView_Handle, $cIndex_Selected, True, True)
 
 			Case $cExampleDummy
@@ -2455,7 +2542,7 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 					Case __GetLang('CUSTOMIZE_EXAMPLE_2', 'Extractor')
 						__ArrayToProfile(_Customize_Examples(3), __GetLang('CUSTOMIZE_EXAMPLE_2', 'Extractor'), $cProfileDirectory, "Big_Box6.png", "80")
 				EndSwitch
-				_Customize_Update($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
+				_Customize_Populate($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
 
 		EndSwitch
 	WEnd
@@ -2821,10 +2908,10 @@ Func _Customize_Delete($cListView, $cIndexItem, $cProfileDirectory, $cFileName =
 EndFunc   ;==>_Customize_Delete
 
 Func _Customize_Examples($cExample)
-	Local $cArray[3][5] = [ _
-			[2, 4], _
+	Local $cArray[3][6] = [ _
+			[2, 5], _
 			[0, "NAME", "RULES", "ACTION", "DESTINATION"], _
-			[0, __GetLang('CUSTOMIZE_EXAMPLE_0', 'Archiver'), "*;**", "Compress", "%Desktop%\" & __GetLang('ARCHIVE', 'Archive') & ".zip"]]
+			[0, __GetLang('CUSTOMIZE_EXAMPLE_0', 'Archiver'), "*;**", "Compress", "%Desktop%\" & __GetLang('ARCHIVE', 'Archive') & ".zip", "|Enabled||"]]
 
 	Switch $cExample
 		Case 2 ; Eraser.
@@ -2842,23 +2929,85 @@ Func _Customize_Examples($cExample)
 	Return $cArray
 EndFunc   ;==>_Customize_Examples
 
-Func _Customize_Import($cProfileDirectory, $cHandle = -1)
-	Local $cListPath, $sProfileName, $cExcel, $cArray
+Func _Customize_Export($cProfileDirectory, $cProfileName, $cHandle = -1)
+	Local $cListPath, $cListName, $cExcel, $cArray
 
-	$cListPath = FileOpenDialog(__GetLang('CUSTOMIZE_MSGBOX_0', 'Select a file to import:'), @DesktopDir, __GetLang('CUSTOMIZE_MSGBOX_1', 'Supported files') & " (*.csv;*.xls;*.xlsx)", 1, "", $cHandle)
+	$cListName = _WinAPI_GetSaveFileName(__GetLang('MANAGE_DESTINATION_FILE_SELECT', 'Choose a destination file:'), "INI - " & __GetLang('MANAGE_DESTINATION_FORMAT_13', 'Copy of Profile file') & " (*.ini)|CSV - " & __GetLang('MANAGE_DESTINATION_FORMAT_2', 'Comma-Separated Values file') & " (*.csv)|XLS - " & __GetLang('MANAGE_DESTINATION_FORMAT_12', 'Microsoft Excel file') & " (*.xls)", @DesktopDir, $cProfileName, "ini", 1, $OFN_OVERWRITEPROMPT, 0, $cHandle)
+	If $cListName[0] = 2 Then
+		If _WinAPI_PathIsDirectory($cListName[1]) Then
+			$cListPath = $cListName[1] & "\" & $cListName[2]
+		EndIf
+	EndIf
+	If $cListPath = "" Then
+		Return SetError(1, 0, 0)
+	EndIf
+	Switch __GetFileExtension($cListPath)
+		Case "ini"
+			FileCopy($cProfileDirectory & $cProfileName & ".ini", $cListPath)
+			If @error Then
+				Return SetError(2, 0, 0)
+			EndIf
+		Case "csv"
+			$cArray = __ProfileToArray($cProfileName)
+			__ArrayToCSV($cArray, $cListPath)
+			If @error Then
+				Return SetError(2, 0, 0)
+			EndIf
+		Case "xls"
+			$cArray = __ProfileToArray($cProfileName)
+			$cExcel = _ExcelBookOpen(@ScriptDir & "\Lib\XLS Import Example.xls", 0)
+			_ExcelWriteSheetFromArray($cExcel, $cArray, 4, 2, 1, 1)
+			If @error Then
+				_ExcelBookClose($cExcel, 0, 0)
+				Return SetError(2, 0, 0)
+			EndIf
+			_ExcelBookSaveAs($cExcel, $cListPath, "xls", 0, 1)
+			_ExcelBookClose($cExcel, 0, 0)
+			If @error Then
+				Return SetError(2, 0, 0)
+			EndIf
+	EndSwitch
+	__Log_Write(__GetLang('CUSTOMIZE_LOG_1', 'Profile Exported'), $cProfileName)
+
+	Return 1
+EndFunc   ;==>_Customize_Export
+
+Func _Customize_Import($cProfileDirectory, $cHandle = -1)
+	Local $cListPath, $cProfileName, $cExcel, $cArray
+
+	$cListPath = FileOpenDialog(__GetLang('CUSTOMIZE_MSGBOX_0', 'Select a file to import:'), @DesktopDir, __GetLang('CUSTOMIZE_MSGBOX_1', 'Supported files') & " (*.ini;*.csv;*.xls;*.xlsx)", 1, "", $cHandle)
 	If @error Then
 		Return SetError(1, 0, 0)
 	EndIf
 	Switch __GetFileExtension($cListPath)
-		Case "csv"
-			$cArray = __CSVSplit(FileRead($cListPath))
+		Case "ini"
+			__IniReadSection($cListPath, "Target") ; To Verify If It Is A DropIt INI File.
 			If @error Then
 				Return SetError(2, 0, 0)
 			EndIf
+			$cProfileName = __IsProfileUnique(__GetFileNameOnly($cListPath)) ; Check If The Selected Profile Name Is Unique.
+			If @error Then
+				$cProfileName = __GetFileNameOnly(__Duplicate_Rename($cProfileName & ".ini", $cProfileDirectory, 0, 2))
+			EndIf
+			FileCopy($cListPath, $cProfileDirectory & $cProfileName & ".ini")
+			If @error Then
+				Return SetError(2, 0, 0)
+			EndIf
+			__Log_Write(__GetLang('CUSTOMIZE_LOG_0', 'Profile Imported'), $cProfileName)
+			Return 1
+		Case "csv"
+			$cArray = __CSVSplit(FileRead($cListPath), ', ')
+			If @error Then
+				$cArray = __CSVSplit(FileRead($cListPath), ',')
+				If @error Then
+					Return SetError(2, 0, 0)
+				EndIf
+			EndIf
 		Case "xls", "xlsx"
 			$cExcel = _ExcelBookOpen($cListPath, 0, True)
-			$cArray = _ExcelReadSheetToArray($cExcel, 3, 2, 0, 4)
+			$cArray = _ExcelReadSheetToArray($cExcel, 3, 2, 0, 5)
 			If @error Then
+				_ExcelBookClose($cExcel, 0, 0)
 				Return SetError(2, 0, 0)
 			EndIf
 			_ExcelBookClose($cExcel, 0, 0)
@@ -2866,31 +3015,32 @@ Func _Customize_Import($cProfileDirectory, $cHandle = -1)
 	If StringInStr($cArray[1][1] & $cArray[1][2] & $cArray[1][3] & $cArray[1][4], "NAMERULESACTIONDESTINATION") = 0 Then
 		Return SetError(2, 0, 0)
 	EndIf
-
-	$sProfileName = __ArrayToProfile($cArray, __GetFileNameOnly($cListPath), $cProfileDirectory)
-	__Log_Write(__GetLang('CUSTOMIZE_LOG_0', 'Profile Imported'), $sProfileName)
+	$cProfileName = __ArrayToProfile($cArray, __GetFileNameOnly($cListPath), $cProfileDirectory)
+	__Log_Write(__GetLang('CUSTOMIZE_LOG_0', 'Profile Imported'), $cProfileName)
 
 	Return 1
 EndFunc   ;==>_Customize_Import
 
 Func _Customize_Options($cProfileName, $cProfileDirectory, $cHandle = -1)
-	Local $cGUI, $cSave, $cCancel, $cState, $cComboItems[5], $cCurrent[5]
+	Local $cGUI, $cSave, $cCancel, $cState, $cComboItems[6], $cCurrent[6]
 	Local $cINI = $cProfileDirectory & $cProfileName & ".ini"
-	Local $cOptions[4] = ["ShowSorting", "DirForFolders", "IgnoreNew", "AutoDup"]
+	Local $cOptions[5] = ["ShowSorting", "UseSendTo", "FolderAsFile", "IgnoreNew", "AutoDup"]
 	Local $cGroup = __GetLang('OPTIONS_PROFILE_MODE_0', 'Use global setting') & "|" & __GetLang('OPTIONS_PROFILE_MODE_1', 'Enable for this profile') & "|" & __GetLang('OPTIONS_PROFILE_MODE_2', 'Disable for this profile')
 
-	$cGUI = GUICreate(__GetLang('OPTIONS_PROFILE', 'Profile Options'), 300, 296, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($cHandle))
-	GUICtrlCreateLabel(__GetLang('OPTIONS_CHECKBOX_11', 'Show progress bar during process') & ":", 10, 10, 280, 20)
-	$cComboItems[0] = GUICtrlCreateCombo("", 20, 10 + 20, 260, 20, 0x0003)
-	GUICtrlCreateLabel(__GetLang('OPTIONS_CHECKBOX_2', 'Enable associations for folders') & ":", 10, 10 + 55, 280, 20)
-	$cComboItems[1] = GUICtrlCreateCombo("", 20, 10 + 55 + 20, 260, 20, 0x0003)
-	GUICtrlCreateLabel(__GetLang('OPTIONS_CHECKBOX_3', 'Ignore unassociated files/folders') & ":", 10, 10 + 110, 280, 20)
-	$cComboItems[2] = GUICtrlCreateCombo("", 20, 10 + 110 + 20, 260, 20, 0x0003)
-	GUICtrlCreateLabel(__GetLang('OPTIONS_CHECKBOX_5', 'Use automatic choice for duplicates') & ":", 10, 10 + 165, 280, 20)
-	$cComboItems[3] = GUICtrlCreateCombo("", 20, 10 + 165 + 20, 260, 20, 0x0003)
-	$cComboItems[4] = GUICtrlCreateCombo("", 20, 10 + 165 + 45, 260, 20, 0x0003)
+	$cGUI = GUICreate(__GetLang('OPTIONS_PROFILE', 'Profile Options'), 320, 351, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($cHandle))
+	GUICtrlCreateLabel(__GetLang('OPTIONS_CHECKBOX_11', 'Show progress window during process') & ":", 10, 10, 300, 20)
+	$cComboItems[0] = GUICtrlCreateCombo("", 10, 10 + 20, 300, 20, 0x0003)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_CHECKBOX_6', 'Integrate in SendTo menu') & ":", 10, 10 + 55, 300, 20)
+	$cComboItems[1] = GUICtrlCreateCombo("", 10, 10 + 55 + 20, 300, 20, 0x0003)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_CHECKBOX_32', 'Process folders as files') & ":", 10, 10 + 110, 300, 20)
+	$cComboItems[2] = GUICtrlCreateCombo("", 10, 10 + 110 + 20, 300, 20, 0x0003)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_CHECKBOX_3', 'Ignore unassociated files/folders') & ":", 10, 10 + 165, 300, 20)
+	$cComboItems[3] = GUICtrlCreateCombo("", 10, 10 + 165 + 20, 300, 20, 0x0003)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_CHECKBOX_5', 'Use automatic choice for duplicates') & ":", 10, 10 + 220, 300, 20)
+	$cComboItems[4] = GUICtrlCreateCombo("", 10, 10 + 220 + 20, 300, 20, 0x0003)
+	$cComboItems[5] = GUICtrlCreateCombo("", 10, 10 + 220 + 45, 300, 20, 0x0003)
 
-	For $A = 0 To 3
+	For $A = 0 To 4
 		$cState = IniRead($cINI, "General", $cOptions[$A], "")
 		Switch $cState
 			Case "True"
@@ -2906,28 +3056,28 @@ Func _Customize_Options($cProfileName, $cProfileDirectory, $cHandle = -1)
 			__GetLang('DUPLICATE_MODE_7', 'Overwrite if different size') & "|" & __GetLang('DUPLICATE_MODE_3', 'Rename as "Name 01"') & "|" & _
 			__GetLang('DUPLICATE_MODE_4', 'Rename as "Name_01"') & "|" & __GetLang('DUPLICATE_MODE_5', 'Rename as "Name (01)"') & "|" & _
 			__GetLang('DUPLICATE_MODE_6', 'Skip')
-	$cCurrent[4] = __GetDuplicateMode(IniRead($cINI, "General", "DupMode", "Overwrite1"), 1)
-	GUICtrlSetData($cComboItems[4], $cGroup, $cCurrent[4])
+	$cCurrent[5] = __GetDuplicateMode(IniRead($cINI, "General", "DupMode", "Overwrite1"), 1)
+	GUICtrlSetData($cComboItems[5], $cGroup, $cCurrent[5])
 
 	$cState = $GUI_ENABLE
-	If $cCurrent[3] <> __GetLang('OPTIONS_PROFILE_MODE_1', 'Enable for this profile') Then
+	If $cCurrent[4] <> __GetLang('OPTIONS_PROFILE_MODE_1', 'Enable for this profile') Then
 		$cState = $GUI_DISABLE
 	EndIf
-	GUICtrlSetState($cComboItems[4], $cState)
+	GUICtrlSetState($cComboItems[5], $cState)
 
-	$cSave = GUICtrlCreateButton(__GetLang('SAVE', 'Save'), 150 - 25 - 80, 260, 80, 24)
-	$cCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 150 + 25, 260, 80, 24)
+	$cSave = GUICtrlCreateButton(__GetLang('SAVE', 'Save'), 160 - 25 - 80, 315, 80, 24)
+	$cCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 160 + 25, 315, 80, 24)
 	GUICtrlSetState($cSave, $GUI_DEFBUTTON)
 	GUISetState(@SW_SHOW)
 
 	While 1
-		If GUICtrlRead($cComboItems[3]) <> $cCurrent[3] And Not _GUICtrlComboBox_GetDroppedState($cComboItems[3]) Then
-			$cCurrent[3] = GUICtrlRead($cComboItems[3])
+		If GUICtrlRead($cComboItems[4]) <> $cCurrent[4] And Not _GUICtrlComboBox_GetDroppedState($cComboItems[4]) Then
+			$cCurrent[4] = GUICtrlRead($cComboItems[4])
 			$cState = $GUI_ENABLE
-			If $cCurrent[3] <> __GetLang('OPTIONS_PROFILE_MODE_1', 'Enable for this profile') Then
+			If $cCurrent[4] <> __GetLang('OPTIONS_PROFILE_MODE_1', 'Enable for this profile') Then
 				$cState = $GUI_DISABLE
 			EndIf
-			GUICtrlSetState($cComboItems[4], $cState)
+			GUICtrlSetState($cComboItems[5], $cState)
 		EndIf
 
 		Switch GUIGetMsg()
@@ -2935,7 +3085,7 @@ Func _Customize_Options($cProfileName, $cProfileDirectory, $cHandle = -1)
 				ExitLoop
 
 			Case $cSave
-				For $A = 0 To 3
+				For $A = 0 To 4
 					$cState = GUICtrlRead($cComboItems[$A])
 					Switch $cState
 						Case __GetLang('OPTIONS_PROFILE_MODE_1', 'Enable for this profile')
@@ -2947,7 +3097,7 @@ Func _Customize_Options($cProfileName, $cProfileDirectory, $cHandle = -1)
 					EndSwitch
 					__IniWriteEx($cINI, "General", $cOptions[$A], $cState)
 				Next
-				__IniWriteEx($cINI, "General", "DupMode", __GetDuplicateMode(GUICtrlRead($cComboItems[4])))
+				__IniWriteEx($cINI, "General", "DupMode", __GetDuplicateMode(GUICtrlRead($cComboItems[5])))
 				ExitLoop
 
 		EndSwitch
@@ -2957,7 +3107,7 @@ Func _Customize_Options($cProfileName, $cProfileDirectory, $cHandle = -1)
 	Return 1
 EndFunc   ;==>_Customize_Options
 
-Func _Customize_Update($cListView, $cProfileDirectory, $cProfileList = -1)
+Func _Customize_Populate($cListView, $cProfileDirectory, $cProfileList = -1)
 	Local $cListViewItem, $cIniReadOpacity, $cIniRead, $cIniRead_Size[2]
 	Local $cImageList = $G_Global_ImageList
 
@@ -3014,10 +3164,10 @@ Func _Customize_Update($cListView, $cProfileDirectory, $cProfileList = -1)
 		Return 1
 	EndIf
 	Return SetError(1, 0, 0)
-EndFunc   ;==>_Customize_Update
+EndFunc   ;==>_Customize_Populate
 
 Func _Customize_ContextMenu_ListView($cmListView, $cmIndex, $cmSubItem)
-	Local Enum $cmItem1 = 1000, $cmItem2, $cmItem3, $cmItem4, $cmItem5, $cmItem6, $cmItem7, $cmItem8, $cmItem9, $cmItem10
+	Local Enum $cmItem1 = 1000, $cmItem2, $cmItem3, $cmItem4, $cmItem5, $cmItem6, $cmItem7, $cmItem8, $cmItem9, $cmItem10, $cmItem11
 	Local $cmContextMenu_1, $cmContextMenu_2
 
 	If IsHWnd($cmListView) = 0 Then
@@ -3028,10 +3178,13 @@ Func _Customize_ContextMenu_ListView($cmListView, $cmIndex, $cmSubItem)
 	If $cmIndex <> -1 And $cmSubItem <> -1 Then ; Won't Show These MenuItem(s) Unless An Item Is Selected.
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __GetLang('EDIT', 'Edit'), $cmItem1)
 		__SetItemImage("EDIT", $cmIndex, $cmContextMenu_1, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, "")
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __GetLang('OPTIONS', 'Options'), $cmItem8)
 		__SetItemImage("OPT", $cmIndex, $cmContextMenu_1, 2, 1)
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __GetLang('DUPLICATE', 'Duplicate'), $cmItem9)
 		__SetItemImage("COPYTO", $cmIndex, $cmContextMenu_1, 2, 1)
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __GetLang('EXPORT', 'Export'), $cmItem11)
+		__SetItemImage("EXPORT", $cmIndex, $cmContextMenu_1, 2, 1)
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, "")
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __GetLang('ACTION_DELETE', 'Delete'), $cmItem2)
 		__SetItemImage("DEL", $cmIndex, $cmContextMenu_1, 2, 1)
@@ -3039,22 +3192,20 @@ Func _Customize_ContextMenu_ListView($cmListView, $cmIndex, $cmSubItem)
 	If $cmIndex = -1 And $cmSubItem <> -1 Then ; Will Show These MenuItem(s) If No Item Is Selected.
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __GetLang('NEW', 'New'), $cmItem3)
 		__SetItemImage("NEW", $cmIndex, $cmContextMenu_1, 2, 1)
-		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __GetLang('IMPORT', 'Import'), $cmItem10)
-		__SetItemImage("IMPORT", $cmIndex, $cmContextMenu_1, 2, 1)
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, "")
 
 		$cmContextMenu_2 = _GUICtrlMenu_CreatePopup()
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __GetLang('EXAMPLES', 'Examples'), $cmItem4, $cmContextMenu_2)
 		__SetItemImage("EXAMP", $cmIndex, $cmContextMenu_1, 2, 1)
-
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_2, __GetLang('CUSTOMIZE_EXAMPLE_0', 'Archiver'), $cmItem5)
 		__SetItemImage(__GetDefault(4) & "Big_Box4.png", $cmIndex, $cmContextMenu_2, 2, 0)
-
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_2, __GetLang('CUSTOMIZE_EXAMPLE_1', 'Eraser'), $cmItem6)
 		__SetItemImage(__GetDefault(4) & "Big_Delete1.png", $cmIndex, $cmContextMenu_2, 2, 0)
-
 		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_2, __GetLang('CUSTOMIZE_EXAMPLE_2', 'Extractor'), $cmItem7)
 		__SetItemImage(__GetDefault(4) & "Big_Box6.png", $cmIndex, $cmContextMenu_2, 2, 0)
+
+		$cmIndex = _GUICtrlMenu_AddMenuItem($cmContextMenu_1, __GetLang('IMPORT', 'Import'), $cmItem10)
+		__SetItemImage("IMPORT", $cmIndex, $cmContextMenu_1, 2, 1)
 	EndIf
 
 	Switch _GUICtrlMenu_TrackPopupMenu($cmContextMenu_1, $cmListView, -1, -1, 1, 1, 2)
@@ -3070,6 +3221,8 @@ Func _Customize_ContextMenu_ListView($cmListView, $cmIndex, $cmSubItem)
 			GUICtrlSendToDummy($Global_ListViewProfiles_Duplicate)
 		Case $cmItem10
 			GUICtrlSendToDummy($Global_ListViewProfiles_Import)
+		Case $cmItem11
+			GUICtrlSendToDummy($Global_ListViewProfiles_Export)
 		Case $cmItem5
 			$Global_ListViewProfiles_Example[1] = __GetLang('CUSTOMIZE_EXAMPLE_0', 'Archiver')
 			GUICtrlSendToDummy($Global_ListViewProfiles_Example[0])
@@ -3088,290 +3241,188 @@ EndFunc   ;==>_Customize_ContextMenu_ListView
 
 #Region >>>>> Processing Functions <<<<<
 Func _DropEvent($dFiles, $dProfile, $dMonitored = 0)
-	__ExpandEnvStrings(1) ; Enable The Expansion Of Environment Variables.
-	_WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
-	FileChangeDir(@ScriptDir) ; Ensure To Use DropIt.exe Directory As Working Directory.
+	Local $dFailed, $dMainArray[10][6]
 
-	Local $dMsgBox, $dSize, $dFullSize, $dElementsGUI, $dFailedList[1] = [0]
+	; Start Process:
 	If IsArray($dFiles) = 0 Then
 		Return SetError(1, 0, 0)
 	EndIf
+	FileChangeDir(@ScriptDir) ; Ensure To Use DropIt.exe Directory As Working Directory.
+	Local $dElementsGUI = _Sorting_CreateGUI($dProfile, $dMonitored) ; Create The Process GUI & Show It If Option Is Enabled.
+	__ExpandEventMode(1) ; Enable Event Buttons.
+	__ExpandEnvStrings(1) ; Enable The Expansion Of Environment Variables.
+	_WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
 
-	For $A = 1 To $dFiles[0]
-		If FileExists($dFiles[$A]) = 0 Then
-			ContinueLoop
-		EndIf
-		If _WinAPI_PathIsDirectory($dFiles[$A]) Then
-			$dSize = DirGetSize($dFiles[$A])
-		Else
-			$dSize = FileGetSize($dFiles[$A])
-		EndIf
-		$dFullSize += $dSize
-	Next
-	__Log_Write(__GetLang('DROP_EVENT_TIP_0', 'Total Size Loaded'), __ByteSuffix($dFullSize)) ; __ByteSuffix() = Round A Value Of Bytes To Highest Value.
+	; Create The Array Of Dropped Items:
+	GUICtrlSetData($dElementsGUI[0], __GetLang('POSITIONPROCESS_1', 'Loading files') & '...')
+	$dMainArray = _Position_MainArray($dMainArray, $dFiles, $dElementsGUI, $dMonitored)
+	If @error Then ; Error Only If Aborted.
+		_DropStop(1)
+		Return SetError(1, 0, 0)
+	EndIf
+	If $dMainArray[0][0] == "" Or $dMainArray[0][0] = 0 Then ; Skip Monitored Folder If Empty.
+		_DropStop()
+		Return 1
+	EndIf
 
-	If $dFullSize > 2 * 1024 * 1024 * 1024 And __Is("AlertSize") Then
-		$dMsgBox = MsgBox(0x4, __GetLang('DROP_EVENT_MSGBOX_3', 'Estimated long processing time'), __GetLang('DROP_EVENT_MSGBOX_4', 'You are trying to process a large size of files') & " (" & __ByteSuffix($dFullSize) & ")" & @LF & __GetLang('DROP_EVENT_MSGBOX_5', 'It may take a long time, do you wish to continue?'), 0, __OnTop())
-		If $dMsgBox <> 6 Then
-			__Log_Write(__GetLang('DROP_EVENT_TIP_1', 'Sorting Aborted'), __GetLang('DROP_EVENT_MSGBOX_3', 'Estimated long processing time'))
+	; Load And Check Total Size:
+	_Sorting_UpdateGUI($dElementsGUI, 3, $dMainArray[0][1]) ; Reset General Progress Bar.
+	__Log_Write(__GetLang('DROP_EVENT_TIP_0', 'Total Size Loaded'), __ByteSuffix($dMainArray[0][1])) ; __ByteSuffix() = Round A Value Of Bytes To Highest Value.
+	_DropCheckSize($dMainArray[0][1])
+	If @error Then ; Error Only If Aborted.
+		_DropStop(1)
+		Return SetError(1, 0, 0)
+	EndIf
+
+	; Update The Array Before Process Items:
+	GUICtrlSetData($dElementsGUI[0], __GetLang('POSITIONPROCESS_11', 'Checking association matches') & '...')
+	$dMainArray = _Position_Load($dMainArray, $dProfile, $dElementsGUI)
+	If @error Then ; Error Only If Aborted.
+		_DropStop(1)
+		Return SetError(1, 0, 0)
+	EndIf
+
+	; Sort The Array And Populate The ListView:
+	GUICtrlSetData($dElementsGUI[0], __GetLang('POSITIONPROCESS_12', 'Optimizing list of files') & '...')
+	$dMainArray = _DropSortMainArray($dMainArray)
+	If __Is("ShowListView") And $G_Global_ExtendGUI = 0 Then
+		_Sorting_Extend()
+	EndIf
+	_Position_Populate($Global_ListViewProcess, $dMainArray) ; Create The ListView.
+	GUICtrlSetData($dElementsGUI[6], $dMainArray[0][0]) ; Update Counter.
+	_Sorting_UpdateGUI($dElementsGUI, 3, $dMainArray[0][1]) ; Reset General Progress Bar.
+	GUICtrlSetData($dElementsGUI[0], __GetLang('POSITIONPROCESS_13', 'Ready to start'))
+
+	; Wait To Start If AutoStart Is Off:
+	If __Is("AutoStart") = 0 And ($dMonitored = 0 Or (__Is("ShowMonitored") And $dMonitored)) Then
+		_Sorting_Pause($dMainArray, 1)
+		If $G_Global_AbortSorting Then
+			_DropStop(1)
 			Return SetError(1, 0, 0)
 		EndIf
 	EndIf
 
-	$dElementsGUI = _Sorting_CreateGUI($dFullSize) ; Create The Sorting GUI & Show It If Option Is Enabled.
-	For $A = 1 To $dFiles[0]
-		If FileExists($dFiles[$A]) Then
-			$Global_MainDir = $dFiles[$A] ; Used Only To Detect Main Folders For %SubDir%.
-			$dFailedList = _Position_Load($dFiles[$A], $dProfile, $dFailedList, $dElementsGUI, $dMonitored)
-		EndIf
-		If @error Then ; _Position_Load() Returns Error Only If Aborted.
-			$dFailedList[0] = 0 ; Do Not Show Failed Items If The User Aborts Sorting (The List Results Incomplete).
-			ExitLoop
-		EndIf
-	Next
-	_Sorting_DeleteGUI() ; Delete The Sorting GUI.
+	; Process Items:
+	$dFailed = _Position_Process($dMainArray, $dProfile, $dElementsGUI)
+	If @error Then ; _Position_Process() Returns Error Only If Aborted.
+		_DropStop(1)
+		Return SetError(1, 0, 0)
+	EndIf
+
+	; End Process:
 	If __Is("PlaySound") Then
 		SoundPlay(@ScriptDir & '\Lib\sounds\complete.mp3')
 	EndIf
-
-	; Reset Various Parameters:
-	ReDim $Global_OpenedFiles[1][2]
-	$Global_OpenedFiles[0][0] = 0
-	$Global_OpenedFiles[0][1] = 0
-	ReDim $Global_PriorityActions[1]
-	$Global_PriorityActions[0] = 0
-	$Global_Clipboard = ""
-
-	; Report A List Of Failed Sortings:
-	If $dFailedList[0] > 0 Then
-		Local $dFailedString
-		For $A = 1 To $dFailedList[0]
-			$dFailedString &= ">> " & $dFailedList[$A] & @CRLF ; Notepad Needs @CRLF Instead Of @LF To Create A New Line.
-		Next
-		If $dFailedList[0] < 8 Then
-			MsgBox(0x40, __GetLang('DROP_EVENT_MSGBOX_6', 'Sorting Partially Failed'), __GetLang('DROP_EVENT_MSGBOX_7', 'Sorting failed for the following files/folders:') & @LF & $dFailedString, 0, __OnTop())
-		Else
-			$dMsgBox = MsgBox(0x4, __GetLang('DROP_EVENT_MSGBOX_6', 'Sorting Partially Failed'), __GetLang('DROP_EVENT_MSGBOX_8', 'Sorting failed for some files/folders. Do you want to read a list of them?'), 0, __OnTop())
-			If $dMsgBox = 6 Then
-				Local $dFileName = @ScriptDir & "\FailedList.txt"
-				Local $dFile = FileOpen($dFileName, 2 + 32)
-				FileWriteLine($dFile, "{" & __GetLang('DROP_EVENT_MSGBOX_9', 'NOTE: this file will be removed after closing') & "}")
-				FileWriteLine($dFile, "")
-				FileWriteLine($dFile, __GetLang('DROP_EVENT_MSGBOX_7', 'Sorting failed for the following files/folders:'))
-				FileWrite($dFile, $dFailedString)
-				FileClose($dFile)
-				ShellExecuteWait($dFileName)
-				FileDelete($dFileName)
-			EndIf
+	GUICtrlSetData($dElementsGUI[0], __GetLang('POSITIONPROCESS_14', 'Process complete!'))
+	If $dFailed Then ; Alert That Process Failed For Some Items.
+		MsgBox(0x40, __GetLang('DROP_EVENT_MSGBOX_6', 'Process partially failed'), __GetLang('DROP_EVENT_MSGBOX_12', 'Process failed for some files/folders.') & @LF & __GetLang('DROP_EVENT_MSGBOX_13', 'You can find the report in "Status" column.'), 0, __OnTop($G_Global_SortingGUI))
+		If $G_Global_ExtendGUI = 0 Then ; Force To Show The Extended GUI.
+			_Sorting_Extend()
 		EndIf
+		_Sorting_Pause($dMainArray, 2)
+	ElseIf __Is("AutoClose") = 0 And ($dMonitored = 0 Or (__Is("ShowMonitored") And $dMonitored)) Then
+		_Sorting_Pause($dMainArray, 2)
 	EndIf
+	_DropStop()
 
-	__ExpandEnvStrings(0) ; Disable The Expansion Of Environment Variables.
-	$G_Global_AbortSorting = 0
-	$G_Global_DuplicateMode = ""
 	Return 1
 EndFunc   ;==>_DropEvent
 
-Func _Matches_Checking($cFileName, $cFilePath, $cIsDirectory, $cProfile) ; Returns: Directory [C:\DropItFiles] Or To Associate [0] Or To Skip [-1]
-	Local $cMatch, $cCheck, $cAssociation, $cAssociationSplit, $cStringSplit, $cString, $cAssociations, $cAllOthers, $cMatches[1][5] = [[0, 5]]
-
-	$cProfile = __IsProfile($cProfile, 0) ; Get Array Of Selected Profile.
-	$cAssociations = __GetAssociations($cProfile[1]) ; Get Associations Array For The Current Profile.
-	If @error Then
-		Return SetError(1, 1, -1)
-	EndIf
-	$cAllOthers = 0 ; For Special Associations That Match All Files That Have Not Other Matches.
-
-	For $A = 1 To $cAssociations[0][0]
-		$cMatch = 0
-		$cAssociation = StringTrimRight($cAssociations[$A][0], 2)
-
-		If $cAssociations[$A][4] <> "Disabled" Then ; Skip Association If It Is Disabled.
-			If __Is("UseRegEx") Then
-				If StringLeft($cAssociation, 1) <> "^" Then ; ^ = Start String.
-					$cAssociation = "^" & $cAssociation
-				EndIf
-				If StringRight($cAssociation, 1) <> "$" Then ; $ = End String.
-					$cAssociation = $cAssociation & "$"
-				EndIf
-				$cMatch = StringRegExp($cFilePath, $cAssociation)
-				If $cMatch = 1 Then
-					$cMatch = _Matches_Filter($cFilePath, $cAssociations[$A][3])
-				EndIf
-			Else
-				$cAssociation = StringReplace($cAssociation, "|", ";") ; To Support Both "|" And ";" As Separators.
-				$cAssociation = StringReplace($cAssociation, "; ", ";") ; To Support Rules Also If Separated By A Space After Separators.
-				$cAssociationSplit = StringSplit($cAssociation, ";")
-
-				For $B = 1 To $cAssociationSplit[0]
-					$cCheck = 0
-					If ($cAssociationSplit[$B] == "#" Or $cAssociationSplit[$B] == "##") And $cAllOthers = 0 Then
-						$cAssociationSplit[$B] = StringReplace($cAssociationSplit[$B], "#", "*")
-						$cAllOthers = -1 ; It Means That This Will Be Used As "All Others" Association.
-					EndIf
-
-					If $cIsDirectory Then
-						If StringInStr($cAssociationSplit[$B], "**") Then ; Rule For Folders.
-							$cAssociationSplit[$B] = StringReplace($cAssociationSplit[$B], "**", "*")
-							$cCheck = 1
-						EndIf
-					Else
-						If StringInStr($cAssociationSplit[$B], "*") And StringInStr($cAssociationSplit[$B], "**") = 0 Then ; Rule For Files.
-							$cCheck = 1
-						EndIf
-					EndIf
-
-					If $cCheck Then
-						$cAssociation = StringRegExpReplace($cAssociationSplit[$B], "(\.|\?|\+|\(|\)|\{|\}|\[|\]|\^|\$|\\)", "\\$1")
-						$cAssociation = StringReplace($cAssociation, "*", "(.*?)") ; (.*?) = Match Any String Of Characters.
-						$cStringSplit = StringSplit($cAssociation, "/") ; To Separate Exclusion Rules If Defined.
-
-						For $C = 1 To $cStringSplit[0]
-							If StringInStr($cStringSplit[$C], "\\") Then ; Rule Formatted As Path.
-								$cString = $cFilePath
-							Else ; Rule Formatted As File.
-								$cString = $cFileName
-							EndIf
-							$cCheck = StringRegExp($cString, "^(?i)" & $cStringSplit[$C] & "$") ; ^ = Start String; (?i) = Case Insensitive; $ = End String.
-							If $cCheck = 1 Then
-								If $C = 1 Then ; It Match With Main Rule.
-									$cMatch = 1
-								Else ; It Match With Exclusion Rule.
-									$cMatch = 0
-									ExitLoop
-								EndIf
-							EndIf
-						Next
-
-						If $cMatch = 1 Then
-							$cMatch = _Matches_Filter($cFilePath, $cAssociations[$A][3])
-						EndIf
-
-						If $cMatch = 1 Then
-							ExitLoop
-						EndIf
-						If $cAllOthers < 0 Then
-							$cAllOthers = 0 ; If Does Not Match With A "All Others" Association.
-						EndIf
-					EndIf
-				Next
-			EndIf
-
-			If $cMatch = 1 And $cMatches[0][0] < 40 Then
-				If UBound($cMatches, 1) <= $cMatches[0][0] + 1 Then
-					ReDim $cMatches[UBound($cMatches, 1) + 1][5] ; ReSize Array If More Items Are Required.
-				EndIf
-				$cMatches[0][0] += 1
-				$cMatches[$cMatches[0][0]][0] = $cAssociations[$A][0] ; Rule.
-				$cMatches[$cMatches[0][0]][1] = $cAssociations[$A][1] ; Destination.
-				$cMatches[$cMatches[0][0]][2] = $cAssociations[$A][5] ; List Properties.
-				$cMatches[$cMatches[0][0]][3] = $cAssociations[$A][2] ; Association Name.
-				$cMatches[$cMatches[0][0]][4] = $cAssociations[$A][6] ; FTP Settings.
-				If $cAllOthers < 0 Then
-					$cAllOthers = $cMatches[0][0] ; It Saves The Index Of The "All Others" Association In $cMatches Array.
-				EndIf
-			EndIf
-		EndIf
-	Next
-
-	If $cMatches[0][0] > 1 And $cAllOthers > 0 Then
-		_ArrayDelete($cMatches, $cAllOthers) ; If Item Matches With More Associations, Remove The "All Others" Association.
-		$cMatches[0][0] -= 1
-	EndIf
-
-	$cMatch = 0
-	If $cMatches[0][0] = 1 Then
-		$cMatch = 1
-	ElseIf $cMatches[0][0] > 1 Then
-		If $Global_PriorityActions[0] > 0 Then ; Automatically Use Priority Action If File Matches With One Of Them.
-			If $Global_PriorityActions[1] = "###" Then ; Skip Item If User Selected "Cancel" In Select Action Window.
-				$cMatch = 1
-				$cMatches[$cMatch][0] = "$2"
-			Else
-				For $A = 1 To $Global_PriorityActions[0]
-					For $B = 1 To $cMatches[0][0]
-						If $Global_PriorityActions[$A] == $cMatches[$B][0] Then
-							$cMatch = $B
-						EndIf
-					Next
-				Next
-			EndIf
-		EndIf
-		If $cMatch = 0 Then
-			$cMatch = _Matches_Select($cMatches, $cFileName)
+Func _DropCheckSize($dSize)
+	If $dSize > 2 * 1024 * 1024 * 1024 And __Is("AlertSize") Then
+		Local $dMsgBox = MsgBox(0x4, __GetLang('DROP_EVENT_MSGBOX_3', 'Estimated long processing time'), __GetLang('DROP_EVENT_MSGBOX_4', 'You are trying to process a large size of files') & " (" & __ByteSuffix($dSize) & ")" & @LF & __GetLang('DROP_EVENT_MSGBOX_5', 'It may take a long time, do you wish to continue?'), 0, __OnTop())
+		If $dMsgBox <> 6 Then
+			Return SetError(1, 0, 0) ; Process Aborted.
 		EndIf
 	EndIf
+	Return 1
+EndFunc   ;==>_DropCheckSize
 
-	If $cMatch > 0 Then
-		$Global_Action = StringRight($cMatches[$cMatch][0], 2) ; Set Action For This File/Folder.
-		If $Global_Action == "$2" Then ; Ignore Action.
-			Return SetError(1, 0, -1)
-		ElseIf $Global_Action == "$8" Then ; Create List Action.
-			$cMatches[$cMatch][1] &= "|" & $cMatches[$cMatch][2] & "|" & $cProfile[1] & "|" & StringTrimRight($cMatches[$cMatch][0], 2) & "|" & $cMatches[$cMatch][3] ; Add List Properties At The End Of The String.
-		ElseIf $Global_Action == "$C" Then ; Upload Action.
-			$cMatches[$cMatch][1] &= "|" & $cMatches[$cMatch][4] ; Add FTP Settings At The End Of The String.
-		EndIf
-		Return $cMatches[$cMatch][1]
-	Else
-		Return SetError(1, 0, $cMatch)
+Func _DropSortMainArray($dMainArray)
+	Local $dSortBy[3] = [3, 4, 0] ; Sort By Action, Then By Destination, Then By FilePath.
+	$dMainArray[0][3] = "$$" ; Needed To Keep It As First Field.
+	ReDim $dMainArray[$dMainArray[0][0] + 1][6] ; Remove Empty Fields.
+	_ArraySort_MultiColumn($dMainArray, $dSortBy)
+	$dMainArray[0][0] -= $dMainArray[0][2] ; From Now $dMainArray[0][0] Contains The Correct Number Of Items.
+	ReDim $dMainArray[$dMainArray[0][0] + 1][6] ; Remove Also Scanned Folders.
+	GUICtrlSetState($Global_ExtendButton, $GUI_ENABLE)
+	Return $dMainArray
+EndFunc   ;==>_DropSortMainArray
+
+Func _DropStop($dAborted = 0)
+	__ExpandEventMode(0) ; Disable Event Buttons.
+	__ExpandEnvStrings(0) ; Disable The Expansion Of Environment Variables.
+	GUIDelete($G_Global_SortingGUI) ; Delete The Process GUI.
+	$G_Global_AbortSorting = 0
+	$G_Global_ExtendGUI = 0
+	$G_Global_DuplicateMode = ""
+	ReDim $Global_PriorityActions[1]
+	$Global_PriorityActions[0] = 0
+	$Global_Wheel = 0
+	$Global_ListViewProcess_Info = 0
+	$Global_ListViewProcess_Skip = 0
+	$Global_Clipboard = ""
+	$Global_UserInput = ""
+	If $dAborted Then
+		__Log_Write(__GetLang('DROP_EVENT_TIP_1', 'Process stopped'), __GetLang('DROP_EVENT_TIP_2', 'Process interrupted by the user'))
 	EndIf
-EndFunc   ;==>_Matches_Checking
+EndFunc   ;==>_DropStop
 
-Func _Matches_Filter($dFilePath, $dFilters)
-	Local $dText[4], $dFileDate[6], $dAttributes, $dTemp
-	Local $dStringSplit = StringSplit($dFilters, ";")
-	ReDim $dStringSplit[11] ; Number Of Filters.
-	Local $dArray[10][2] = [ _
-			[$dStringSplit[1], 0], _
-			[$dStringSplit[2], 1], _
-			[$dStringSplit[3], 0], _
-			[$dStringSplit[4], 2], _
-			[$dStringSplit[5], "A"], _
-			[$dStringSplit[6], "H"], _
-			[$dStringSplit[7], "R"], _
-			[$dStringSplit[8], "S"], _
-			[$dStringSplit[9], "T"], _
-			[$dStringSplit[10], 0]]
+Func _Matches_Filter($mFilePath, $mFilters)
+	Local $mText[4], $mFileDate[6], $mAttributes, $mTemp
+	Local $mStringSplit = StringSplit($mFilters, ";")
+	ReDim $mStringSplit[11] ; Number Of Filters.
+	Local $mArray[10][2] = [ _
+			[$mStringSplit[1], 0], _
+			[$mStringSplit[2], 1], _
+			[$mStringSplit[3], 0], _
+			[$mStringSplit[4], 2], _
+			[$mStringSplit[5], "A"], _
+			[$mStringSplit[6], "H"], _
+			[$mStringSplit[7], "R"], _
+			[$mStringSplit[8], "S"], _
+			[$mStringSplit[9], "T"], _
+			[$mStringSplit[10], 0]]
 
 	For $A = 0 To 9
-		If Number(StringLeft($dArray[$A][0], 1)) = 1 Then ; Filter Active.
-			$dText[0] = StringLeft(StringTrimLeft($dArray[$A][0], 1), 1) ; Mode Character (<, >, =).
-			$dText[1] = StringTrimLeft($dArray[$A][0], 2) ; Full Next String.
-			$dText[2] = StringRegExpReplace($dText[1], "[^0-9]", "") ; Only Numbers.
-			$dText[3] = StringRegExpReplace($dText[1], "[0-9]", "") ; Only Other Not Numbers.
+		If Number(StringLeft($mArray[$A][0], 1)) = 1 Then ; Filter Active.
+			$mText[0] = StringLeft(StringTrimLeft($mArray[$A][0], 1), 1) ; Mode Character (<, >, =).
+			$mText[1] = StringTrimLeft($mArray[$A][0], 2) ; Full Next String.
+			$mText[2] = StringRegExpReplace($mText[1], "[^0-9]", "") ; Only Numbers.
+			$mText[3] = StringRegExpReplace($mText[1], "[0-9]", "") ; Only Other Not Numbers.
 
 			If $A = 0 Then ; Size.
-				If _WinAPI_PathIsDirectory($dFilePath) Then
-					$dTemp = DirGetSize($dFilePath)
+				If _WinAPI_PathIsDirectory($mFilePath) Then
+					$mTemp = DirGetSize($mFilePath)
 				Else
-					$dTemp = FileGetSize($dFilePath)
+					$mTemp = FileGetSize($mFilePath)
 				EndIf
-				Switch $dText[3]
+				Switch $mText[3]
 					Case "bytes"
-						$dTemp = Round($dTemp)
+						$mTemp = Round($mTemp)
 					Case "KB"
-						$dTemp = Round($dTemp / 1024)
+						$mTemp = Round($mTemp / 1024)
 					Case "MB"
-						$dTemp = Round($dTemp / (1024 * 1024))
+						$mTemp = Round($mTemp / (1024 * 1024))
 					Case Else ; "GB".
-						$dTemp = Round($dTemp / (1024 * 1024 * 1024))
+						$mTemp = Round($mTemp / (1024 * 1024 * 1024))
 				EndSwitch
 			ElseIf $A < 4 Then ; Dates.
-				$dFileDate = FileGetTime($dFilePath, $dArray[$A][1])
-				$dTemp = _DateDiff($dText[3], $dFileDate[0] & "/" & $dFileDate[1] & "/" & $dFileDate[2] & " " & $dFileDate[3] & ":" & $dFileDate[4] & ":" & $dFileDate[5], _NowCalc())
+				$mFileDate = FileGetTime($mFilePath, $mArray[$A][1])
+				$mTemp = _DateDiff($mText[3], $mFileDate[0] & "/" & $mFileDate[1] & "/" & $mFileDate[2] & " " & $mFileDate[3] & ":" & $mFileDate[4] & ":" & $mFileDate[5], _NowCalc())
 			ElseIf $A < 9 Then ; Attributes.
-				$dAttributes = FileGetAttrib($dFilePath)
+				$mAttributes = FileGetAttrib($mFilePath)
 			Else ; File Content.
-				If _WinAPI_PathIsDirectory($dFilePath) Then
+				If _WinAPI_PathIsDirectory($mFilePath) Then
 					Return 0
 				EndIf
-				Switch $dText[0]
+				Switch $mText[0]
 					Case ">" ; Search All The Words And Not Case Sensitive.
-						__FindInFile($dFilePath, $dText[1], 0, 0)
+						__FindInFile($mFilePath, $mText[1], 0, 0)
 					Case "<" ; Search The Literal String And Case Sensitive.
-						__FindInFile($dFilePath, $dText[1], 1, 1)
+						__FindInFile($mFilePath, $mText[1], 1, 1)
 					Case Else ; Search The Literal String And Not Case Sensitive.
-						__FindInFile($dFilePath, $dText[1], 1, 0)
+						__FindInFile($mFilePath, $mText[1], 1, 0)
 				EndSwitch
 				If @error Then
 					Return 0
@@ -3380,28 +3431,28 @@ Func _Matches_Filter($dFilePath, $dFilters)
 
 			If @error = 0 Then
 				If $A < 4 Then ; Size, Dates.
-					Switch $dText[0]
+					Switch $mText[0]
 						Case ">"
-							If Not ($dTemp > $dText[2]) Then
+							If Not ($mTemp > $mText[2]) Then
 								Return 0
 							EndIf
 						Case "<"
-							If Not ($dTemp < $dText[2]) Then
+							If Not ($mTemp < $mText[2]) Then
 								Return 0
 							EndIf
 						Case Else ; "=".
-							If Not ($dTemp = $dText[2]) Then
+							If Not ($mTemp = $mText[2]) Then
 								Return 0
 							EndIf
 					EndSwitch
 				ElseIf $A < 9 Then ; Attributes.
-					Switch $dText[3]
+					Switch $mText[3]
 						Case "off"
-							If StringInStr($dAttributes, $dArray[$A][1]) Then
+							If StringInStr($mAttributes, $mArray[$A][1]) Then
 								Return 0
 							EndIf
 						Case Else ; "on".
-							If StringInStr($dAttributes, $dArray[$A][1]) = 0 Then
+							If StringInStr($mAttributes, $mArray[$A][1]) = 0 Then
 								Return 0
 							EndIf
 					EndSwitch
@@ -3417,26 +3468,20 @@ Func _Matches_Select($mMatches, $mFileName)
 	If IsArray($mMatches) = 0 Then
 		Return SetError(1, 0, 0) ; Exit Function If Not An Array.
 	EndIf
-	Local $mHandle = $Global_GUI_1
-	Local $mGUI, $mAction, $mDestination, $mMsg, $mCancel, $mPriority, $mTwoColumns, $mString, $mStringSplit, $mButtons[$mMatches[0][0] + 1] = [0], $mRead = -1
+	Local $mGUI, $mAction, $mDestination, $mMsg, $mCancel, $mPriority, $mTwoColumns, $mString, $mStringSplit
+	Local $mFromLeft, $mFromTop, $mHandle = $Global_GUI_1, $mRead = -1, $mButtons[$mMatches[0][0] + 1] = [0]
 	If $mMatches[0][0] > 14 Then
 		$mTwoColumns = 1
 	EndIf
-	Local $mWidth = 24 + 10 * $mTwoColumns + 300 * ($mTwoColumns + 1)
+	Local $mWidth = 20 + 10 * $mTwoColumns + 300 * ($mTwoColumns + 1)
 	Local $mRows = Int(($mMatches[0][0] + $mTwoColumns) / ($mTwoColumns + 1))
 
-	$mGUI = GUICreate(__GetLang('MOREMATCHES_GUI', 'Select Action'), $mWidth, 175 + 23 * $mRows, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
-	GUICtrlCreateGraphic(0, 0, $mWidth, 74)
-	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlSetColor(-1, 0xffffff)
+	$mGUI = GUICreate(__GetLang('MOREMATCHES_GUI', 'Select Action'), $mWidth, 195 + 23 * $mRows, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
-	GUICtrlCreateLabel(__GetLang('MOREMATCHES_LABEL_0', 'Loaded item:'), 12, 12, 300, 18)
-	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlCreateLabel($mFileName, 12, 12 + 18, 300, 40)
-	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlSetFont(-1, -1, 800)
+	GUICtrlCreateLabel(__GetLang('MOREMATCHES_LABEL_0', 'Loaded item:'), 10, 10, $mWidth - 20, 20)
+	GUICtrlCreateEdit($mFileName, 10, 30, $mWidth - 20, 52, $ES_READONLY + $WS_VSCROLL)
+	GUICtrlCreateLabel(__GetLang('MOREMATCHES_LABEL_1', 'Select the action to use:'), 10, 90 + 10, $mWidth - 20, 20)
 
-	GUICtrlCreateLabel(__GetLang('MOREMATCHES_LABEL_1', 'Select the action to use:'), 12, 80, 300, 18)
 	For $A = 1 To $mMatches[0][0]
 		$mAction = StringRight($mMatches[$A][0], 2)
 		$mDestination = $mMatches[$A][1]
@@ -3458,25 +3503,30 @@ Func _Matches_Select($mMatches, $mFileName)
 			$mDestination = __GetLang('MAIL_SETTINGS_DEFINED', 'Defined Settings')
 		EndIf
 		$mString = " " & _WinAPI_PathCompactPathEx($mMatches[$A][3], 35) & " (" & __GetAssociationString($mAction) & ")" ; __GetAssociationString() = Convert Action Code To Action Name.
-		$mButtons[$A] = GUICtrlCreateButton($mString, 12 + (300 + 10) * Int($A / ($mRows + 1)), 74 + 23 * $A - (23 * $mRows) * Int($A / ($mRows + 1)), 300, 22, 0x0100)
+		$mFromLeft = 10 + (300 + 10) * Int($A / ($mRows + 1))
+		$mFromTop = 94 + 23 * $A - (23 * $mRows) * Int($A / ($mRows + 1))
+		$mButtons[$A] = GUICtrlCreateButton($mString, $mFromLeft, $mFromTop, 300, 22, 0x0100)
 		GUICtrlSetTip($mButtons[$A], __GetLang('DESTINATION', 'Destination') & ":" & @LF & $mDestination)
 		$mButtons[0] += 1
 	Next
 
-	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), ($mWidth / 2) - 50, 115 + 23 * $mRows, 100, 25)
-	$mPriority = GUICtrlCreateCheckbox(__GetLang('MOREMATCHES_LABEL_2', 'Apply to all ambiguities of this drop'), 12, 150 + 23 * $mRows, 320, 20)
+	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), ($mWidth / 2) - 50, 135 + 23 * $mRows, 100, 25)
+	$mPriority = GUICtrlCreateCheckbox(__GetLang('MOREMATCHES_LABEL_2', 'Apply to all ambiguities of this drop'), 10, 170 + 23 * $mRows, $mWidth - 20, 20)
 	If __Is("AmbiguitiesCheck") Then
 		GUICtrlSetState($mPriority, $GUI_CHECKED)
 	EndIf
 	GUISetState(@SW_SHOWNOACTIVATE)
 
-	;msgbox(0, "test", "test") ; <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< why it solve the issue of "send to" ??
 	While 1
 		$mMsg = GUIGetMsg()
 		Switch $mMsg
-			Case $GUI_EVENT_CLOSE, $mCancel
+			Case $GUI_EVENT_CLOSE
 				$mRead = -1
-				If GUICtrlRead($mPriority) = 1 And $mMsg = $mCancel Then ; Save Priority Action If Selected.
+				ExitLoop
+
+			Case $mCancel
+				$mRead = -1
+				If GUICtrlRead($mPriority) = 1 Then ; Save Priority Action If Selected.
 					$Global_PriorityActions[0] = 1
 					ReDim $Global_PriorityActions[2]
 					$Global_PriorityActions[1] = "###"
@@ -3506,11 +3556,553 @@ Func _Matches_Select($mMatches, $mFileName)
 	Return $mRead
 EndFunc   ;==>_Matches_Select
 
-Func _Position_Abbreviations($pDestination, $pFilePath, $pProfile)
-	Local $pLoadedProperty, $pStringSplit, $pTimeArray[6]
+Func _Position_Checking($pMainArray, $pIndex, $pAssociations, $pProfileName)
+	Local $pMatch, $pCheck, $pAction, $pAssociation, $pAssociationSplit, $pStringSplit, $pString, $pAllOthers
+	Local $pFilePath = $pMainArray[$pIndex][0], $pMatches[1][5] = [[0, 5]]
+	$pAllOthers = 0 ; For Special Associations That Match All Files That Have Not Other Matches.
+
+	For $A = 1 To $pAssociations[0][0]
+		$pMatch = 0
+		$pAssociation = StringTrimRight($pAssociations[$A][0], 2)
+
+		If $pAssociations[$A][4] <> "Disabled" Then ; Skip Association If It Is Disabled.
+			If __Is("UseRegEx") Then
+				If StringLeft($pAssociation, 1) <> "^" Then ; ^ = Start String.
+					$pAssociation = "^" & $pAssociation
+				EndIf
+				If StringRight($pAssociation, 1) <> "$" Then ; $ = End String.
+					$pAssociation = $pAssociation & "$"
+				EndIf
+				$pMatch = StringRegExp($pFilePath, $pAssociation)
+				If $pMatch = 1 Then
+					$pMatch = _Matches_Filter($pFilePath, $pAssociations[$A][3])
+				EndIf
+			Else
+				$pAssociation = StringReplace($pAssociation, "|", ";") ; To Support Both "|" And ";" As Separators.
+				$pAssociation = StringReplace($pAssociation, "; ", ";") ; To Support Rules Also If Separated By A Space After Separators.
+				$pAssociationSplit = StringSplit($pAssociation, ";")
+
+				For $B = 1 To $pAssociationSplit[0]
+					$pCheck = 0
+					If ($pAssociationSplit[$B] == "#" Or $pAssociationSplit[$B] == "##") And $pAllOthers = 0 Then
+						$pAssociationSplit[$B] = StringReplace($pAssociationSplit[$B], "#", "*")
+						$pAllOthers = -1 ; It Means That This Will Be Used As "All Others" Association.
+					EndIf
+
+					If _WinAPI_PathIsDirectory($pFilePath) Then
+						If StringInStr($pAssociationSplit[$B], "**") Then ; Rule For Folders.
+							$pAssociationSplit[$B] = StringReplace($pAssociationSplit[$B], "**", "*")
+							$pCheck = 1
+						EndIf
+					Else
+						If StringInStr($pAssociationSplit[$B], "*") And StringInStr($pAssociationSplit[$B], "**") = 0 Then ; Rule For Files.
+							$pCheck = 1
+						EndIf
+					EndIf
+
+					If $pCheck Then
+						$pAssociation = StringRegExpReplace($pAssociationSplit[$B], "(\.|\?|\+|\(|\)|\{|\}|\[|\]|\^|\$|\\)", "\\$1")
+						$pAssociation = StringReplace($pAssociation, "*", "(.*?)") ; (.*?) = Match Any String Of Characters.
+						$pStringSplit = StringSplit($pAssociation, "/") ; To Separate Exclusion Rules If Defined.
+
+						For $C = 1 To $pStringSplit[0]
+							If StringInStr($pStringSplit[$C], "\\") Then ; Rule Formatted As Path.
+								$pString = $pFilePath
+							Else ; Rule Formatted As File.
+								$pString = __GetFileName($pFilePath)
+							EndIf
+							$pCheck = StringRegExp($pString, "^(?i)" & $pStringSplit[$C] & "$") ; ^ = Start String; (?i) = Case Insensitive; $ = End String.
+							If $pCheck = 1 Then
+								If $C = 1 Then ; It Match With Main Rule.
+									$pMatch = 1
+								Else ; It Match With Exclusion Rule.
+									$pMatch = 0
+									ExitLoop
+								EndIf
+							EndIf
+						Next
+
+						If $pMatch = 1 Then
+							$pMatch = _Matches_Filter($pFilePath, $pAssociations[$A][3])
+						EndIf
+
+						If $pMatch = 1 Then
+							ExitLoop
+						EndIf
+						If $pAllOthers < 0 Then
+							$pAllOthers = 0 ; If Does Not Match With A "All Others" Association.
+						EndIf
+					EndIf
+				Next
+			EndIf
+
+			If $pMatch = 1 And $pMatches[0][0] < 40 Then
+				$pMatches[0][0] += 1
+				If UBound($pMatches) <= $pMatches[0][0] Then
+					ReDim $pMatches[UBound($pMatches) * 2][5]
+				EndIf
+				$pMatches[$pMatches[0][0]][0] = $pAssociations[$A][0] ; Rule.
+				$pMatches[$pMatches[0][0]][1] = $pAssociations[$A][1] ; Destination.
+				$pMatches[$pMatches[0][0]][2] = $pAssociations[$A][5] ; List Properties.
+				$pMatches[$pMatches[0][0]][3] = $pAssociations[$A][2] ; Association Name.
+				$pMatches[$pMatches[0][0]][4] = $pAssociations[$A][6] ; FTP Settings / HTML Theme.
+				If $pAllOthers < 0 Then
+					$pAllOthers = $pMatches[0][0] ; It Saves The Index Of The "All Others" Association In $pMatches Array.
+				EndIf
+			EndIf
+		EndIf
+	Next
+
+	If $pMatches[0][0] > 1 And $pAllOthers > 0 Then
+		_ArrayDelete($pMatches, $pAllOthers) ; If Item Matches With More Associations, Remove The "All Others" Association.
+		$pMatches[0][0] -= 1
+	EndIf
+
+	$pMatch = 0
+	If $pMatches[0][0] = 1 Then
+		$pMatch = 1
+	ElseIf $pMatches[0][0] > 1 Then
+		If $Global_PriorityActions[0] > 0 Then ; Automatically Use Priority Action If File Matches With One Of Them.
+			If $Global_PriorityActions[1] = "###" Then ; Skip Item If User Selected "Cancel" In Select Action Window.
+				$pMatch = -1
+			Else
+				For $A = 1 To $Global_PriorityActions[0]
+					For $B = 1 To $pMatches[0][0]
+						If $Global_PriorityActions[$A] == $pMatches[$B][0] Then
+							$pMatch = $B
+						EndIf
+					Next
+				Next
+			EndIf
+		EndIf
+		If $pMatch = 0 Then
+			__ExpandEventMode(0) ; Disable Event Buttons.
+			$pMatch = _Matches_Select($pMatches, __GetFileName($pFilePath))
+			__ExpandEventMode(1) ; Enable Event Buttons.
+		EndIf
+	EndIf
+
+	If $pMatch > 0 Then
+		$pAction = StringRight($pMatches[$pMatch][0], 2) ; Action.
+		If $pAction == "$2" Then ; Ignore Action.
+			$pMainArray[$pIndex][5] = -1 ; To Skip.
+		Else
+			If $pAction == "$8" Then ; Create List Action.
+				If $pMatches[$pMatch][4] == "" Then
+					$pMatches[$pMatch][4] = "Default" ; Use Default Theme If Not Defined.
+				EndIf
+				$pMatches[$pMatch][1] &= "|" & $pMatches[$pMatch][2] & "|" & $pProfileName & "|" & StringTrimRight($pMatches[$pMatch][0], 2) & "|" & $pMatches[$pMatch][3] & "|" & $pMatches[$pMatch][4] ; Add List Properties At The End Of The String.
+			ElseIf $pAction == "$C" Then ; Upload Action.
+				$pMatches[$pMatch][1] &= "|" & $pMatches[$pMatch][4] ; Add FTP Settings At The End Of The String.
+			EndIf
+			$pMainArray[$pIndex][4] = $pMatches[$pMatch][1]
+			$pMainArray[$pIndex][5] = 0 ; OK.
+		EndIf
+	ElseIf $pMatch = 0 Then
+		If _WinAPI_PathIsDirectory($pFilePath) And __Is("FolderAsFile", -1, "False", $pProfileName) = 0 Then
+			$pMainArray[$pIndex][5] = -2 ; To Scan.
+		Else
+			$pMainArray[$pIndex][5] = -3 ; To Associate.
+		EndIf
+	Else ; $pMatch = -1 If User Selected "Cancel" In Select Action Window.
+		$pMainArray[$pIndex][5] = -1 ; To Skip.
+	EndIf
+	$pMainArray[$pIndex][3] = $pAction
+
+	Return $pMainArray
+EndFunc   ;==>_Position_Checking
+
+Func _Position_MainArray($pMainArray, $pFiles, $pElementsGUI, $pScanLevel = 0)
+	Local $pFileName, $pFilePath, $pSearch, $pSearchPath, $pMainDir = -1, $pFolderList[10] = [1, 0]
+
+	For $A = 1 To $pFiles[0]
+		_Sorting_CheckButtons($pMainArray)
+		If @error Then
+			Return SetError(1, 0, $pMainArray) ; Process Aborted.
+		EndIf
+
+		If $pScanLevel > 0 And _WinAPI_PathIsDirectory($pFiles[$A]) Then
+			$pMainDir = $pFiles[$A]
+			$pFiles[$A] = $pFiles[$A] & "\*.*"
+		EndIf
+		If StringInStr(__GetFileName($pFiles[$A]), "*") Then ; Load With Wildcards Input.
+			$pSearchPath = $pFiles[$A]
+			While $pFolderList[0] > 0
+				$pSearch = FileFindFirstFile($pSearchPath)
+				If $pSearch = -1 Then
+					ExitLoop
+				EndIf
+				While 1
+					_Sorting_CheckButtons($pMainArray)
+					If @error Then
+						FileClose($pSearch)
+						Return SetError(1, 0, $pMainArray) ; Process Aborted.
+					EndIf
+
+					$pFileName = FileFindNextFile($pSearch)
+					If @error Then
+						ExitLoop
+					EndIf
+					If @extended And $pScanLevel = 2 Then
+						If __Is("ScanSubfolders") Then
+							$pFolderList[0] += 1
+							If UBound($pFolderList) <= $pFolderList[0] Then
+								ReDim $pFolderList[UBound($pFolderList) * 2]
+							EndIf
+							$pFolderList[$pFolderList[0]] = __GetParentFolder($pSearchPath) & '\' & $pFileName
+						EndIf
+					Else
+						$pFilePath = __GetParentFolder($pSearchPath) & '\' & $pFileName
+						$pMainArray = _Position_MainArrayAdd($pMainArray, $pFilePath, $pElementsGUI, $pMainDir)
+					EndIf
+				WEnd
+				FileClose($pSearch)
+				$pSearchPath = $pFolderList[$pFolderList[0]] & "\*.*"
+				$pFolderList[0] -= 1
+			WEnd
+		ElseIf FileExists($pFiles[$A]) Then
+			$pMainArray = _Position_MainArrayAdd($pMainArray, $pFiles[$A], $pElementsGUI, $pMainDir)
+		EndIf
+	Next
+	_Sorting_UpdateGUI($pElementsGUI, 1, "") ; Reset Single Progress Bar And Show Second Line.
+
+	Return $pMainArray
+EndFunc   ;==>_Position_MainArray
+
+Func _Position_MainArrayAdd($pMainArray, $pFilePath, $pElementsGUI, $pMainDir = -1)
+	Local $pSize
+
+	$pMainArray[0][0] += 1 ; [0][0] Counter, [0][1] Full Size, [$A][0] File Path, [$A][1] File Size, [$A][2] Main Dir, [$A][3] Action, [$A][4] Destination, [$A][5] Result.
+	If UBound($pMainArray) <= $pMainArray[0][0] Then
+		ReDim $pMainArray[UBound($pMainArray) * 2][6]
+	EndIf
+
+	$pFilePath = _WinAPI_PathRemoveBackslash($pFilePath)
+	$pMainArray[$pMainArray[0][0]][0] = $pFilePath
+	If _WinAPI_PathIsDirectory($pFilePath) Then
+		$pSize = DirGetSize($pFilePath)
+	Else
+		$pSize = FileGetSize($pFilePath)
+	EndIf
+	$pMainArray[0][1] += $pSize
+	$pMainArray[$pMainArray[0][0]][1] = $pSize
+	$pMainArray[$pMainArray[0][0]][2] = $pMainDir ; For Files Loaded From A Folder Scan.
+	_Sorting_UpdateGUI($pElementsGUI, 1, $pFilePath) ; Reset Single Progress Bar And Show Second Line.
+	GUICtrlSetData($pElementsGUI[6], $pMainArray[0][0]) ; Update Counter.
+
+	Return $pMainArray
+EndFunc   ;==>_Position_MainArrayAdd
+
+Func _Position_Load($pMainArray, $pProfile, $pElementsGUI)
+	Local $A, $pFiles[2] = [1, 0]
 	Local $pProfileArray = __IsProfile($pProfile, 0) ; Get Array Of Selected Profile.
-	Local $pEnvArray[92][3] = [ _
-			[91, 0, 0], _
+	Local $pAssociations = __GetAssociations($pProfileArray[1]) ; Get Associations Array.
+
+	While 1
+		_Sorting_CheckButtons($pMainArray)
+		If @error Then
+			Return SetError(1, 0, $pMainArray) ; Process Aborted.
+		EndIf
+
+		$A += 1
+		$pMainArray = _Position_Checking($pMainArray, $A, $pAssociations, $pProfileArray[1]) ; $pMainArray[$A][5] = OK [0], To Skip [-1], To Scan [-2], To Associate [-3].
+		If $pMainArray[$A][5] == -3 Then ; To Associate.
+			$pMainArray[$A][5] = -1 ; To Skip.
+			If __Is("IgnoreNew", -1, "False", $pProfile) = 0 Then
+				Switch MsgBox(0x03, __GetLang('POSITIONPROCESS_MSGBOX_0', 'Association Needed'), __GetLang('POSITIONPROCESS_MSGBOX_1', 'No association found for:') & @LF & $pMainArray[$A][0] & @LF & @LF & __GetLang('POSITIONPROCESS_MSGBOX_2', 'Do you want to create an association for it?'), 0, __OnTop())
+					Case 6 ; Yes.
+						__ExpandEventMode(0) ; Disable Event Buttons.
+						If _Manage_Edit_GUI($pProfile, __GetFileNameOnly($pMainArray[$A][0]), __GetFileExtension($pMainArray[$A][0]), -1, -1, -1, -1, 1, 1) <> 0 Then ; _Manage_Edit_GUI() = Show Manage Edit GUI Of Selected Association.
+							$pAssociations = __GetAssociations($pProfileArray[1]) ; Get Updated Associations Array.
+							$pMainArray = _Position_Checking($pMainArray, $A, $pAssociations, $pProfileArray[1]) ; $pMainArray[$A][5] = OK [0], To Skip [-1], To Scan [-2], To Associate [-3].
+						EndIf
+						__ExpandEventMode(1) ; Enable Event Buttons.
+					Case 7 ; No.
+						$pMainArray[$A][5] = -1
+					Case Else ; Abort.
+						$pMainArray[$A][5] = -3
+				EndSwitch
+			EndIf
+		EndIf
+
+		Switch $pMainArray[$A][5]
+			Case -3 ; Aborted.
+				Return SetError(1, 0, $pMainArray)
+			Case -2 ; To Scan.
+				$pFiles[1] = $pMainArray[$A][0]
+				$pMainArray = _Position_MainArray($pMainArray, $pFiles, $pElementsGUI, 2)
+				If @error Then ; _Position_MainArray() Returns Error Only If Aborted.
+					Return SetError(1, 0, $pMainArray) ; Process Aborted.
+				EndIf
+				$pMainArray[0][1] -= $pMainArray[$A][1] ; Remove Folder Size Because Added Size Of Its Files.
+				$pMainArray[0][2] += 1 ; Reduce Counter To Remove Scanned Folders From The Array.
+				$pMainArray[$A][3] = "$Z" ; Fake Action To Move At The End Of The Array When Sorted.
+				GUICtrlSetData($pElementsGUI[6], $pMainArray[0][0] - $pMainArray[0][2]) ; Update Counter.
+			Case Else
+				$pMainArray[$A][4] = _Destination_Fix($pMainArray[$A][0], $pMainArray[$A][4], $pMainArray[$A][3], $pMainArray[$A][2], $pProfile)
+				_Sorting_UpdateGUI($pElementsGUI, 4, $pMainArray[$A][1]) ; Update General Progress Bar.
+				GUICtrlSetData($pElementsGUI[6], ($A - $pMainArray[0][2]) & " / " & ($pMainArray[0][0] - $pMainArray[0][2])) ; Update Counter.
+		EndSwitch
+
+		If $A = $pMainArray[0][0] Then
+			ExitLoop ; Needed Because $pMainArray[0][0] Is Updated During The Loop.
+		EndIf
+	WEnd
+
+	Return $pMainArray
+EndFunc   ;==>_Position_Load
+
+Func _Position_Populate($pListView, $pMainArray)
+	Local $pName, $pAction, $pDestination
+
+	_GUICtrlListView_BeginUpdate($pListView)
+	For $A = 1 To $pMainArray[0][0]
+		$pName = __GetFileName($pMainArray[$A][0])
+		$pAction = "-" ; Because The Item Is Skipped If The User Does Not Define An Association With _Manage_Edit_GUI().
+		$pDestination = "-"
+		If $pMainArray[$A][3] <> "" Then
+			$pAction = __GetAssociationString($pMainArray[$A][3]) ; Convert Action Code To Action Name.
+		EndIf
+		If $pMainArray[$A][4] <> "" Then
+			$pDestination = _Position_GetDestination($pMainArray[$A][3], $pMainArray[$A][4])
+		EndIf
+		_GUICtrlListView_AddItem($pListView, $pName)
+		_GUICtrlListView_AddSubItem($pListView, $A - 1, $pAction, 1)
+		_GUICtrlListView_AddSubItem($pListView, $A - 1, $pDestination, 2)
+	Next
+	_GUICtrlListView_SetItemSelected($pListView, 0, False, False)
+	_GUICtrlListView_EndUpdate($pListView)
+
+	Return $pMainArray
+EndFunc   ;==>_Position_Populate
+
+Func _Position_GetDestination($pAction, $pDestination)
+	Local $pStringSplit
+	If $pAction == "$6" Then
+		Switch $pDestination
+			Case 2
+				$pDestination = __GetLang('DELETE_MODE_2', 'Safely Erase')
+			Case 3
+				$pDestination = __GetLang('DELETE_MODE_3', 'Send to Recycle Bin')
+			Case Else
+				$pDestination = __GetLang('DELETE_MODE_1', 'Directly Remove')
+		EndSwitch
+	ElseIf $pAction == "$8" Then
+		$pStringSplit = StringSplit($pDestination, "|")
+		$pDestination = $pStringSplit[1]
+	ElseIf $pAction == "$C" Then
+		$pStringSplit = StringSplit($pDestination, "|") ; Remove FTP Settings From The End Of The String.
+		$pDestination = $pStringSplit[1]
+		$pStringSplit = StringSplit($pStringSplit[2], ";")
+		$pDestination = $pStringSplit[1] & $pDestination
+	ElseIf $pAction == "$D" Then
+		$pDestination = __GetLang('CHANGE_PROPERTIES_DEFINED', 'Defined Properties')
+	ElseIf $pAction == "$E" Then
+		$pStringSplit = StringSplit($pDestination, ";")
+		ReDim $pStringSplit[13]
+		If $pStringSplit[8] <> "" Then
+			$pDestination = $pStringSplit[8] ; To Email Address.
+		Else
+			$pDestination = __GetLang('MAIL_SETTINGS_DEFINED', 'Defined Settings')
+		EndIf
+	EndIf
+	Return $pDestination
+EndFunc   ;==>_Position_GetDestination
+
+Func _Position_Process($pMainArray, $pProfile, $pElementsGUI)
+	Local $pFailed, $pLoadDll, $pFrom, $pTo, $pCounter, $pCurrentGroup, $pPreviousGroup = ""
+
+	$pLoadDll = 'Copy.dll'
+	If @AutoItX64 Then
+		$pLoadDll = 'Copy_x64.dll'
+	EndIf
+	If _Copy_OpenDll(@ScriptDir & '\Lib\copy\' & $pLoadDll) = 0 Then
+		Return SetError(1, 0, 0) ; Process Aborted.
+	EndIf
+
+	For $A = 1 To $pMainArray[0][0] + 1
+		_Sorting_CheckButtons($pMainArray)
+		If @error Then
+			_Copy_CloseDll()
+			Return SetError(1, 0, 0) ; Process Aborted.
+		EndIf
+
+		$pCurrentGroup = "end" ; To Process Also The Last Item.
+		If $A <= $pMainArray[0][0] Then
+			If $pMainArray[$A][3] == "$2" Then
+				$pMainArray[$A][5] = -1
+				GUICtrlSetData($pElementsGUI[0], __GetLang('ACTION_IGNORE', 'Ignore'))
+				_Sorting_UpdateGUI($pElementsGUI, 1, $pMainArray[$A][0]) ; Reset Single Progress Bar And Show Second Line.
+			ElseIf _GUICtrlListView_GetItemText($Global_ListViewProcess, $A - 1, 3) <> "" Then ; Item Skipped By The User.
+				$pMainArray[$A][5] = -1
+			EndIf
+			If $pMainArray[$A][5] == -1 Then
+				If $pMainArray[$A][4] = "" Then
+					$pMainArray[$A][4] = "-"
+				EndIf
+				_Position_SetResult($pMainArray, $A, $A, $Global_ListViewProcess, $pElementsGUI, -1)
+				$pMainArray[$A][5] = -9 ; To Do Not Process It Again In Group.
+				ContinueLoop
+			EndIf
+			$pCurrentGroup = $pMainArray[$A][3] & $pMainArray[$A][4] ; Unique String For Group = Action + Destination.
+			If $pMainArray[$A][3] == "$7" Then
+				$pCurrentGroup = $pMainArray[$A][3] & __GetParentFolder($pMainArray[$A][4]) ; To Support %Counter%.
+			EndIf
+		EndIf
+
+		If $pPreviousGroup <> $pCurrentGroup Then
+			$pTo = $A - 1 ; Last Item Of The Group.
+			If $pPreviousGroup <> "" Then ; Process Previous Group If Not Empty.
+				If _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI) = 1 Then ; 0 = OK, 1 = Failed.
+					$pFailed = 1 ; At Least One Item Failed.
+				EndIf
+				If @error Then
+					_Copy_CloseDll()
+					Return SetError(1, 0, 0) ; Process Aborted.
+				EndIf
+			EndIf
+			If $pCurrentGroup == "end" Then
+				ExitLoop ; Exit If The Previous Was The Last Item.
+			EndIf
+			$pPreviousGroup = $pCurrentGroup ; Start A New Group.
+			$pFrom = $A ; First Item Of The Group.
+			$pCounter = 0 ; Used For %Counter% Abbreviation.
+			GUICtrlSetData($pElementsGUI[0], __GetAssociationString($pMainArray[$A][3]))
+			_Sorting_UpdateGUI($pElementsGUI, 1, '') ; Reset Single Progress Bar And Show Second Line.
+		EndIf
+
+		_GUICtrlListView_AddSubItem($Global_ListViewProcess, $A - 1, __GetLang('POSITIONPROCESS_LOG_1', 'Loaded'), 3) ; Set ListView State To "Loaded".
+		__Log_Write(__GetLang('POSITIONPROCESS_LOG_1', 'Loaded'), $pMainArray[$A][0])
+		$pCounter += 1 ; Used For %Counter% Abbreviation.
+		If StringInStr($pMainArray[$A][4], "%") And StringInStr("$C" & "$D" & "$E", $pMainArray[$A][3]) = 0 Then
+			$pMainArray[$A][4] = StringReplace($pMainArray[$A][4], "%Counter%", StringFormat("%02d", $pCounter))
+		EndIf
+	Next
+	GUICtrlSetData($pElementsGUI[1], "")
+	_Copy_CloseDll()
+
+	Return $pFailed
+EndFunc   ;==>_Position_Process
+
+Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
+	Local $pFailed, $pResult
+
+	Switch $pMainArray[$pFrom][3]
+		Case "$3" ; Compress Action.
+			$pMainArray = _Sorting_CompressFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+
+		Case "$8" ; Create List Action.
+			$pMainArray = _Sorting_ListFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+
+		Case "$9" ; Create Playlist Action.
+			$pMainArray = _Sorting_PlaylistFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+
+		Case "$C" ; Upload Action.
+			$pMainArray = _Sorting_UploadFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+
+		Case "$E" ; Send by Mail Action.
+			$pMainArray = _Sorting_MailFile($pMainArray, $pFrom, $pTo, $pElementsGUI)
+
+		Case Else ; Single Process Actions.
+			For $A = $pFrom To $pTo
+				If $pMainArray[$A][5] = -9 Then ; Skip Already Processed Item.
+					ContinueLoop
+				EndIf
+				Switch $pMainArray[$pFrom][3]
+					Case "$4" ; Extract Action.
+						$pMainArray = _Sorting_ExtractFile($pMainArray, $A, $pElementsGUI, $pProfile)
+
+					Case "$5" ; Open With Action.
+						$pMainArray = _Sorting_OpenFile($pMainArray, $A, $pElementsGUI)
+
+					Case "$6" ; Delete Action.
+						$pMainArray = _Sorting_DeleteFile($pMainArray, $A, $pElementsGUI)
+
+					Case "$7" ; Rename Action.
+						$pMainArray = _Sorting_RenameFile($pMainArray, $A, $pElementsGUI, $pProfile)
+
+					Case "$A" ; Create Shortcut Action.
+						$pMainArray = _Sorting_ShortcutFile($pMainArray, $A, $pElementsGUI, $pProfile)
+
+					Case "$B" ; Copy To Clipboard Action.
+						$pMainArray = _Sorting_ClipboardFile($pMainArray, $A, $pElementsGUI)
+
+					Case "$D" ; Change Properties Action.
+						$pMainArray = _Sorting_ChangeFile($pMainArray, $A, $pElementsGUI)
+
+					Case Else ; Move Or Copy Action.
+						$pMainArray = _Sorting_CopyFile($pMainArray, $A, $pElementsGUI, $pProfile)
+
+				EndSwitch
+				If @extended = 1 Then ; Aborted.
+					Return SetError(1, 0, 0)
+				ElseIf @error = 1 Then ; Skipped.
+					$pResult = -1
+				ElseIf @error = 2 Then ; Failed.
+					$pResult = -2
+					$pFailed = 1 ; At Least One Item Failed.
+				Else ; OK.
+					$pResult = 0
+				EndIf
+				_Position_SetResult($pMainArray, $A, $A, $Global_ListViewProcess, $pElementsGUI, $pResult)
+			Next
+			Return $pFailed
+
+	EndSwitch
+
+	If @extended = 1 Then ; Aborted.
+		Return SetError(1, 0, 0)
+	ElseIf @error = 1 Then ; All Skipped.
+		$pResult = -1
+	ElseIf @error = 2 Then ; All Failed.
+		$pResult = -2
+		$pFailed = 1 ; At Least One Item Failed.
+	ElseIf @error = 3 Then ; Some Failed (Already Reported).
+		$pResult = 0
+		$pFailed = 1 ; At Least One Item Failed.
+	Else ; OK.
+		$pResult = 0
+	EndIf
+	_Position_SetResult($pMainArray, $pFrom, $pTo, $Global_ListViewProcess, $pElementsGUI, $pResult)
+	Return $pFailed
+EndFunc   ;==>_Position_ProcessGroup
+
+Func _Position_SetResult($pMainArray, $pFrom, $pTo, $pListView, $pElementsGUI, $pResult)
+	Local $pText, $pDestination, $pAction = $pMainArray[$pFrom][3]
+	$pDestination = _Position_GetDestination($pAction, $pMainArray[$pFrom][4])
+
+	If $pResult == 0 Then
+		$pText = __GetLang('OK', 'OK')
+		__Log_Write(__GetActionResult($pAction), $pDestination)
+	EndIf
+
+	For $A = $pFrom To $pTo
+		If $pMainArray[$A][5] <> -9 Then ; If Not Previously Processed.
+			If $pResult <> 0 Then
+				If $pResult == -1 Then
+					$pText = __GetLang('POSITIONPROCESS_LOGMSG_0', 'Skipped')
+				Else
+					$pText = __GetLang('POSITIONPROCESS_LOGMSG_2', 'Failed')
+				EndIf
+				__Log_Write($pText, $pMainArray[$A][0])
+			EndIf
+			_Sorting_UpdateGUI($pElementsGUI, 2) ; Complete Single Progress Bar.
+			_Sorting_UpdateGUI($pElementsGUI, 4, $pMainArray[$A][1]) ; Update General Progress Bar.
+			_GUICtrlListView_AddSubItem($pListView, $A - 1, $pDestination, 2)
+			_GUICtrlListView_AddSubItem($pListView, $A - 1, $pText, 3)
+			_GUICtrlListView_EnsureVisible($pListView, $A)
+			GUICtrlSetData($pElementsGUI[6], $A & " / " & $pMainArray[0][0]) ; Update Counter.
+		EndIf
+	Next
+
+	Return 1
+EndFunc   ;==>_Position_SetResult
+
+Func _Destination_Abbreviations($dDestination, $dFilePath, $dAction, $dMainDir, $dProfile)
+	Local $dLoadedProperty, $dExif, $dTimeArray[6]
+	Local $dProfileArray = __IsProfile($dProfile, 0) ; Get Array Of Selected Profile.
+	Local $dEnvArray[104][3] = [ _
+			[103, 0, 0], _
 			["FileExt", 0, 1], _
 			["FileName", 0, 2], _
 			["FileNameExt", 0, 3], _
@@ -3532,15 +4124,26 @@ Func _Position_Abbreviations($pDestination, $pFilePath, $pProfile)
 			["ProgramFiles", 6, @ProgramFilesDir], _
 			["Owner", 1, 8], _
 			["Authors", 1, 12], _
+			["Company", 1, 26], _
+			["Subject", 1, 19], _
+			["Category", 1, 20], _
 			["FileType", 1, 2], _
 			["Attributes", 1, 6], _
 			["Comments", 1, 21], _
 			["Copyright", 1, 22], _
 			["Duration", 5, 23], _
 			["BitRate", 1, 24], _
+			["CameraMaker", 1, 25], _
 			["CameraModel", 1, 11], _
 			["Dimensions", 1, 10], _
-			["Megapixels", 4, 10], _
+			["Megapixels", 4, 1], _
+			["ISO", 4, 2], _
+			["FNumber", 4, 3], _
+			["FocalLength", 4, 4], _
+			["ExposureTime", 4, 5], _
+			["ExposureTimeFraction", 4, 6], _
+			["ExposureBias", 4, 7], _
+			["Brightness", 4, 8], _
 			["SongAlbum", 1, 15], _
 			["SongArtist", 1, 13], _
 			["SongGenre", 1, 16], _
@@ -3601,712 +4204,575 @@ Func _Position_Abbreviations($pDestination, $pFilePath, $pProfile)
 			["MD4", 3, 2], _
 			["MD5", 3, 3], _
 			["SHA-1", 3, 4], _
-			["SHA1", 3, 4]]
+			["SHA1", 3, 4], _
+			["UserInput", 7, 0]]
 
-	For $A = 1 To $pEnvArray[0][0]
-		If StringRegExp($pDestination, "%" & $pEnvArray[$A][0] & "%|%" & $pEnvArray[$A][0] & "#(.*?)%") Then
-			Switch $pEnvArray[$A][1]
-				Case 0
-					Switch $pEnvArray[$A][2]
+	For $A = 1 To $dEnvArray[0][0]
+		If StringRegExp($dDestination, "%" & $dEnvArray[$A][0] & "%|%" & $dEnvArray[$A][0] & "#(.*?)%") Then
+			Switch $dEnvArray[$A][1]
+				Case 0 ; Specific Strings.
+					Switch $dEnvArray[$A][2]
 						Case 1
-							$pLoadedProperty = __GetFileExtension($pFilePath)
+							$dLoadedProperty = __GetFileExtension($dFilePath)
 						Case 2
-							$pLoadedProperty = __GetFileNameOnly($pFilePath)
+							$dLoadedProperty = __GetFileNameOnly($dFilePath)
 						Case 3
-							$pLoadedProperty = __GetFileName($pFilePath)
+							$dLoadedProperty = __GetFileName($dFilePath)
 						Case 4
-							$pLoadedProperty = __GetParentFolder($pFilePath)
+							$dLoadedProperty = __GetParentFolder($dFilePath)
 						Case 5
-							$pLoadedProperty = __GetFileName(__GetParentFolder($pFilePath))
+							$dLoadedProperty = __GetFileName(__GetParentFolder($dFilePath))
 						Case 6
-							$pLoadedProperty = StringLeft(@ScriptFullPath, 2) ; Drive Letter [C:].
+							$dLoadedProperty = StringLeft(@ScriptFullPath, 2) ; Drive Letter [C:].
 						Case 7
-							$pLoadedProperty = StringTrimLeft(__GetParentFolder($pFilePath), StringLen($Global_MainDir))
+							$dLoadedProperty = StringTrimLeft(__GetParentFolder($dFilePath), StringLen($dMainDir))
 						Case 8
-							$pLoadedProperty = $pProfileArray[1]
+							$dLoadedProperty = $dProfileArray[1]
 					EndSwitch
-				Case 1
-					$pLoadedProperty = __GetFileProperties($pFilePath, $pEnvArray[$A][2])
-				Case 2
-					If $pEnvArray[$A][2] = 3 Then
-						$pLoadedProperty = StringRegExpReplace(_ImageGetParam(_ImageGetInfo($pFilePath), "DateTimeOriginal"), "[^0-9]", "")
-						If StringIsDigit($pLoadedProperty) Then
-							$pTimeArray[0] = StringLeft($pLoadedProperty, 4)
-							$pTimeArray[1] = StringRight(StringLeft($pLoadedProperty, 6), 2)
-							$pTimeArray[2] = StringRight(StringLeft($pLoadedProperty, 8), 2)
-							$pTimeArray[3] = StringLeft(StringRight($pLoadedProperty, 6), 2)
-							$pTimeArray[4] = StringLeft(StringRight($pLoadedProperty, 4), 2)
-							$pTimeArray[5] = StringRight($pLoadedProperty, 2)
+				Case 1 ; From Windows Explorer.
+					$dLoadedProperty = __GetFileProperties($dFilePath, $dEnvArray[$A][2])
+				Case 2 ; Date And Time.
+					If $dEnvArray[$A][2] = 3 Then
+						$dLoadedProperty = StringRegExpReplace(_ImageGetParam(_ImageGetInfo($dFilePath), "DateTimeOriginal"), "[^0-9]", "")
+						If StringIsDigit($dLoadedProperty) Then
+							$dTimeArray[0] = StringLeft($dLoadedProperty, 4)
+							$dTimeArray[1] = StringRight(StringLeft($dLoadedProperty, 6), 2)
+							$dTimeArray[2] = StringRight(StringLeft($dLoadedProperty, 8), 2)
+							$dTimeArray[3] = StringLeft(StringRight($dLoadedProperty, 6), 2)
+							$dTimeArray[4] = StringLeft(StringRight($dLoadedProperty, 4), 2)
+							$dTimeArray[5] = StringRight($dLoadedProperty, 2)
 						Else
 							SetError(1, 0, 0)
 						EndIf
 					Else
-						$pTimeArray = FileGetTime($pFilePath, $pEnvArray[$A][2])
+						$dTimeArray = FileGetTime($dFilePath, $dEnvArray[$A][2])
 					EndIf
-					$pLoadedProperty = ""
+					$dLoadedProperty = ""
 					If @error = 0 Then
-						If StringInStr($pEnvArray[$A][0], "Date") Then
-							$pLoadedProperty = $pTimeArray[0] & "-" & $pTimeArray[1] & "-" & $pTimeArray[2] ; YYYY-MM-DD.
-						ElseIf StringInStr($pEnvArray[$A][0], "Time") Then
-							$pLoadedProperty = $pTimeArray[3] & "." & $pTimeArray[4] ; HH.MM.
-						ElseIf StringInStr($pEnvArray[$A][0], "Year") Then
-							$pLoadedProperty = $pTimeArray[0] ; YYYY.
-						ElseIf StringInStr($pEnvArray[$A][0], "MonthName") Then
-							$pLoadedProperty = __Locale_MonthName($pTimeArray[1], 0) ; [November].
-						ElseIf StringInStr($pEnvArray[$A][0], "MonthShort") Then
-							$pLoadedProperty = __Locale_MonthName($pTimeArray[1], 1) ; [Nov].
-						ElseIf StringInStr($pEnvArray[$A][0], "Month") Then
-							$pLoadedProperty = $pTimeArray[1] ; MM.
-						ElseIf StringInStr($pEnvArray[$A][0], "Day") Then
-							$pLoadedProperty = $pTimeArray[2] ; DD.
-						ElseIf StringInStr($pEnvArray[$A][0], "Hour") Then
-							$pLoadedProperty = $pTimeArray[3] ; HH.
-						ElseIf StringInStr($pEnvArray[$A][0], "Minute") Then
-							$pLoadedProperty = $pTimeArray[4] ; MM.
-						ElseIf StringInStr($pEnvArray[$A][0], "Second") Then
-							$pLoadedProperty = $pTimeArray[5] ; SS.
+						If StringInStr($dEnvArray[$A][0], "Date") Then
+							$dLoadedProperty = $dTimeArray[0] & "-" & $dTimeArray[1] & "-" & $dTimeArray[2] ; YYYY-MM-DD.
+						ElseIf StringInStr($dEnvArray[$A][0], "Time") Then
+							$dLoadedProperty = $dTimeArray[3] & "." & $dTimeArray[4] ; HH.MM.
+						ElseIf StringInStr($dEnvArray[$A][0], "Year") Then
+							$dLoadedProperty = $dTimeArray[0] ; YYYY.
+						ElseIf StringInStr($dEnvArray[$A][0], "MonthName") Then
+							$dLoadedProperty = __Locale_MonthName($dTimeArray[1], 0) ; [November].
+						ElseIf StringInStr($dEnvArray[$A][0], "MonthShort") Then
+							$dLoadedProperty = __Locale_MonthName($dTimeArray[1], 1) ; [Nov].
+						ElseIf StringInStr($dEnvArray[$A][0], "Month") Then
+							$dLoadedProperty = $dTimeArray[1] ; MM.
+						ElseIf StringInStr($dEnvArray[$A][0], "Day") Then
+							$dLoadedProperty = $dTimeArray[2] ; DD.
+						ElseIf StringInStr($dEnvArray[$A][0], "Hour") Then
+							$dLoadedProperty = $dTimeArray[3] ; HH.
+						ElseIf StringInStr($dEnvArray[$A][0], "Minute") Then
+							$dLoadedProperty = $dTimeArray[4] ; MM.
+						ElseIf StringInStr($dEnvArray[$A][0], "Second") Then
+							$dLoadedProperty = $dTimeArray[5] ; SS.
 						EndIf
 					EndIf
-				Case 3
-					Switch $pEnvArray[$A][2]
+				Case 3 ; Hash.
+					Switch $dEnvArray[$A][2]
 						Case 1
-							$pLoadedProperty = __CRC32ForFile($pFilePath)
+							$dLoadedProperty = __CRC32ForFile($dFilePath)
 						Case 2
-							$pLoadedProperty = __MD4ForFile($pFilePath)
+							$dLoadedProperty = __MD4ForFile($dFilePath)
 						Case 3
-							$pLoadedProperty = __MD5ForFile($pFilePath)
+							$dLoadedProperty = __MD5ForFile($dFilePath)
 						Case 4
-							$pLoadedProperty = __SHA1ForFile($pFilePath)
+							$dLoadedProperty = __SHA1ForFile($dFilePath)
 					EndSwitch
-				Case 4 ; Only Megapixels.
-					$pLoadedProperty = StringRegExpReplace(__GetFileProperties($pFilePath, $pEnvArray[$A][2]), "[^[:alnum:]]", "")
-					$pStringSplit = StringSplit($pLoadedProperty, "x")
-					$pLoadedProperty = ""
-					If $pStringSplit[0] = 2 Then
-						$pLoadedProperty = Round($pStringSplit[1] * $pStringSplit[2] / 1000000, 1)
+				Case 4 ; Exif.
+					$dLoadedProperty = ""
+					$dExif = _ImageGetInfo($dFilePath)
+					If @error = 0 Then
+						Switch $dEnvArray[$A][2]
+							Case 1
+								$dLoadedProperty = Round(_ImageGetParam($dExif, "Width") * _ImageGetParam($dExif, "Height") / 1000000, 1)
+							Case 2
+								$dLoadedProperty = _ImageGetParam($dExif, "ISO")
+							Case 3
+								$dLoadedProperty = _ImageGetParam($dExif, "FNumber")
+							Case 4
+								$dLoadedProperty = Round(_ImageGetParam($dExif, "FocalLength"), 1)
+							Case 5
+								$dLoadedProperty = Round(_ImageGetParam($dExif, "ExposureTime"), 5)
+							Case 6
+								$dLoadedProperty = Round(1 / _ImageGetParam($dExif, "ExposureTime"))
+							Case 7
+								$dLoadedProperty = Round(_ImageGetParam($dExif, "ExposureBiasValue"), 1)
+							Case 8
+								$dLoadedProperty = Round(_ImageGetParam($dExif, "BrightnessValue"), 2)
+						EndSwitch
 					EndIf
-				Case 5 ; Only Duration.
-					$pLoadedProperty = StringReplace(__GetFileProperties($pFilePath, $pEnvArray[$A][2]), ":", ".")
-				Case 6
-					$pLoadedProperty = $pEnvArray[$A][2]
+				Case 5 ; Duration.
+					$dLoadedProperty = StringReplace(__GetFileProperties($dFilePath, $dEnvArray[$A][2]), ":", ".")
+				Case 6 ; Preloaded Value.
+					$dLoadedProperty = $dEnvArray[$A][2]
+				Case 7 ; User Input.
+					$dLoadedProperty = _Destination_UserInput($dDestination, __GetFileName($dFilePath), $dAction)
 			EndSwitch
-			If $pLoadedProperty == "" And $pEnvArray[$A][0] <> "SubDir" Then
-				$pLoadedProperty = $pEnvArray[$A][0]
+			If $dLoadedProperty == "" And $dEnvArray[$A][0] <> "SubDir" Then
+				$dLoadedProperty = $dEnvArray[$A][0]
 			EndIf
-			$pDestination = _Modifier_StringReplaceModifier($pDestination, $pEnvArray[$A][0], $pLoadedProperty)
+			$dDestination = _Modifier_StringReplaceModifier($dDestination, $dEnvArray[$A][0], $dLoadedProperty)
 		EndIf
 	Next
 
-	Return $pDestination
-EndFunc   ;==>_Position_Abbreviations
+	Return $dDestination
+EndFunc   ;==>_Destination_Abbreviations
 
-Func _Position_Load($pFilePath, $pProfile, $pFailedList, $pElementsGUI, $pMonitored = 0)
-	Local $pSearch, $pFileName, $pFailedFile, $pSize, $pMultiplePosition = 0, $pWildcards = ""
-
-	If _WinAPI_PathIsDirectory($pFilePath) Then
-		If __Is("DirForFolders", -1, "False", $pProfile) = 0 Then
-			$pMultiplePosition = 1
-			$pWildcards = "*.*"
-		ElseIf $pMonitored Then
-			$pMultiplePosition = 2
-			$pWildcards = "*.*"
-		EndIf
-	Else
-		$pFileName = __GetFileName($pFilePath) ; File Or Folder Name.
-		If StringInStr($pFileName, "*") Then
-			$pMultiplePosition = 1
-			$pWildcards = $pFileName
-			$pFilePath = __GetParentFolder($pFilePath) ; Parent Path.
+Func _Destination_CreateDir($dDestination)
+	If __GetFileExtension($dDestination) <> "" Then
+		$dDestination = __GetParentFolder($dDestination)
+	EndIf
+	If FileExists($dDestination) = 0 And $dDestination <> "" Then
+		If DirCreate($dDestination) = 0 Then
+			MsgBox(0x40, __GetLang('POSITIONPROCESS_MSGBOX_3', 'Destination Folder Problem'), __GetLang('POSITIONPROCESS_MSGBOX_5', 'The following destination folder does not exist and cannot be created:') & @LF & _WinAPI_PathCompactPathEx($dDestination, 70), 0, __OnTop())
+			Return SetError(1, 0, 0) ; Failed.
 		EndIf
 	EndIf
+	Return 1
+EndFunc   ;==>_Destination_CreateDir
 
-	If $pMultiplePosition > 0 Then
-		$pSearch = FileFindFirstFile($pFilePath & "\" & $pWildcards) ; Load Files.
-		While 1
-			$pFileName = FileFindNextFile($pSearch)
-			If @error Then
-				ExitLoop
-			EndIf
-			If _WinAPI_PathIsDirectory($pFilePath & "\" & $pFileName) = 0 Or $pMultiplePosition = 2 Then
-				$pFailedFile = _Position_Process($pFilePath & "\" & $pFileName, $pProfile, $pElementsGUI) ; If Selected Is Not A Directory Then Process The File.
-				If @error Then
-					$pSize = @extended
-					If $pSize > 0 Then
-						_Sorting_UpdateGUI($pElementsGUI, 2, $pSize) ; Force Update Progress Bar.
-					EndIf
-					Switch $pFailedFile
-						Case 1
-							__Log_Write(__GetLang('POSITIONPROCESS_LOG_2', 'Not Sorted'), __GetLang('POSITIONPROCESS_LOGMSG_0', 'Skipped'))
-						Case 0
-							__Log_Write(__GetLang('POSITIONPROCESS_LOG_2', 'Not Sorted'), __GetLang('POSITIONPROCESS_LOGMSG_1', 'Aborted'))
-							FileClose($pSearch)
-							Return SetError(1, 0, $pFailedList) ; Immediately Return If Sorting Aborted.
-						Case Else
-							__Log_Write(__GetLang('POSITIONPROCESS_LOG_2', 'Not Sorted'), __GetLang('POSITIONPROCESS_LOGMSG_2', 'Failed'))
-							$pFailedList[0] += 1
-							ReDim $pFailedList[$pFailedList[0] + 1]
-							$pFailedList[$pFailedList[0]] = $pFailedFile
-					EndSwitch
-				EndIf
-			EndIf
-		WEnd
-		FileClose($pSearch)
-		If __Is("ScanSubfolders") Then
-			$pSearch = FileFindFirstFile($pFilePath & "\" & $pWildcards) ; Load Folders.
-			While 1
-				$pFileName = FileFindNextFile($pSearch)
-				If @error Then
-					ExitLoop
-				EndIf
-				If _WinAPI_PathIsDirectory($pFilePath & "\" & $pFileName) Then
-					$pFailedList = _Position_Load($pFilePath & "\" & $pFileName, $pProfile, $pFailedList, $pElementsGUI) ; If Selected Is A Directory Then Process The Directory.
-					If @error Then ; _Position_Load() Returns Error Only If Aborted.
-						FileClose($pSearch)
-						Return SetError(1, 0, $pFailedList) ; Immediately Return If Sorting Aborted.
-					EndIf
-				EndIf
-			WEnd
-			FileClose($pSearch)
-		EndIf
-	Else
-		$pFailedFile = _Position_Process($pFilePath, $pProfile, $pElementsGUI)
-		If @error Then
-			$pSize = @extended
-			If $pSize > 0 Then
-				_Sorting_UpdateGUI($pElementsGUI, 2, $pSize) ; Force Update Progress Bar.
-			EndIf
-			Switch $pFailedFile
-				Case 1
-					__Log_Write(__GetLang('POSITIONPROCESS_LOG_2', 'Not Sorted'), __GetLang('POSITIONPROCESS_LOGMSG_0', 'Skipped'))
-				Case 0
-					__Log_Write(__GetLang('POSITIONPROCESS_LOG_2', 'Not Sorted'), __GetLang('POSITIONPROCESS_LOGMSG_1', 'Aborted'))
-					FileClose($pSearch)
-					Return SetError(1, 0, $pFailedList) ; Immediately Return If Sorting Aborted.
-				Case Else
-					__Log_Write(__GetLang('POSITIONPROCESS_LOG_2', 'Not Sorted'), __GetLang('POSITIONPROCESS_LOGMSG_2', 'Failed'))
-					$pFailedList[0] += 1
-					ReDim $pFailedList[$pFailedList[0] + 1]
-					$pFailedList[$pFailedList[0]] = $pFailedFile
-			EndSwitch
-		EndIf
+Func _Destination_Fix($dFilePath, $dDestination, $dAction, $dMainDir, $dProfile)
+
+	; Fix Destination For Rename Action:
+	If $dAction == "$7" And _WinAPI_PathIsDirectory($dFilePath) Then
+		$dDestination = StringReplace($dDestination, ".%FileExt%", "") ; Remove File Extension Environment Variable.
+		$dDestination = StringReplace($dDestination, "%FileExt%", "") ; Remove File Extension Environment Variable.
+		$dDestination = StringReplace($dDestination, "%FileName%", "%FileNameExt%") ; To Correctly Load Name.
 	EndIf
 
-	Return $pFailedList
-EndFunc   ;==>_Position_Load
+	; Substitute Abbreviations:
+	If StringInStr($dDestination, "%") And StringInStr("$C" & "$D" & "$E", $dAction) = 0 Then
+		$dDestination = _Destination_Abbreviations($dDestination, $dFilePath, $dAction, $dMainDir, $dProfile)
+	EndIf
 
-Func _Position_MailMessage($pFilePath, $pSettings)
-	Local $pGUI, $pSave, $pCancel, $pStringSplit, $pText, $pInput_Array[6], $pError = 0
+	; Update Destination For Compress, Create Shortcut Actions:
+	If $dAction == "$3" And __GetFileExtension($dDestination) == "" Then
+		$dDestination &= "\" & __GetFileNameOnly(__GetFileName($dFilePath)) & ".zip" ; To Work Also If Destination Is A Directory.
+	ElseIf $dAction == "$A" Then
+		$dDestination &= "\" & __GetFileName($dFilePath) & " - " & __GetLang('SHORTCUT', 'shortcut') & ".lnk"
+	EndIf
 
-	$pStringSplit = StringSplit($pSettings, ";") ; 1 = Server, 2 = Port, 3 = SSL, 4 = Name, 5 = FromEmail, 6 = User, 7 = Password, 8 = ToEmail, 9 = Cc, 10 = Bcc, 11 = Subject, 12 = Body.
-	ReDim $pStringSplit[13] ; Number Of Settings.
+	; Fix Relative Destination For Move, Copy, Compress, Rename, Create List, Create Playlist, Create Shortcut Actions:
+	If StringInStr("$0" & "$1" & "$3" & "$4" & "$7" & "$8" & "$9" & "$A", $dAction) And StringInStr(StringLeft($dDestination, 2), "\\") = 0 And StringInStr(StringLeft($dDestination, 2), ":") = 0 Then
+		$dDestination = _WinAPI_GetFullPathName(__GetParentFolder($dFilePath) & "\" & $dDestination)
+	EndIf
+
+	Return $dDestination
+EndFunc   ;==>_Destination_Fix
+
+Func _Destination_MailMessage($dFileNames, $dSettings)
+	Local $dGUI, $dSave, $dCancel, $dStringSplit, $dText, $dInput_Array[6], $dError = 0
+
+	__ExpandEventMode(0) ; Disable Event Buttons.
+	$dStringSplit = StringSplit($dSettings, ";") ; 1 = Server, 2 = Port, 3 = SSL, 4 = Name, 5 = FromEmail, 6 = User, 7 = Password, 8 = ToEmail, 9 = Cc, 10 = Bcc, 11 = Subject, 12 = Body.
+	ReDim $dStringSplit[13] ; Number Of Settings.
 	For $A = 8 To 12
-		If $pStringSplit[$A] <> "" Then
-			$pStringSplit[$A] = StringReplace($pStringSplit[$A], "/n>>", @CRLF)
-			$pStringSplit[$A] = StringReplace($pStringSplit[$A], "/d>>", ";")
-			$pStringSplit[$A] = StringReplace($pStringSplit[$A], "/b>>", "|")
+		If $dStringSplit[$A] <> "" Then
+			$dStringSplit[$A] = StringReplace($dStringSplit[$A], "/n>>", @CRLF)
+			$dStringSplit[$A] = StringReplace($dStringSplit[$A], "/d>>", ";")
+			$dStringSplit[$A] = StringReplace($dStringSplit[$A], "/b>>", "|")
 		EndIf
 	Next
 
-	$pGUI = GUICreate(__GetLang('ACTION_SEND_MAIL', 'Send by Mail'), 400, 360, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
-	GUICtrlCreateGraphic(0, 0, 400, 74)
-	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlSetColor(-1, 0xffffff)
+	$dGUI = GUICreate(__GetLang('ACTION_SEND_MAIL', 'Send by Mail') & " - " & $dStringSplit[5], 400, 410, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
 
-	GUICtrlCreateLabel(__GetLang('MOREMATCHES_LABEL_0', 'Loaded item:'), 10, 12, 400, 18)
-	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlCreateLabel(__GetFileName($pFilePath), 12, 12 + 18, 396, 40)
-	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlSetFont(-1, -1, 800)
+	GUICtrlCreateLabel(__GetLang('MOREMATCHES_LABEL_0', 'Loaded item:'), 10, 10, 380, 20)
+	GUICtrlCreateEdit($dFileNames, 10, 30, 380, 52, $ES_READONLY + $WS_VSCROLL)
+	GUICtrlCreateLabel(__GetLang('TO', 'To') & ":", 10, 90 + 10, 380, 20)
+	$dInput_Array[1] = GUICtrlCreateInput($dStringSplit[8], 10, 90 + 30, 380, 22)
+	GUICtrlCreateLabel(__GetLang('MANAGE_MAIL_LABEL_3', 'Cc') & ":", 10, 90 + 60 + 10, 190, 20)
+	$dInput_Array[2] = GUICtrlCreateInput($dStringSplit[9], 10, 90 + 60 + 30, 185, 22)
+	GUICtrlCreateLabel(__GetLang('MANAGE_MAIL_LABEL_4', 'Bcc') & ":", 10 + 195, 90 + 60 + 10, 190, 20)
+	$dInput_Array[3] = GUICtrlCreateInput($dStringSplit[10], 10 + 195, 90 + 60 + 30, 185, 22)
+	GUICtrlCreateLabel(__GetLang('MANAGE_MAIL_LABEL_5', 'Subject') & ":", 10, 90 + 120 + 10, 300, 20)
+	$dInput_Array[4] = GUICtrlCreateInput($dStringSplit[11], 10, 90 + 120 + 30, 380, 22)
+	GUICtrlCreateLabel(__GetLang('MANAGE_MAIL_LABEL_6', 'Body') & ":", 10, 90 + 180 + 10, 300, 20)
+	$dInput_Array[5] = GUICtrlCreateEdit($dStringSplit[12], 10, 90 + 180 + 30, 380, 60, BitOR($WS_VSCROLL, $ES_AUTOVSCROLL, $ES_WANTRETURN))
 
-	GUICtrlCreateLabel(__GetLang('TO', 'To') & ":", 10, 60 + 22, 300, 20)
-	$pInput_Array[1] = GUICtrlCreateInput($pStringSplit[8], 10, 60 + 40, 380, 22)
-	GUICtrlCreateLabel(__GetLang('MANAGE_MAIL_LABEL_3', 'Cc') & ":", 10, 60 + 22 + 50, 190, 20)
-	$pInput_Array[2] = GUICtrlCreateInput($pStringSplit[9], 10, 60 + 40 + 50, 185, 22)
-	GUICtrlCreateLabel(__GetLang('MANAGE_MAIL_LABEL_4', 'Bcc') & ":", 10 + 195, 60 + 22 + 50, 190, 20)
-	$pInput_Array[3] = GUICtrlCreateInput($pStringSplit[10], 10 + 195, 60 + 40 + 50, 185, 22)
-	GUICtrlCreateLabel(__GetLang('MANAGE_MAIL_LABEL_5', 'Subject') & ":", 10, 60 + 22 + 100, 300, 20)
-	$pInput_Array[4] = GUICtrlCreateInput($pStringSplit[11], 10, 60 + 40 + 100, 380, 22)
-	GUICtrlCreateLabel(__GetLang('MANAGE_MAIL_LABEL_6', 'Body') & ":", 10, 60 + 22 + 150, 300, 20)
-	$pInput_Array[5] = GUICtrlCreateEdit($pStringSplit[12], 10, 60 + 40 + 150, 380, 60, BitOR($WS_VSCROLL, $ES_AUTOVSCROLL, $ES_WANTRETURN))
-
-	$pSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 200 - 70 - 85, 325, 85, 24)
-	$pCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 200 + 70, 325, 85, 24)
-	GUICtrlSetState($pSave, $GUI_DEFBUTTON)
+	$dSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 200 - 60 - 85, 375, 85, 24)
+	$dCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 200 + 60, 375, 85, 24)
+	GUICtrlSetState($dSave, $GUI_DEFBUTTON)
 	GUISetState(@SW_SHOW)
 
 	While 1
 		; Enable/Disable Save Button:
-		If GUICtrlRead($pInput_Array[1]) <> "" Then
-			If GUICtrlGetState($pSave) > 80 Then
-				GUICtrlSetState($pSave, 576) ; $GUI_ENABLE + $GUI_DEFBUTTON.
+		If GUICtrlRead($dInput_Array[1]) <> "" Then
+			If GUICtrlGetState($dSave) > 80 Then
+				GUICtrlSetState($dSave, 576) ; $GUI_ENABLE + $GUI_DEFBUTTON.
 			EndIf
-			If GUICtrlGetState($pCancel) = 512 Then
-				GUICtrlSetState($pCancel, 80) ; $GUI_ENABLE + $GUI_SHOW.
+			If GUICtrlGetState($dCancel) = 512 Then
+				GUICtrlSetState($dCancel, 80) ; $GUI_ENABLE + $GUI_SHOW.
 			EndIf
-		ElseIf GUICtrlRead($pInput_Array[1]) = "" Then
-			If GUICtrlGetState($pSave) = 80 Then
-				GUICtrlSetState($pSave, 144) ; $GUI_DISABLE + $GUI_SHOW.
+		ElseIf GUICtrlRead($dInput_Array[1]) = "" Then
+			If GUICtrlGetState($dSave) = 80 Then
+				GUICtrlSetState($dSave, 144) ; $GUI_DISABLE + $GUI_SHOW.
 			EndIf
-			If GUICtrlGetState($pCancel) = 80 Then
-				GUICtrlSetState($pCancel, 512) ; $GUI_DEFBUTTON.
+			If GUICtrlGetState($dCancel) = 80 Then
+				GUICtrlSetState($dCancel, 512) ; $GUI_DEFBUTTON.
 			EndIf
 		EndIf
 
 		Switch GUIGetMsg()
-			Case $GUI_EVENT_CLOSE, $pCancel
-				$pError = 1
+			Case $GUI_EVENT_CLOSE, $dCancel
+				$dError = 1
 				ExitLoop
 
-			Case $pSave
-				$pSettings = ""
+			Case $dSave
+				$dSettings = ""
 				For $A = 1 To 7
-					$pSettings &= $pStringSplit[$A] & ";"
+					$dSettings &= $dStringSplit[$A] & ";"
 				Next
 				For $A = 1 To 5
-					$pText = GUICtrlRead($pInput_Array[$A])
-					If $pText <> "" Then
-						$pText = StringReplace($pText, @CRLF, "/n>>")
-						$pText = StringReplace($pText, ";", "/d>>")
-						$pText = StringReplace($pText, "|", "/b>>")
+					$dText = GUICtrlRead($dInput_Array[$A])
+					If $dText <> "" Then
+						$dText = StringReplace($dText, @CRLF, "/n>>")
+						$dText = StringReplace($dText, ";", "/d>>")
+						$dText = StringReplace($dText, "|", "/b>>")
 					EndIf
-					$pSettings &= $pText
+					$dSettings &= $dText
 					If $A < 5 Then
-						$pSettings &= ";"
+						$dSettings &= ";"
 					EndIf
 				Next
 				ExitLoop
 
 		EndSwitch
 	WEnd
-	GUIDelete($pGUI)
+	GUIDelete($dGUI)
+	__ExpandEventMode(1) ; Enable Event Buttons.
 
-	Return SetError($pError, 0, $pSettings)
-EndFunc   ;==>_Position_MailMessage
+	Return SetError($dError, 0, $dSettings)
+EndFunc   ;==>_Destination_MailMessage
 
-Func _Position_OpenedFiles($pFilePath, $pProfile)
-	Local $pNewFilePath = ""
+Func _Destination_UserInput($dDestination, $dFilePath, $dAction)
+	Local $dGUI, $dSave, $dCancel, $dCheckForAll, $dText, $dInput
 
-	If $Global_OpenedFiles[0][0] > 0 Then
-		For $A = 1 To $Global_OpenedFiles[0][0]
-			If $pFilePath = $Global_OpenedFiles[$A][0] Then
-				$pNewFilePath = $Global_OpenedFiles[$A][1] ; Load Opened File Name Of This Drop.
+	If $Global_UserInput <> "" Then
+		Return $Global_UserInput
+	EndIf
+	$dDestination = _Position_GetDestination($dAction, $dDestination)
+
+	__ExpandEventMode(0) ; Disable Event Buttons.
+	$dGUI = GUICreate(__GetLang('USERINPUT_0', 'Define Abbreviation Value'), 400, 280, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
+	GUICtrlCreateLabel(__GetLang('MOREMATCHES_LABEL_0', 'Loaded item:'), 10, 10, 380, 20)
+	GUICtrlCreateEdit($dFilePath, 10, 30, 380, 52, $ES_READONLY + $WS_VSCROLL)
+	GUICtrlCreateLabel(__GetLang('DESTINATION', 'Destination') & ":", 10, 90 + 10, 380, 20)
+	GUICtrlCreateInput($dDestination, 10, 90 + 30, 380, 22, BitOR($ES_READONLY, $ES_AUTOHSCROLL))
+	GUICtrlCreateLabel(__GetLang('USERINPUT_1', 'Replace %UserInput% with', 1) & ":", 10, 90 + 60 + 10, 380, 20)
+	$dInput = GUICtrlCreateInput("", 10, 90 + 60 + 30, 380, 22)
+
+	$dSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 200 - 60 - 85, 220, 85, 24)
+	$dCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 200 + 60, 220, 85, 24)
+	GUICtrlSetState($dSave, $GUI_DEFBUTTON)
+	$dCheckForAll = GUICtrlCreateCheckbox(__GetLang('USERINPUT_2', 'Apply to all %UserInput% abbreviations of this drop', 1), 10, 255, 380, 20)
+	GUISetState(@SW_SHOW)
+
+	While 1
+		Switch GUIGetMsg()
+			Case $GUI_EVENT_CLOSE, $dCancel
 				ExitLoop
-			EndIf
-		Next
+
+			Case $dSave
+				$dText = GUICtrlRead($dInput)
+				ExitLoop
+
+		EndSwitch
+	WEnd
+	If GUICtrlRead($dCheckForAll) = 1 Then
+		$Global_UserInput = $dText
 	EndIf
-	If $pNewFilePath = "" Then ; Opening File Now.
-		$Global_OpenedFiles[0][0] += 1
-		ReDim $Global_OpenedFiles[$Global_OpenedFiles[0][0] + 1][2]
-		$Global_OpenedFiles[$Global_OpenedFiles[0][0]][0] = $pFilePath ; Original Opened File Name.
-		$pNewFilePath = $pFilePath
-		If FileExists($pNewFilePath) Then
-			$pNewFilePath = __GetParentFolder($pFilePath) & "\" & __Duplicate_Process($pProfile, -1, $pNewFilePath)
-			Switch @error
-				Case 1 ; To Skip Also All Next Files.
-					$pNewFilePath = "###"
-				Case 2 ; To Overwrite Destination File.
-					FileDelete($pFilePath)
-			EndSwitch
+	GUIDelete($dGUI)
+	__ExpandEventMode(1) ; Enable Event Buttons.
+
+	Return $dText
+EndFunc   ;==>_Destination_UserInput
+
+Func _Sorting_CheckButtons($sMainArray, $sIsCopying = 0)
+	If $G_Global_PauseSorting Then
+		If $sIsCopying Then
+			_Copy_Pause(True)
 		EndIf
-		$Global_OpenedFiles[$Global_OpenedFiles[0][0]][1] = $pNewFilePath
-	EndIf
-
-	If $pNewFilePath = "###" Then
-		Return SetError(2, 0, 0) ; Skipped.
-	EndIf
-	Return $pNewFilePath
-EndFunc   ;==>_Position_OpenedFiles
-
-Func _Position_Process($pFilePath, $pProfile, $pElementsGUI)
-	Local $pFileName, $pFileExtension, $pSize, $pIsDirectory, $pDestination, $pNewDestination, $pStringSplit, $pSortFailed
-
-	$pFilePath = _WinAPI_PathRemoveBackslash($pFilePath)
-	If _WinAPI_PathIsDirectory($pFilePath) Then
-		$pIsDirectory = 1
-	EndIf
-	If $pIsDirectory Then
-		$pSize = DirGetSize($pFilePath)
-		__Log_Write(__GetLang('POSITIONPROCESS_LOG_0', 'Folder Loaded'), $pFilePath)
-	Else
-		$pFileExtension = __GetFileExtension($pFilePath)
-		$pSize = FileGetSize($pFilePath)
-		__Log_Write(__GetLang('POSITIONPROCESS_LOG_1', 'File Loaded'), $pFilePath)
-	EndIf
-	$pFileName = __GetFileName($pFilePath)
-	_Sorting_UpdateGUI($pElementsGUI, 1, $pFilePath) ; Show Processed File/Folder.
-	GUICtrlSetData($pElementsGUI[1], __GetLang('POSITIONPROCESS_1', 'Loading') & '...')
-
-	; Check Association Matches:
-	$pDestination = _Matches_Checking($pFileName, $pFilePath, $pIsDirectory, $pProfile) ; Destination If OK, 0 To Associate, -1 To Skip.
-	If $pDestination == 0 Then
-		If __Is("IgnoreNew", -1, "False", $pProfile) Then
-			Return SetError(1, $pSize, 1) ; 1 = Skipped.
-		Else
-			Switch MsgBox(0x03, __GetLang('POSITIONPROCESS_MSGBOX_0', 'Association Needed'), __GetLang('POSITIONPROCESS_MSGBOX_1', 'No association found for:') & @LF & $pFilePath & @LF & @LF & __GetLang('POSITIONPROCESS_MSGBOX_2', 'Do you want to create an association for it?'), 0, __OnTop())
-				Case 6 ; Yes.
-					If _Manage_Edit_GUI($pProfile, __GetFileNameOnly($pFileName), $pFileExtension, -1, -1, -1, -1, 1, 1) <> 0 Then ; _Manage_Edit_GUI() = Show Manage Edit GUI Of Selected Association.
-						$pDestination = _Matches_Checking($pFileName, $pFilePath, $pIsDirectory, $pProfile) ; Destination If OK, 0 To Abort, -1 To Skip.
-					EndIf
-				Case 7 ; No.
-					$pDestination = -1
-				Case Else ; Abort.
-					$pDestination = 0
-			EndSwitch
+		_Sorting_Pause($sMainArray)
+		If $sIsCopying Then
+			_Copy_Pause(False)
 		EndIf
 	EndIf
-	If $pDestination == 0 Or $pDestination == -1 Or $pDestination = "" Then
-		If $pDestination == -1 Then
-			Return SetError(1, $pSize, 1) ; 1 = Skipped.
-		Else
-			Return SetError(1, $pSize, 0) ; 0 = Aborted.
-		EndIf
+	If $G_Global_AbortSorting Then
+		Return SetError(1, 0, 0)
 	EndIf
-
-	; Show Sorting GUI Only If Needed:
-	If __Is("ShowSorting", -1, "True", $pProfile) Then
-		GUISetState(@SW_SHOWNOACTIVATE, $G_Global_SortingGUI)
-	EndIf
-
-	; Fix Destination For Rename Action:
-	If $Global_Action == "$7" And $pIsDirectory Then
-		$pDestination = StringReplace($pDestination, ".%FileExt%", "") ; Remove File Extension Environment Variable.
-		$pDestination = StringReplace($pDestination, "%FileExt%", "") ; Remove File Extension Environment Variable.
-		$pDestination = StringReplace($pDestination, "%FileName%", "%FileNameExt%") ; To Correctly Load Name.
-	EndIf
-
-	; Substitute Abbreviations:
-	If StringInStr($pDestination, "%") And StringInStr("$C" & "$D" & "$E", $Global_Action) = 0 Then
-		$pDestination = _Position_Abbreviations($pDestination, $pFilePath, $pProfile)
-	EndIf
-
-	; Update Destination For Rename Action:
-	If $Global_Action == "$7" Then
-		$pFileName = $pDestination
-		$pDestination = __GetParentFolder($pFilePath)
-	EndIf
-
-	; Update Relative Destination For Compress, Create List And Create Playlist Actions:
-	If StringInStr("$3" & "$8" & "$9", $Global_Action) And StringInStr($pDestination, "\") = 0 Then
-		$pDestination = _WinAPI_GetFullPathName(__GetParentFolder($pFilePath) & "\" & $pDestination)
-	EndIf
-
-	; Destination Folder Creation:
-	If StringInStr("$0" & "$1" & "$4" & "$7" & "$A", $Global_Action) And FileExists($pDestination) = 0 Then
-		If DirCreate($pDestination) = 0 Then
-			MsgBox(0x40, __GetLang('POSITIONPROCESS_MSGBOX_3', 'Destination Folder Problem'), __GetLang('POSITIONPROCESS_MSGBOX_4', 'Sorting operation has been partially skipped.') & @LF & __GetLang('POSITIONPROCESS_MSGBOX_5', 'The following destination folder does not exist and cannot be created:') & @LF & _WinAPI_PathCompactPathEx($pDestination, 65), 0, __OnTop())
-			Return SetError(1, $pSize, $pFileName)
-		EndIf
-	EndIf
-
-	; Update File Name For Compress And Create Shortcut Actions:
-	If $Global_Action == "$3" And __GetFileExtension($pDestination) == "" Then
-		$pDestination &= "\" & __GetFileNameOnly($pFileName) & ".zip" ; To Work Also If Destination Is A Directory.
-	ElseIf $Global_Action == "$A" Then
-		$pFileName &= " - " & __GetLang('SHORTCUT', 'shortcut') & ".lnk"
-	EndIf
-
-	; Manage Duplicates:
-	If StringInStr("$0" & "$1" & "$7" & "$A", $Global_Action) Then
-		If FileExists($pDestination & "\" & $pFileName) Then
-			If $Global_Action == "$A" Then
-				$pFileName = __Duplicate_Process($pProfile, -1, $pDestination & "\" & $pFileName)
-			Else
-				$pFileName = __Duplicate_Process($pProfile, $pFilePath, $pDestination & "\" & $pFileName)
-			EndIf
-			If @error = 1 Then ; Skip.
-				__ExpandEventMode(0) ; Disable The Abort Button.
-				Return SetError(1, $pSize, 1) ; 1 = Skipped.
-			EndIf
-		EndIf
-		$pDestination &= "\" & $pFileName
-	EndIf
-
-	; Get Opened Output Files For Compress, List And Playlist Actions:
-	If StringInStr("$3" & "$8" & "$9", $Global_Action) Then
-		$pStringSplit = StringSplit($pDestination, "|") ; Remove Possible Extra Data From The End Of The String.
-		$pNewDestination = _Position_OpenedFiles($pStringSplit[1], $pProfile)
-		If @error Then
-			Return SetError(1, $pSize, 1) ; 1 = Skipped.
-		EndIf
-		$pDestination = StringReplace($pDestination, $pStringSplit[1], $pNewDestination)
-	EndIf
-
-	; Message For Send By Mail Action:
-	If $Global_Action == "$E" Then
-		$pDestination = _Position_MailMessage($pFilePath, $pDestination)
-		If @error Then
-			Return SetError(1, $pSize, 0) ; 0 = Aborted.
-		EndIf
-	EndIf
-
-	__ExpandEventMode(1) ; Enable The Abort Button.
-	$pDestination = _Sorting_Process($pFilePath, $pDestination, $pSize, $pElementsGUI, $pProfile)
-	$pSortFailed = @error
-	__ExpandEventMode(0) ; Disable The Abort Button.
-
-	; Process Log For This File/Folder:
-	If $pSortFailed > 0 Then
-		If $pSortFailed = 2 Then
-			Return SetError(1, 0, 1) ; 1 = Skipped.
-		ElseIf $G_Global_AbortSorting Then
-			Return SetError(1, 0, 0) ; 0 = Aborted.
-		Else
-			Return SetError(1, 0, $pFileName) ; $pFileName = Failed.
-		EndIf
-	EndIf
-	__Log_Write(__GetActionResult($Global_Action), $pDestination)
-
 	Return 1
-EndFunc   ;==>_Position_Process
+EndFunc   ;==>_Sorting_CheckButtons
 
-Func _Sorting_Abort()
+Func _Sorting_EventButtons()
 	Switch @GUI_CtrlId
 		Case $GUI_EVENT_CLOSE, $Global_AbortButton
 			$G_Global_PauseSorting = 0
 			$G_Global_AbortSorting = 1
-			GUICtrlSetData($Global_DoingLabel, __GetLang('POSITIONPROCESS_5', 'Aborting') & '...')
+			GUICtrlSetState($Global_PauseButton, $GUI_DISABLE)
+			GUICtrlSetState($Global_AbortButton, $GUI_DISABLE)
 		Case $Global_PauseButton
-			If $G_Global_PauseSorting = 2 Then ; Resume From Pause Because Process Is In _Sorting_Pause().
+			$G_Global_PauseSorting = 1
+			GUICtrlSetState($Global_PauseButton, $GUI_DISABLE)
+			GUICtrlSetState($Global_AbortButton, $GUI_DISABLE)
+		Case $Global_ExtendButton
+			_Sorting_Extend() ; Show/Hide The Extended GUI.
+	EndSwitch
+EndFunc   ;==>_Sorting_EventButtons
+
+Func _Sorting_Extend()
+	Local $sNameGUI = "DropIt - " & __GetLang('POSITIONPROCESS_0', 'Processing')
+	Local $sPos = WinGetPos($sNameGUI)
+	If $G_Global_ExtendGUI = 1 Then ; Hide The Extended GUI.
+		$G_Global_ExtendGUI = 0
+		WinMove($sNameGUI, "", $sPos[0], $sPos[1], $sPos[2], $sPos[3] - 250)
+		GUICtrlSetTip($Global_ExtendButton, __GetLang('POSITIONPROCESS_9', 'More'))
+		GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -22, 0)
+	Else ; Show The Extended GUI.
+		$G_Global_ExtendGUI = 1
+		WinMove($sNameGUI, "", $sPos[0], $sPos[1], $sPos[2], $sPos[3] + 250)
+		GUICtrlSetTip($Global_ExtendButton, __GetLang('POSITIONPROCESS_10', 'Less'))
+		GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -23, 0)
+	EndIf
+EndFunc   ;==>_Sorting_Extend
+
+Func _Sorting_Pause($sMainArray, $sMode = 0)
+	Local $sIndex_Selected, $sStatus, $sInfoDummy = -1, $sSkipDummy = -1
+
+	$G_Global_PauseSorting = 2 ; To Define That The Process Is In This Function.
+	GUICtrlSetState($Global_PauseButton, $GUI_ENABLE)
+	GUICtrlSetState($Global_AbortButton, $GUI_ENABLE)
+	If $sMainArray[0][0] = 0 Then ; Disable Start Button If 0 Items.
+		GUICtrlSetState($Global_PauseButton, $GUI_DISABLE)
+	EndIf
+	If $Global_ListViewProcess_Info <> 0 Then
+		GUIRegisterMsg($WM_NOTIFY, "WM_NOTIFY")
+		$sInfoDummy = $Global_ListViewProcess_Info
+		$sSkipDummy = $Global_ListViewProcess_Skip
+	Else
+		GUIRegisterMsg($WM_NOTIFY, "")
+	EndIf
+	$Global_ListViewIndex = -1 ; Set As No Item Selected.
+
+	If $sMode = 1 Then
+		GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_7', 'Start'))
+		GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -20, 0)
+	ElseIf $sMode = 2 Then
+		GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_8', 'Done'))
+		GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -24, 0)
+		GUICtrlSetState($Global_AbortButton, $GUI_DISABLE)
+	Else
+		GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_4', 'Resume'))
+		GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -20, 0)
+	EndIf
+
+	__ExpandEventMode(0) ; Disable Event Buttons.
+	While $G_Global_PauseSorting
+		$sIndex_Selected = $Global_ListViewIndex
+
+		Switch GUIGetMsg()
+			Case $GUI_EVENT_CLOSE, $Global_AbortButton
+				$G_Global_PauseSorting = 0
+				$G_Global_AbortSorting = 1
+				GUICtrlSetState($Global_PauseButton, $GUI_DISABLE)
+				GUICtrlSetState($Global_AbortButton, $GUI_DISABLE)
+			Case $Global_PauseButton
 				$G_Global_PauseSorting = 0
 				GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_3', 'Pause'))
 				GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -19, 0)
-			Else
-				$G_Global_PauseSorting = 1
-				GUICtrlSetData($Global_DoingLabel, __GetLang('POSITIONPROCESS_6', 'Pausing') & '...')
-			EndIf
-	EndSwitch
-EndFunc   ;==>_Sorting_Abort
-
-Func _Sorting_Pause()
-	$G_Global_PauseSorting = 2 ; To Define That The Process Is In This Function.
-	GUICtrlSetData($Global_DoingLabel, '')
-	GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_4', 'Resume'))
-	GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -20, 0)
-	While $G_Global_PauseSorting
-		; Closed By _Sorting_Abort() Called As Event.
-		Sleep(50)
+			Case $Global_ExtendButton
+				_Sorting_Extend() ; Show/Hide The Extended GUI.
+			Case $sInfoDummy
+				_Sorting_Pause_Info($sMainArray[$sIndex_Selected + 1][0])
+			Case $sSkipDummy
+				$sStatus = _GUICtrlListView_GetItemText($Global_ListViewProcess, $sIndex_Selected, 3)
+				If $sStatus == "" Then
+					$sStatus = __GetLang('DUPLICATE_MODE_6', 'Skip')
+				ElseIf $sStatus == __GetLang('DUPLICATE_MODE_6', 'Skip') Then
+					$sStatus = ""
+				EndIf
+				_GUICtrlListView_AddSubItem($Global_ListViewProcess, $sIndex_Selected, $sStatus, 3)
+		EndSwitch
 	WEnd
+	__ExpandEventMode(1) ; Enable Event Buttons.
 EndFunc   ;==>_Sorting_Pause
 
-Func _Sorting_CreateGUI($sTotalSize)
-	Local $sLabel_1, $sLabel_2, $sProgress_1, $sProgress_2, $sPercent_1, $sPercent_2, $sLoadDll
+Func _Sorting_Pause_ContextMenu($sListView, $sIndex, $sSubItem)
+	Local Enum $sItem1 = 1000, $sItem2
 
-	$G_Global_SortingTotalSize = $sTotalSize
-	$G_Global_SortingCurrentSize = 0
-
-	If @AutoItX64 Then
-		$sLoadDll = @ScriptDir & '\Lib\copy\Copy_x64.dll'
-	Else
-		$sLoadDll = @ScriptDir & '\Lib\copy\Copy.dll'
-	EndIf
-	If _Copy_OpenDll($sLoadDll) = 0 Then
-		Return SetError(1, 0, 0)
+	If IsHWnd($sListView) = 0 Then
+		$sListView = GUICtrlGetHandle($sListView)
 	EndIf
 
-	$G_Global_SortingGUI = GUICreate("DropIt - " & __GetLang('POSITIONPROCESS_0', 'Sorting'), 440, 150, -1, -1, -1, -1, __OnTop())
-	GUISetOnEvent($GUI_EVENT_CLOSE, '_Sorting_Abort')
-	$sLabel_1 = GUICtrlCreateLabel(__GetLang('POSITIONPROCESS_1', 'Loading') & '...', 12, 14, 416, 16)
-	$sLabel_2 = GUICtrlCreateLabel('', 12, 14 + 20, 416, 16)
-	$sProgress_2 = GUICtrlCreateProgress(12, 14 + 43, 380, 12)
-	$sPercent_2 = GUICtrlCreateLabel('0 %', 12 + 382, 14 + 43, 34, 16, $SS_RIGHT)
-	$sProgress_1 = GUICtrlCreateProgress(12, 14 + 64, 380, 18)
-	$sPercent_1 = GUICtrlCreateLabel('0 %', 12 + 382, 14 + 67, 34, 16, $SS_RIGHT)
-	$Global_PauseButton = GUICtrlCreateButton("P", 220 - 58 - 65, 110, 58, 26, $BS_ICON)
+	Local $sStatus = _GUICtrlListView_GetItemText($sListView, $sIndex, 3)
+	Local $sContextMenu = _GUICtrlMenu_CreatePopup()
+	If $sIndex <> -1 And $sSubItem <> -1 Then
+		$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('ENV_VAR_TAB_3', 'Info'), $sItem1)
+		__SetItemImage("ABOUT", $sIndex, $sContextMenu, 2, 1)
+		If $sStatus == "" Then
+			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('DUPLICATE_MODE_6', 'Skip'), $sItem2)
+			__SetItemImage("SKIP", $sIndex, $sContextMenu, 2, 1)
+		ElseIf $sStatus == __GetLang('DUPLICATE_MODE_6', 'Skip') Then
+			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('OPTIONS_BUTTON_2', 'Restore'), $sItem2)
+			__SetItemImage("NEW", $sIndex, $sContextMenu, 2, 1)
+		EndIf
+	EndIf
+
+	Switch _GUICtrlMenu_TrackPopupMenu($sContextMenu, $sListView, -1, -1, 1, 1, 2)
+		Case $sItem1
+			GUICtrlSendToDummy($Global_ListViewProcess_Info)
+		Case $sItem2
+			GUICtrlSendToDummy($Global_ListViewProcess_Skip)
+	EndSwitch
+	_GUICtrlMenu_DestroyMenu($sContextMenu)
+	Return 1
+EndFunc   ;==>_Sorting_Pause_ContextMenu
+
+Func _Sorting_Pause_Info($sFilePath)
+	Local $sGUI, $sClose, $sListView, $sListView_Handle, $sToolTip, $sProperty, $sIndex
+
+	If FileExists($sFilePath) = 0 Then
+		MsgBox(0x30, __GetLang('POSITIONPROCESS_MSGBOX_6', 'Info Error'), __GetLang('POSITIONPROCESS_MSGBOX_7', 'Selected file/folder does not exist.'), 0, __OnTop($G_Global_SortingGUI))
+		Return 1
+	EndIf
+
+	$sGUI = GUICreate(__GetLang('ENV_VAR_TAB_3', 'Info'), 440, 500, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
+
+	$sListView = GUICtrlCreateListView(__GetLang('PROPERTY', 'Property') & "|" & __GetLang('VALUE', 'Value'), 0, 0, 440, 460, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
+	$sListView_Handle = GUICtrlGetHandle($sListView)
+	_GUICtrlListView_SetExtendedListViewStyle($sListView_Handle, BitOR($LVS_EX_FULLROWSELECT, $LVS_EX_GRIDLINES, $LVS_EX_INFOTIP))
+	_GUICtrlListView_SetColumnWidth($sListView_Handle, 0, 160)
+	_GUICtrlListView_SetColumnWidth($sListView_Handle, 1, 250)
+
+	$sToolTip = _GUICtrlListView_GetToolTips($sListView_Handle)
+	If IsHWnd($sToolTip) Then
+		__OnTop($sToolTip, 1)
+		_GUIToolTip_SetDelayTime($sToolTip, 3, 60) ; Speed Up InfoTip Appearance.
+	EndIf
+
+	$sClose = GUICtrlCreateButton(__GetLang('CLOSE', 'Close'), 220 - 50, 467, 100, 26)
+	GUICtrlSetState($sClose, $GUI_DEFBUTTON + $GUI_DISABLE)
+	GUISetState(@SW_SHOW)
+
+	For $A = 0 To 300
+		$sProperty = __GetFileProperties($sFilePath, $A, 2)
+		If StringStripWS($sProperty[1], 8) <> "" Then
+			$sIndex = _GUICtrlListView_AddItem($sListView, $sProperty[0])
+			_GUICtrlListView_AddSubItem($sListView, $sIndex, $sProperty[1], 1)
+		EndIf
+		Switch GUIGetMsg()
+			Case $GUI_EVENT_CLOSE, $sClose
+				GUIDelete($sGUI)
+				Return 1
+		EndSwitch
+	Next
+	GUICtrlSetState($sClose, $GUI_ENABLE)
+
+	While 1
+		Switch GUIGetMsg()
+			Case $GUI_EVENT_CLOSE, $sClose
+				GUIDelete($sGUI)
+				Return 1
+		EndSwitch
+	WEnd
+EndFunc   ;==>_Sorting_Pause_Info
+
+Func _Sorting_CreateGUI($sProfile, $sMonitored)
+	Local $sLabel_1, $sLabel_2, $sProgress_1, $sProgress_2, $sPercent_1, $sPercent_2
+	Local $sListView, $sListView_Handle, $sToolTip, $sCounter
+
+	$G_Global_SortingGUI = GUICreate("DropIt - " & __GetLang('POSITIONPROCESS_0', 'Processing'), 500, 150, -1, -1, -1, -1, __OnTop())
+	GUISetOnEvent($GUI_EVENT_CLOSE, '_Sorting_EventButtons')
+	$sLabel_1 = GUICtrlCreateLabel('', 12, 14, 376, 16)
+	$sCounter = GUICtrlCreateLabel('', 12 + 376, 14, 100, 16, $SS_RIGHT)
+	$sLabel_2 = GUICtrlCreateLabel('', 12, 14 + 20, 476, 16)
+	$sProgress_2 = GUICtrlCreateProgress(12, 14 + 43, 440, 12)
+	$sPercent_2 = GUICtrlCreateLabel('0 %', 12 + 442, 14 + 43, 34, 16, $SS_RIGHT)
+	$sProgress_1 = GUICtrlCreateProgress(12, 14 + 64, 440, 18)
+	$sPercent_1 = GUICtrlCreateLabel('0 %', 12 + 442, 14 + 67, 34, 16, $SS_RIGHT)
+
+	$Global_ExtendButton = GUICtrlCreateButton("E", 250 - 110 - 58, 110, 58, 26, $BS_ICON)
+	GUICtrlSetTip($Global_ExtendButton, __GetLang('POSITIONPROCESS_9', 'More'))
+	GUICtrlSetOnEvent($Global_ExtendButton, '_Sorting_EventButtons')
+	GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -22, 0)
+	GUICtrlSetResizing($Global_ExtendButton, $GUI_DOCKALL)
+	GUICtrlSetState($Global_ExtendButton, $GUI_DISABLE) ; Enabled When MainArray Is Sorted.
+
+	$Global_PauseButton = GUICtrlCreateButton("P", 250 - 29, 110, 58, 26, $BS_ICON)
 	GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_3', 'Pause'))
-	GUICtrlSetOnEvent($Global_PauseButton, '_Sorting_Abort')
+	GUICtrlSetOnEvent($Global_PauseButton, '_Sorting_EventButtons')
 	GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -19, 0)
-	$Global_AbortButton = GUICtrlCreateButton("X", 220 + 65, 110, 58, 26, $BS_ICON)
-	GUICtrlSetTip($Global_AbortButton, __GetLang('POSITIONPROCESS_2', 'Abort'))
-	GUICtrlSetOnEvent($Global_AbortButton, '_Sorting_Abort')
+	GUICtrlSetResizing($Global_PauseButton, $GUI_DOCKALL)
+
+	$Global_AbortButton = GUICtrlCreateButton("X", 250 + 110, 110, 58, 26, $BS_ICON)
+	GUICtrlSetTip($Global_AbortButton, __GetLang('POSITIONPROCESS_2', 'Stop'))
+	GUICtrlSetOnEvent($Global_AbortButton, '_Sorting_EventButtons')
 	GUICtrlSetImage($Global_AbortButton, @ScriptFullPath, -18, 0)
-	$Global_DoingLabel = GUICtrlCreateLabel('', 220 - 50, 113, 100, 16)
+	GUICtrlSetResizing($Global_AbortButton, $GUI_DOCKALL)
 
-	Local $sElementsGUI[6] = [$sLabel_1, $sLabel_2, $sProgress_1, $sProgress_2, $sPercent_1, $sPercent_2] ; Populate Elements GUI.
+	$sListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination') & "|" & __GetLang('STATUS', 'Status'), 0, 150, 500, 250, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
+	$sListView_Handle = GUICtrlGetHandle($sListView)
+	$Global_ListViewProcess = $sListView_Handle
+	GUICtrlSetResizing($sListView, $GUI_DOCKALL)
+	_GUICtrlListView_SetExtendedListViewStyle($sListView_Handle, BitOR($LVS_EX_FULLROWSELECT, $LVS_EX_GRIDLINES, $LVS_EX_INFOTIP))
+	_GUICtrlListView_SetColumnWidth($sListView_Handle, 0, 140)
+	_GUICtrlListView_SetColumnWidth($sListView_Handle, 1, 80)
+	_GUICtrlListView_SetColumnWidth($sListView_Handle, 2, 180)
+	_GUICtrlListView_SetColumnWidth($sListView_Handle, 3, 70)
 
-	If @error Then
-		Return SetError(1, 0, 0)
+	$sToolTip = _GUICtrlListView_GetToolTips($sListView_Handle)
+	If IsHWnd($sToolTip) Then
+		__OnTop($sToolTip, 1)
+		_GUIToolTip_SetDelayTime($sToolTip, 3, 60) ; Speed Up InfoTip Appearance.
 	EndIf
+
+	$Global_ListViewProcess_Info = GUICtrlCreateDummy()
+	$Global_ListViewProcess_Skip = GUICtrlCreateDummy()
+
+	Local $sElementsGUI[7] = [$sLabel_1, $sLabel_2, $sProgress_1, $sProgress_2, $sPercent_1, $sPercent_2, $sCounter] ; Populate Elements GUI.
+
+	For $A = 0 To 6
+		GUICtrlSetResizing($sElementsGUI[$A], $GUI_DOCKALL)
+	Next
+	If (__Is("ShowSorting", -1, "True", $sProfile) And $sMonitored = 0) Or (__Is("ShowMonitored") And $sMonitored) Then
+		GUISetState(@SW_SHOWNOACTIVATE, $G_Global_SortingGUI)
+	EndIf
+
 	Return $sElementsGUI
 EndFunc   ;==>_Sorting_CreateGUI
 
-Func _Sorting_DeleteGUI()
-	GUIDelete($G_Global_SortingGUI)
-	_Copy_CloseDll()
-
-	If @error Then
-		Return SetError(1, 0, 0)
-	EndIf
-	Return 1
-EndFunc   ;==>_Sorting_DeleteGUI
-
 Func _Sorting_UpdateGUI($sElementsGUI, $sType, $sParam = 0)
-	If $sType = 1 Then ; $sParam = String To Update.
-		GUICtrlSetData($sElementsGUI[0], _WinAPI_PathCompactPathEx($sParam, 70))
+	If $sType = 1 Then ; Reset Single Progress Bar And Show Second Line With $sParam.
+		GUICtrlSetData($sElementsGUI[1], _WinAPI_PathCompactPathEx($sParam, 75))
 		GUICtrlSetData($sElementsGUI[3], 0)
 		GUICtrlSetData($sElementsGUI[5], '0 %')
-	ElseIf $sType = 2 Then ; $sParam = Size To Add To The Progress Bar.
+	ElseIf $sType = 2 Then ; Complete Single Progress Bar.
+		GUICtrlSetData($sElementsGUI[3], 100)
+		GUICtrlSetData($sElementsGUI[5], '100 %')
+	ElseIf $sType = 3 Then ; Reset General Progress Bar After Loading.
+		GUICtrlSetData($sElementsGUI[2], 0)
+		GUICtrlSetData($sElementsGUI[4], '0 %')
+		$G_Global_SortingTotalSize = $sParam
+		$G_Global_SortingCurrentSize = 0
+	ElseIf $sType = 4 Then ; Update General Progress Bar With $sParam = Size.
 		Local $sPercent = __GetPercent($sParam)
 		GUICtrlSetData($sElementsGUI[2], $sPercent)
 		GUICtrlSetData($sElementsGUI[4], $sPercent & ' %')
-	ElseIf $sType = 3 Then ; File/Folder Processed.
-		GUICtrlSetData($sElementsGUI[3], 100)
-		GUICtrlSetData($sElementsGUI[5], '100 %')
 	Else
 		Return SetError(1, 0, 0)
 	EndIf
 	Return 1
 EndFunc   ;==>_Sorting_UpdateGUI
 
-Func _Sorting_Process($sSource, $sDestination, $sSize, $sElementsGUI, $sProfile)
-	Local $sError
-
-	If $G_Global_PauseSorting Then
-		_Sorting_Pause()
-	EndIf
-	If $G_Global_AbortSorting Then
-		Return SetError(1, 0, 0) ; Needed To Do Not Start A New Operation If Sorting Is Aborted.
-	EndIf
-	_Sorting_UpdateGUI($sElementsGUI, 1, $sSource) ; Show Processed File/Folder.
-
-	Switch $Global_Action
-		Case "$3" ; Compress Action.
-			$sDestination = _Sorting_ArchiveFile($sSource, $sDestination, $sElementsGUI, $sProfile, $sSize, 3)
-
-		Case "$4" ; Extract Action.
-			$sDestination = _Sorting_ArchiveFile($sSource, $sDestination, $sElementsGUI, $sProfile, $sSize, 1)
-
-		Case "$5" ; Open With Action.
-			_Sorting_OpenFile($sSource, $sDestination, $sElementsGUI)
-
-		Case "$6" ; Delete Action.
-			$sDestination = _Sorting_DeleteFile($sSource, $sDestination, $sElementsGUI)
-
-		Case "$7" ; Rename Action.
-			_Sorting_RenameFile($sSource, $sDestination, $sElementsGUI)
-
-		Case "$8" ; Create List Action.
-			$sDestination = _Sorting_ListFile($sSource, $sDestination, $sElementsGUI, $sSize)
-
-		Case "$9" ; Create Playlist Action.
-			$sDestination = _Sorting_PlaylistFile($sSource, $sDestination, $sElementsGUI)
-
-		Case "$A" ; Create Shortcut Action.
-			_Sorting_ShortcutFile($sSource, $sDestination, $sElementsGUI)
-
-		Case "$B" ; Copy To Clipboard Action.
-			$sDestination = _Sorting_ClipboardFile($sDestination, $sElementsGUI)
-
-		Case "$C" ; Upload Action.
-			$sDestination = _Sorting_UploadFile($sSource, $sDestination, $sElementsGUI, $sProfile, $sSize)
-
-		Case "$D" ; Change Properties Action.
-			_Sorting_ChangeFile($sSource, $sDestination, $sElementsGUI)
-
-		Case "$E" ; Send by Mail Action.
-			_Sorting_MailFile($sSource, $sDestination, $sElementsGUI)
-
-		Case Else ; Move Or Copy Action.
-			If _WinAPI_PathIsDirectory($sSource) Then
-				_Sorting_CopyDir($sSource, $sDestination, $sElementsGUI)
-			Else
-				_Sorting_CopyFile($sSource, $sDestination, $sElementsGUI)
-			EndIf
-	EndSwitch
-
-	$sError = @error
-	_Sorting_UpdateGUI($sElementsGUI, 3) ; File/Folder Processed.
-	If StringInStr("$0" & "$1", $Global_Action) = 0 Then ; Because Copy And Move Actions Already Update It.
-		_Sorting_UpdateGUI($sElementsGUI, 2, $sSize) ; Update Progress Bar.
-	EndIf
-	If $sError Then
-		Return SetError($sError, 0, 0)
-	EndIf
-
-	Return $sDestination
-EndFunc   ;==>_Sorting_Process
-
-Func _Sorting_ArchiveFile($sSource, $sDestination, $sElementsGUI, $sProfile, $sSize, $sType)
-	Local $sProcess, $sINI, $sDecrypt_Password = "", $sDuplicateMode = 0, $sLabel_2 = $sElementsGUI[1]
-
-	Switch $sType
-		Case 1 ; Extract Mode.
-			$sProcess = __7ZipRun($sSource, 0, 2) ; Check If Archive Is Encrypted.
-			Switch @error
-				Case 1 ; Failed.
-					Return SetError(1, 0, 0)
-				Case 2 ; Password Needed.
-					__ExpandEventMode(0) ; Disable The Abort Button.
-					$sDecrypt_Password = __InsertPassword_GUI(_WinAPI_PathCompactPathEx(__GetFileName($sSource), 68))
-					__ExpandEventMode(1) ; Enable The Abort Button.
-					If $sDecrypt_Password = -1 Then
-						Return SetError(1, 0, 0)
-					EndIf
-			EndSwitch
-
-			$sDuplicateMode = "None" ; Needed To Match Else Case.
-			If __Is("AutoDup", -1, "False", $sProfile) Then
-				$sINI = __IsProfile($sProfile, 1) ; Get Profile Path Of Selected Profile.
-				If IniRead($sINI, "General", "AutoDup", "Default") == "Default" Then
-					$sINI = __IsSettingsFile() ; Get Default Settings INI File.
-				EndIf
-				$sDuplicateMode = IniRead($sINI, "General", "DupMode", "Skip")
-			Else
-				If $G_Global_DuplicateMode <> "" Then
-					$sDuplicateMode = $G_Global_DuplicateMode
-				EndIf
-			EndIf
-			Switch $sDuplicateMode
-					Case "Overwrite1"
-						$sDuplicateMode = 1
-					Case "Skip"
-						$sDuplicateMode = 2
-					Case "Rename1", "Rename2", "Rename3"
-						$sDuplicateMode = 3
-					Case Else
-						$sDuplicateMode = 0
-						Local $sNewDestination = $sDestination & "\" & __GetFileNameOnly($sSource)
-						If FileExists($sNewDestination) Then
-							$sNewDestination = $sDestination & "\" & __Duplicate_Process($sProfile, -1, $sNewDestination)
-							If @error Then
-								Return SetError(2, 0, 0) ; Skipped.
-							EndIf
-						EndIf
-						$sDestination = $sNewDestination
-			EndSwitch
-			GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_EXTRACT', 'Extract') & ' =>  ' & $sDestination, 70))
-
-		Case 3 ; Compress Action (With Update Archive Support).
-			GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_COMPRESS', 'Compress') & ' =>  ' & $sDestination, 70))
-	EndSwitch
-
-	$sProcess = __7ZipRun($sSource, $sDestination, $sType, 0, $sDuplicateMode, 1, $sDecrypt_Password)
-	If @error Then
-		Return SetError(1, 0, 0)
-	EndIf
-
-	_Sorting_ProgressArchive($sProcess, $sSize, $sDecrypt_Password, $sElementsGUI)
-	If @error Then
-		FileDelete($sDestination)
-		Return SetError(1, 0, 0)
-	EndIf
-
-	If FileExists($sDestination) = 0 Or ($sType = 1 And $sSize > 0 And DirGetSize($sDestination) < 1) Then
-		DirRemove($sDestination, 1) ; Remove If File Is Corrupted Because Extracted With Not Correct Password.
-		If $sDecrypt_Password <> "" Then
-			MsgBox(0x30, __GetLang('PASSWORD_MSGBOX_1', 'Password Not Correct'), __GetLang('PASSWORD_MSGBOX_3', 'You have to enter the correct password to extract this archive.'), 0, __OnTop())
-		EndIf
-		Return SetError(1, 0, 0)
-	EndIf
-
-	Return $sDestination
-EndFunc   ;==>_Sorting_ArchiveFile
-
-Func _Sorting_ChangeFile($sSource, $sProperties, $sElementsGUI)
-	Local $B, $sStringSplit, $sAttributes, $sNewAttribute, $sReadOnly, $sFileTimes[3], $sLabel_2 = $sElementsGUI[1]
+Func _Sorting_ChangeFile($sMainArray, $sIndex, $sElementsGUI)
+	Local $B, $sStringSplit, $sAttributes, $sNewAttribute, $sReadOnly, $sFileTimes[3], $sSource = $sMainArray[$sIndex][0]
 
 	$sAttributes = FileGetAttrib($sSource)
-	$sStringSplit = StringSplit($sProperties, ";") ; {modified} YYYYMMDD;HHMMSS;0h; {created} YYYYMMDD;HHMMSS;0h; {opened} YYYYMMDD;HHMMSS;0h; {attributes} A0;H0;R0;S0;T0
-	GUICtrlSetData($sLabel_2, __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties'))
+	$sStringSplit = StringSplit($sMainArray[$sIndex][4], ";") ; {modified} YYYYMMDD;HHMMSS;0h; {created} YYYYMMDD;HHMMSS;0h; {opened} YYYYMMDD;HHMMSS;0h; {attributes} A0;H0;R0;S0;T0
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sSource) ; Reset Single Progress Bar And Show Second Line.
 
 	If __IsReadOnly($sSource) Then
 		$sReadOnly = 1
@@ -4327,13 +4793,13 @@ Func _Sorting_ChangeFile($sSource, $sProperties, $sElementsGUI)
 			$sFileTimes[$A] = StringRegExpReplace($sFileTimes[$A], "(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})", "$1/$2/$3 $4:$5:$6")
 			$sFileTimes[$A] = _DateAdd(StringRight($sStringSplit[$B + 2], 1), Number(StringTrimRight($sStringSplit[$B + 2], 1)), $sFileTimes[$A])
 			If @error Then
-				Return SetError(1, 0, 0)
+				Return SetError(2, 0, $sMainArray) ; Failed.
 			EndIf
 			$sFileTimes[$A] = StringRegExpReplace($sFileTimes[$A], "[^0-9]", "")
 		EndIf
 
 		If FileSetTime($sSource, $sFileTimes[$A], $A) = 0 Then
-			Return SetError(1, 0, 0)
+			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
 	Next
 
@@ -4360,17 +4826,17 @@ Func _Sorting_ChangeFile($sSource, $sProperties, $sElementsGUI)
 		EndSwitch
 
 		If FileSetAttrib($sSource, $sNewAttribute) = 0 Then
-			Return SetError(1, 0, 0)
+			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
 	Next
 
-	Return 1
+	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ChangeFile
 
-Func _Sorting_ClipboardFile($sClipboardText, $sElementsGUI)
-	Local $sLabel_2 = $sElementsGUI[1]
+Func _Sorting_ClipboardFile($sMainArray, $sIndex, $sElementsGUI)
+	Local $sClipboardText = $sMainArray[$sIndex][4]
 
-	GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard') & ' =>  ' & $sClipboardText, 70))
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sClipboardText) ; Reset Single Progress Bar And Show Second Line.
 
 	If $Global_Clipboard <> "" Then
 		$Global_Clipboard &= @CRLF
@@ -4378,117 +4844,125 @@ Func _Sorting_ClipboardFile($sClipboardText, $sElementsGUI)
 	$Global_Clipboard &= $sClipboardText
 	ClipPut($Global_Clipboard)
 	If @error Then
-		Return SetError(1, 0, 0)
+		Return SetError(2, 0, $sMainArray) ; Failed.
 	EndIf
 
-	Return $sClipboardText
+	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ClipboardFile
 
-Func _Sorting_CopyFile($sSource, $sDestination, $sElementsGUI)
-	Local $sSize, $sMD5_Before, $sMD5_After, $sLabel_2 = $sElementsGUI[1]
+Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+	Local $sFile, $sFailed, $sString, $sSize, $sDestination = $sMainArray[$sFrom][4], $sSourceList = @ScriptDir & "\Lib\ArchiveList.dat"
 
 	If FileExists($sDestination) Then
+		$sDestination = __Duplicate_Process($sProfile, -1, $sDestination, 1) ; Support To Merge Archives Instead Of Overwrite Them.
+		If @error = 2 Then
+			Return SetError(1, 0, $sMainArray) ; All Skipped.
+		EndIf
+		$sMainArray[$sFrom][4] = $sDestination
+	EndIf
+
+	_Destination_CreateDir(__GetParentFolder($sDestination))
+	If @error Then
+		Return SetError(2, 0, $sMainArray) ; All Failed.
+	EndIf
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
+
+	For $A = $sFrom To $sTo
+		If $sMainArray[$A][5] == -9 Then ; Skip Already Processed Item.
+			ContinueLoop
+		ElseIf StringInStr($sString, __GetFileName($sMainArray[$A][0]) & @CRLF) Then
+			__Log_Write(__GetLang('POSITIONPROCESS_LOGMSG_3', 'The archive already includes a file with this name'))
+			_Position_SetResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
+			$sMainArray[$A][5] = -9 ; Force Result To Be Not Overwritten.
+			$sFailed = 1
+		Else
+			$sString &= $sMainArray[$A][0] & @CRLF
+			$sSize += $sMainArray[$A][1]
+		EndIf
+	Next
+	$sFile = FileOpen($sSourceList, 2 + 128)
+	FileWrite($sFile, $sString)
+	FileClose($sFile)
+
+	Local $sProcess = __7ZipRun($sSourceList, $sDestination, 3, 0, 0, 1)
+	If @error Then
+		FileDelete($sSourceList)
+		Return SetError(2, 0, $sMainArray) ; All Failed.
+	EndIf
+
+	_Sorting_ProgressArchive($sProcess, $sSize, $sElementsGUI)
+	If @error Then
+		FileDelete($sDestination)
+		FileDelete($sSourceList)
+		Return SetExtended(1, $sMainArray) ; Aborted.
+	EndIf
+	FileDelete($sSourceList)
+	If FileExists($sDestination) = 0 Then
+		Return SetError(2, 0, $sMainArray) ; All Failed.
+	EndIf
+
+	If $sFailed = 1 Then
+		Return SetError(3, 0, $sMainArray) ; Some Failed.
+	EndIf
+	Return $sMainArray ; OK.
+EndFunc   ;==>_Sorting_CompressFile
+
+Func _Sorting_CopyFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+	Local $sSource = $sMainArray[$sIndex][0], $sAction = $sMainArray[$sIndex][3], $sDestination = $sMainArray[$sIndex][4] & "\" & __GetFileName($sMainArray[$sIndex][0])
+
+	If FileExists($sDestination) Then
+		$sDestination = __Duplicate_Process($sProfile, $sSource, $sDestination)
+		If @error = 2 Then
+			Return SetError(1, 0, $sMainArray) ; Skipped.
+		EndIf
+		$sMainArray[$sIndex][4] = $sDestination
 		FileSetAttrib($sDestination, '-RH') ; Needed To Overwrite Hidden And Read-Only Files/Folders.
 	EndIf
-	If __Is("IntegrityCheck") Then
-		$sMD5_Before = __MD5ForFile($sSource)
-	EndIf
 
-	If $Global_Action == "$0" Then
-		If _Copy_MoveFile($sSource, $sDestination, 0x0003) = 0 Then ; 0x0003 = $MOVE_FILE_COPY_ALLOWED + $MOVE_FILE_REPLACE_EXISTING.
-			Return SetError(1, 0, 0)
-		EndIf
-		GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_MOVE', 'Move') & ' =>  ' & $sDestination, 70))
-	Else
-		If _Copy_CopyFile($sSource, $sDestination) = 0 Then
-			Return SetError(1, 0, 0)
-		EndIf
-		GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_COPY', 'Copy') & ' =>  ' & $sDestination, 70))
-	EndIf
-
-	$sSize = _Sorting_ProgressCopy($sElementsGUI)
+	_Destination_CreateDir(__GetParentFolder($sDestination))
 	If @error Then
-		Return SetError(1, 0, 0)
+		Return SetError(2, 0, $sMainArray) ; Failed.
+	EndIf
+
+	If $sAction == "$0" Then
+		If _WinAPI_PathIsDirectory($sSource) And StringLeft($sSource, 2) <> StringLeft($sDestination, 2) Then ; Move Folder On Different Drive.
+			If _Copy_MoveDir($sSource, $sDestination, BitOR($MOVE_FILE_COPY_ALLOWED, $MOVE_FILE_REPLACE_EXISTING), $COPY_OVERWRITE_YES) = 0 Then
+				Return SetError(2, 0, $sMainArray) ; Failed.
+			EndIf
+		Else
+			If _Copy_MoveFile($sSource, $sDestination, BitOR($MOVE_FILE_COPY_ALLOWED, $MOVE_FILE_REPLACE_EXISTING)) = 0 Then
+				Return SetError(2, 0, $sMainArray) ; Failed.
+			EndIf
+		EndIf
+	Else
+		If _WinAPI_PathIsDirectory($sSource) Then
+			If _Copy_CopyDir($sSource, $sDestination, $COPY_FILE_ALLOW_DECRYPTED_DESTINATION, $COPY_OVERWRITE_YES) = 0 Then
+				Return SetError(2, 0, $sMainArray) ; Failed.
+			EndIf
+		Else
+			If _Copy_CopyFile($sSource, $sDestination, $COPY_FILE_ALLOW_DECRYPTED_DESTINATION) = 0 Then
+				Return SetError(2, 0, $sMainArray) ; Failed.
+			EndIf
+		EndIf
+	EndIf
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
+
+	_Sorting_ProgressCopy($sMainArray, $sElementsGUI)
+	If @error = 1 Then
+		Return SetExtended(1, $sMainArray) ; Aborted.
+	ElseIf @error = 2 Then
+		Return SetError(2, 0, $sMainArray) ; Failed.
 	EndIf
 
 	If StringInStr(FileGetAttrib($sSource), 'A') = 0 Then
-		FileSetAttrib($sDestination, '-A')
-	EndIf
-	If __Is("IntegrityCheck") Then
-		$sMD5_After = __MD5ForFile($sDestination)
-		If $sMD5_Before <> $sMD5_After Then
-			Return SetError(1, 0, 0)
-		EndIf
+		FileSetAttrib($sDestination, '-A') ; Remove Archive Property If Source Does Not Have It.
 	EndIf
 
-	_Sorting_UpdateGUI($sElementsGUI, 2, $sSize) ; Update Progress Bar.
-
-	Return 1
+	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_CopyFile
 
-Func _Sorting_CopyDir($sSource, $sDestination, $sElementsGUI)
-	Local $sFile, $sSearch, $sError
-
-	If FileExists($sDestination) = 0 Then
-		If DirCreate($sDestination) = 0 Then
-			Return SetError(1, 0, 0)
-		EndIf
-	EndIf
-	$sSearch = FileFindFirstFile($sSource & '\*.*')
-	If $sSearch = -1 Then
-		Switch @error
-			Case 1 ; Folder Is Empty.
-				Return 1
-			Case Else
-				Return SetError(1, 0, 0)
-		EndSwitch
-	EndIf
-
-	While 1
-		If $G_Global_PauseSorting Then
-			_Sorting_Pause()
-		EndIf
-		If $G_Global_AbortSorting Then
-			Return SetError(1, 0, 0)
-		EndIf
-		$sFile = FileFindNextFile($sSearch)
-		If @error Then
-			FileClose($sSearch)
-			If $Global_Action == "$0" And DirGetSize($sSource) = 0 Then ; Move Action And Source Folder Is Empty.
-				DirRemove($sSource)
-			EndIf
-			Return 1
-		EndIf
-
-		If @extended Then ; Loaded A Directory.
-			If FileExists($sDestination & '\' & $sFile) = 0 Then
-				If DirCreate($sDestination & '\' & $sFile) = 0 Then
-					ExitLoop
-				EndIf
-				FileSetAttrib($sDestination & '\' & $sFile, '+' & StringReplace(FileGetAttrib($sSource & '\' & $sFile), 'D', ''))
-			EndIf
-			_Sorting_CopyDir($sSource & '\' & $sFile, $sDestination & '\' & $sFile, $sElementsGUI)
-			If @error Then
-				$sError = @error
-				ExitLoop
-			EndIf
-		Else ; Loaded A File.
-			If _Sorting_CopyFile($sSource & '\' & $sFile, $sDestination & '\' & $sFile, $sElementsGUI) = 0 Then
-				$sError = @error
-				ExitLoop
-			EndIf
-		EndIf
-	WEnd
-	FileClose($sSearch)
-
-	If $sError Then
-		Return SetError($sError, 0, 0)
-	EndIf
-	Return 1
-EndFunc   ;==>_Sorting_CopyDir
-
-Func _Sorting_DeleteFile($sSource, $sDeletionMode, $sElementsGUI)
-	Local $sDeleteText, $sLabel_2 = $sElementsGUI[1]
+Func _Sorting_DeleteFile($sMainArray, $sIndex, $sElementsGUI)
+	Local $sDeleteText, $sSource = $sMainArray[$sIndex][0], $sDeletionMode = $sMainArray[$sIndex][4]
 
 	If __IsReadOnly($sSource) Then
 		FileSetAttrib($sSource, '-R')
@@ -4502,14 +4976,15 @@ Func _Sorting_DeleteFile($sSource, $sDeletionMode, $sElementsGUI)
 		Case Else
 			$sDeleteText = __GetLang('DELETE_MODE_1', 'Directly Remove')
 	EndSwitch
-	GUICtrlSetData($sLabel_2, __GetLang('ACTION_DELETE', 'Delete') & ' =>  ' & $sDeleteText)
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sDeleteText) ; Reset Single Progress Bar And Show Second Line.
 
 	If __Is("AlertDelete") Then
 		Local $sMsgBox = MsgBox(0x4, __GetLang('DROP_EVENT_MSGBOX_10', 'Delete item'), __GetLang('MOREMATCHES_LABEL_0', 'Loaded item:') & @LF & __GetFileName($sSource) & @LF & @LF & __GetLang('DROP_EVENT_MSGBOX_11', 'Are you sure to delete this item?'), 0, __OnTop())
 		If $sMsgBox <> 6 Then
-			Return SetError(1, 0, 0)
+			Return SetError(1, 0, $sMainArray) ; Skipped.
 		EndIf
 	EndIf
+
 	If _WinAPI_PathIsDirectory($sSource) Then
 		Switch $sDeletionMode
 			Case 2
@@ -4529,30 +5004,149 @@ Func _Sorting_DeleteFile($sSource, $sDeletionMode, $sElementsGUI)
 				FileDelete($sSource)
 		EndSwitch
 	EndIf
-	If @error Or FileExists($sSource) Then
-		Return SetError(1, 0, 0)
-	EndIf
 
-	Return $sDeleteText
+	If @error Or FileExists($sSource) Then
+		Return SetError(2, 0, $sMainArray) ; Failed.
+	EndIf
+	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_DeleteFile
 
-Func _Sorting_ListFile($sSource, $sListFileAndProperties, $sElementsGUI, $sSize)
-	Local $sStringSplit, $sLabel_2 = $sElementsGUI[1]
+Func _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+	Local $sSource = $sMainArray[$sIndex][0], $sSize = $sMainArray[$sIndex][1], $sDestination = $sMainArray[$sIndex][4]
+	Local $sDuplicateMode, $sDecrypt_Password = ""
 
-	$sStringSplit = StringSplit($sListFileAndProperties, "|") ; Remove List Properties From The End Of The String.
-	GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_LIST', 'Create List') & ' =>  ' & $sStringSplit[1], 70))
+	Local $sProcess = __7ZipRun($sSource, "", 2) ; Check If Archive Is Encrypted.
+	Switch @error
+		Case 1
+			Return SetError(2, 0, $sMainArray) ; Failed.
+		Case 2 ; Password Needed.
+			__ExpandEventMode(0) ; Disable Event Buttons.
+			$sDecrypt_Password = __InsertPassword_GUI(_WinAPI_PathCompactPathEx(__GetFileName($sSource), 68))
+			__ExpandEventMode(1) ; Enable Event Buttons.
+			If $sDecrypt_Password = -1 Then
+				Return SetError(1, 0, $sMainArray) ; Skipped.
+			EndIf
+	EndSwitch
 
-	__List_Write($sSource, $sListFileAndProperties, $sSize)
+	$sDuplicateMode = __Duplicate_GetMode($sProfile)
+	Switch $sDuplicateMode
+		Case "Overwrite1", "Overwrite2", "Overwrite3"
+			$sDuplicateMode = 1
+		Case "Skip"
+			$sDuplicateMode = 2
+		Case "Rename1", "Rename2", "Rename3"
+			$sDuplicateMode = 3
+		Case Else
+			$sDuplicateMode = 0
+			$sDestination &= "\" & __GetFileNameOnly($sSource)
+			If FileExists($sDestination) Then
+				$sDestination = __Duplicate_Process($sProfile, -1, $sDestination)
+				If @error = 2 Then
+					Return SetError(1, 0, $sMainArray) ; Skipped.
+				EndIf
+				$sMainArray[$sIndex][4] = $sDestination
+			EndIf
+	EndSwitch
+
+	_Destination_CreateDir($sDestination)
 	If @error Then
-		Return SetError(1, 0, 0)
+		Return SetError(2, 0, $sMainArray) ; Failed.
+	EndIf
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
+
+	$sProcess = __7ZipRun($sSource, $sDestination, 1, 0, $sDuplicateMode, 1, $sDecrypt_Password)
+	If @error Then
+		Return SetError(2, 0, $sMainArray) ; Failed.
 	EndIf
 
-	Return $sStringSplit[1]
+	_Sorting_ProgressArchive($sProcess, $sSize, $sElementsGUI)
+	If @error Then
+		FileDelete($sDestination)
+		Return SetExtended(1, $sMainArray) ; Aborted.
+	EndIf
+
+	If FileExists($sDestination) = 0 Or ($sSize > 0 And DirGetSize($sDestination) < 1) Then
+		DirRemove($sDestination, 1) ; Remove If File Is Corrupted Because Extracted With Not Correct Password.
+		If $sDecrypt_Password <> "" Then
+			MsgBox(0x30, __GetLang('PASSWORD_MSGBOX_1', 'Password Not Correct'), __GetLang('PASSWORD_MSGBOX_3', 'You have to enter the correct password to extract this archive.'), 0, __OnTop())
+		EndIf
+		Return SetError(2, 0, $sMainArray) ; Failed.
+	EndIf
+
+	Return $sMainArray ; OK.
+EndFunc   ;==>_Sorting_ExtractFile
+
+Func _Sorting_ListFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+	Local $sStringSplit, $sSkipped, $sDestination, $sSubArray[$sTo - $sFrom + 2], $sListFileAndProperties = $sMainArray[$sFrom][4]
+	$sSubArray[0] = $sTo - $sFrom + 1
+
+	$sStringSplit = StringSplit($sListFileAndProperties, "|") ; Remove Possible Extra Data From The End Of The String.
+	$sDestination = $sStringSplit[1]
+	If FileExists($sDestination) Then
+		$sDestination = __Duplicate_Process($sProfile, -1, $sDestination)
+		If @error = 1 Then
+			FileDelete($sDestination) ; To Overwrite.
+		ElseIf @error = 2 Then
+			Return SetError(1, 0, $sMainArray) ; All Skipped.
+		EndIf
+		$sMainArray[$sFrom][4] = $sDestination
+	EndIf
+
+	_Destination_CreateDir($sDestination)
+	If @error Then
+		Return SetError(2, 0, $sMainArray) ; All Failed.
+	EndIf
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
+	GUICtrlSetData($sElementsGUI[3], 30)
+	GUICtrlSetData($sElementsGUI[5], '30 %')
+
+	For $A = $sFrom To $sTo
+		If $sMainArray[$A][5] == -9 Then ; Skip Already Processed Item.
+			$sSkipped += 1
+			$sSubArray[0] -= 1
+			ContinueLoop
+		EndIf
+		$sSubArray[$A - $sFrom + 1 - $sSkipped] = $sMainArray[$A][0] ; File Path.
+	Next
+
+	Switch __GetFileExtension($sDestination)
+		Case "html", "htm"
+			__List_WriteHTML($sSubArray, $sDestination, $sStringSplit[2], $sStringSplit[3], $sStringSplit[4], $sStringSplit[5], $sStringSplit[6])
+		Case "pdf"
+			__List_WritePDF($sSubArray, $sDestination, $sStringSplit[2], $sStringSplit[5])
+		Case "xls"
+			__List_WriteXLS($sSubArray, $sDestination, $sStringSplit[2])
+		Case "csv"
+			__List_WriteTEXT($sSubArray, $sDestination, $sStringSplit[2], ',', '"')
+		Case "txt"
+			__List_WriteTEXT($sSubArray, $sDestination, $sStringSplit[2], '|', '')
+		Case "xml"
+			__List_WriteXML($sSubArray, $sDestination, $sStringSplit[2])
+		Case Else
+			SetError(1, 0, 0)
+	EndSwitch
+	If @error Then
+		Return SetError(2, 0, $sMainArray) ; All Failed.
+	EndIf
+	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ListFile
 
-Func _Sorting_MailFile($sSource, $sDestination, $sElementsGUI)
-	Local $sLabel_2 = $sElementsGUI[1], $sProgress_2 = $sElementsGUI[3], $sPercent_2 = $sElementsGUI[5]
-	Local $sStringSplit, $sNewPath, $sPriority = "Normal", $mPassword_Code = $G_Global_PasswordKey
+Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
+	Local $sFailed, $sFileNames, $sSource, $sStringSplit, $sNewPath, $mPassword_Code = $G_Global_PasswordKey, $sDestination = $sMainArray[$sFrom][4]
+
+	For $A = $sFrom To $sTo
+		If $sMainArray[$A][5] == -9 Then ; Skip Already Processed Item.
+			ContinueLoop
+		EndIf
+		$sFileNames &= __GetFileName($sMainArray[$A][0])
+		If $A < $sTo Then
+			$sFileNames &= ", "
+		EndIf
+	Next
+	$sDestination = _Destination_MailMessage($sFileNames, $sDestination)
+	If @error Then
+		Return SetError(1, 0, $sMainArray) ; All Skipped.
+	EndIf
 
 	$sStringSplit = StringSplit($sDestination, ";") ; 1 = Server, 2 = Port, 3 = SSL, 4 = Name, 5 = FromEmail, 6 = User, 7 = Password, 8 = ToEmail, 9 = Cc, 10 = Bcc, 11 = Subject, 12 = Body.
 	ReDim $sStringSplit[13]
@@ -4570,39 +5164,62 @@ Func _Sorting_MailFile($sSource, $sDestination, $sElementsGUI)
 		EndIf
 	Next
 
-	GUICtrlSetData($sLabel_2, __GetLang('ACTION_SEND_MAIL', 'Send by Mail') & ' =>  ' & $sStringSplit[8])
-	GUICtrlSetData($sProgress_2, 10)
-	GUICtrlSetData($sPercent_2, '10 %')
-
-	If _WinAPI_PathIsDirectory($sSource) Then ; Compress Folders To Send Them As Single Archive.
-		$sNewPath = $sSource & ".zip"
-		If FileExists($sNewPath) Then
-			$sNewPath = __GetParentFolder($sSource) & "\" & __Duplicate_Rename(__GetFileName($sSource) & ".zip", __GetParentFolder($sSource), 0, 2)
+	For $A = $sFrom To $sTo
+		_Sorting_CheckButtons($sMainArray)
+		If @error Then
+			Return SetExtended(1, $sMainArray) ; Aborted.
 		EndIf
-		__7ZipRun($sSource, $sNewPath, 0, 1)
+
+		If $sMainArray[$A][5] == -9 Then ; Skip Already Processed Item.
+			ContinueLoop
+		EndIf
+		$sSource = $sMainArray[$A][0]
+		$sNewPath = "" ; Reset Archive Path.
+		_Sorting_UpdateGUI($sElementsGUI, 1, $sSource) ; Reset Single Progress Bar And Show Second Line.
+		GUICtrlSetData($sElementsGUI[3], 30)
+		GUICtrlSetData($sElementsGUI[5], '30 %')
+
+		If _WinAPI_PathIsDirectory($sSource) Then ; Compress Folders To Send Them As Single Archive.
+			$sNewPath = $sSource & ".zip"
+			If FileExists($sNewPath) Then
+				$sNewPath = __GetParentFolder($sSource) & "\" & __Duplicate_Rename(__GetFileName($sSource) & ".zip", __GetParentFolder($sSource), 0, 2)
+			EndIf
+			__7ZipRun($sSource, $sNewPath, 0, 1)
+			If @error Then
+				FileDelete($sNewPath)
+				_Position_SetResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
+				$sMainArray[$A][5] = -9 ; Force Result To Be Not Overwritten.
+				$sFailed = 1 ; At Least One Item Failed.
+				ContinueLoop
+			EndIf
+			$sSource = $sNewPath
+			GUICtrlSetData($sElementsGUI[3], 50)
+			GUICtrlSetData($sElementsGUI[5], '50 %')
+		EndIf
+
+		__INetSmtpMailCom($sStringSplit[1], $sStringSplit[4], $sStringSplit[5], $sStringSplit[8], $sStringSplit[11], $sStringSplit[12], $sSource, $sStringSplit[9], $sStringSplit[10], "Normal", $sStringSplit[6], $sStringSplit[7], $sStringSplit[2], $sStringSplit[3])
 		If @error Then
 			FileDelete($sNewPath)
-			Return SetError(1, 0, 0)
+			_Position_SetResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
+			$sMainArray[$A][5] = -9 ; Force Result To Be Not Overwritten.
+			$sFailed = 1 ; At Least One Item Failed.
+			ContinueLoop
 		EndIf
-		$sSource = $sNewPath
-		GUICtrlSetData($sProgress_2, 50)
-		GUICtrlSetData($sPercent_2, '50 %')
-	EndIf
-
-	__INetSmtpMailCom($sStringSplit[1], $sStringSplit[4], $sStringSplit[5], $sStringSplit[8], $sStringSplit[11], $sStringSplit[12], $sSource, $sStringSplit[9], $sStringSplit[10], $sPriority, $sStringSplit[6], $sStringSplit[7], $sStringSplit[2], $sStringSplit[3])
-	If @error Then
 		FileDelete($sNewPath)
-		Return SetError(1, 0, 0)
-	EndIf
-	FileDelete($sNewPath)
+		_Position_SetResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, 0)
+		$sMainArray[$A][5] = -9 ; Force Result To Be Not Overwritten.
+	Next
 
-	Return 1
+	If $sFailed Then
+		Return SetError(3, 0, $sMainArray) ; Some Failed.
+	EndIf
+	Return $sMainArray
 EndFunc   ;==>_Sorting_MailFile
 
-Func _Sorting_OpenFile($sSource, $sDestination, $sElementsGUI)
-	Local $sLabel_2 = $sElementsGUI[1]
+Func _Sorting_OpenFile($sMainArray, $sIndex, $sElementsGUI)
+	Local $sSource = $sMainArray[$sIndex][0], $sDestination = $sMainArray[$sIndex][4]
 
-	GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_OPEN_WITH', 'Open With') & ' =>  ' & $sDestination, 70))
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sSource) ; Reset Single Progress Bar And Show Second Line.
 
 	If StringInStr($sDestination, "%DefaultProgram%") Then
 		$sDestination = StringReplace($sDestination, "%DefaultProgram%", "")
@@ -4625,29 +5242,72 @@ Func _Sorting_OpenFile($sSource, $sDestination, $sElementsGUI)
 		EndIf
 	EndIf
 	If @error Then
-		Return SetError(1, 0, 0)
+		Return SetError(2, 0, $sMainArray) ; Failed.
 	EndIf
 
-	Return 1
+	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_OpenFile
 
-Func _Sorting_PlaylistFile($sSource, $sPlaylistFile, $sElementsGUI)
-	Local $sLabel_2 = $sElementsGUI[1]
+Func _Sorting_PlaylistFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+	Local $sSkipped, $sSubArray[$sTo - $sFrom + 2], $sPlaylistFile = $sMainArray[$sFrom][4]
+	$sSubArray[0] = $sTo - $sFrom + 1
 
-	GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_PLAYLIST', 'Create Playlist') & ' =>  ' & $sPlaylistFile, 70))
-
-	__Playlist_Write($sSource, $sPlaylistFile)
-	If @error Then
-		Return SetError(1, 0, 0)
+	If FileExists($sPlaylistFile) Then
+		$sPlaylistFile = __Duplicate_Process($sProfile, -1, $sPlaylistFile)
+		If @error = 1 Then
+			FileDelete($sPlaylistFile) ; To Overwrite.
+		ElseIf @error = 2 Then
+			Return SetError(1, 0, $sMainArray) ; All Skipped.
+		EndIf
+		$sMainArray[$sFrom][4] = $sPlaylistFile
 	EndIf
 
-	Return $sPlaylistFile
+	_Destination_CreateDir($sPlaylistFile)
+	If @error Then
+		Return SetError(2, 0, $sMainArray) ; All Failed.
+	EndIf
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sPlaylistFile) ; Reset Single Progress Bar And Show Second Line.
+
+	For $A = $sFrom To $sTo
+		If $sMainArray[$A][5] == -9 Then ; Skip Already Processed Item.
+			$sSkipped += 1
+			$sSubArray[0] -= 1
+			ContinueLoop
+		EndIf
+		$sSubArray[$A - $sFrom + 1 - $sSkipped] = $sMainArray[$A][0] ; File Path.
+	Next
+
+	Switch __GetFileExtension($sPlaylistFile)
+		Case "m3u"
+			__Playlist_WriteM3U($sSubArray, $sPlaylistFile)
+		Case "m3u8"
+			__Playlist_WriteM3U($sSubArray, $sPlaylistFile, 1)
+		Case "pls"
+			__Playlist_WritePLS($sSubArray, $sPlaylistFile)
+		Case "wpl"
+			__Playlist_WriteWPL($sSubArray, $sPlaylistFile)
+		Case Else
+			SetError(1, 0, 0)
+	EndSwitch
+	If @error Then
+		Return SetError(2, 0, $sMainArray) ; All Failed.
+	EndIf
+	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_PlaylistFile
 
-Func _Sorting_RenameFile($sSource, $sNewName, $sElementsGUI)
-	Local $sReadOnly, $sLabel_2 = $sElementsGUI[1]
+Func _Sorting_RenameFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+	Local $sReadOnly, $sSource = $sMainArray[$sIndex][0], $sDestination = $sMainArray[$sIndex][4]
 
-	GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_RENAME', 'Rename') & ' =>  ' & __GetFileName($sNewName), 70))
+	If FileExists($sDestination) And $sSource <> $sDestination Then
+		$sDestination = __Duplicate_Process($sProfile, $sSource, $sDestination)
+		If @error = 1 And _WinAPI_PathIsDirectory($sSource) Then
+			DirRemove($sDestination) ; Overwrite.
+		ElseIf @error = 2 Then
+			Return SetError(1, 0, $sMainArray) ; Skipped.
+		EndIf
+		$sMainArray[$sIndex][4] = $sDestination
+	EndIf
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
 
 	If __IsReadOnly($sSource) Then
 		$sReadOnly = 1
@@ -4655,37 +5315,49 @@ Func _Sorting_RenameFile($sSource, $sNewName, $sElementsGUI)
 	EndIf
 
 	If _WinAPI_PathIsDirectory($sSource) Then
-		DirMove($sSource, $sNewName)
+		DirMove($sSource, $sDestination)
 	Else
-		FileMove($sSource, $sNewName, 1)
+		FileMove($sSource, $sDestination, 1)
 	EndIf
 	If @error Then
-		Return SetError(1, 0, 0)
+		Return SetError(2, 0, $sMainArray) ; Failed.
 	EndIf
 
 	If $sReadOnly = 1 Then
 		FileSetAttrib($sSource, '+R')
 	EndIf
 
-	Return 1
+	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_RenameFile
 
-Func _Sorting_ShortcutFile($sSource, $sDestination, $sElementsGUI)
-	Local $sLabel_2 = $sElementsGUI[1]
+Func _Sorting_ShortcutFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+	Local $sSource = $sMainArray[$sIndex][0], $sShortcut = $sMainArray[$sIndex][4]
 
-	GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_SHORTCUT', 'Create Shortcut') & ' =>  ' & $sDestination, 70))
-
-	FileCreateShortcut($sSource, $sDestination)
-	If @error Then
-		Return SetError(1, 0, 0)
+	If FileExists($sShortcut) Then
+		$sShortcut = __Duplicate_Process($sProfile, -1, $sShortcut)
+		If @error = 2 Then
+			Return SetError(1, 0, $sMainArray) ; Skipped.
+		EndIf
+		$sMainArray[$sIndex][4] = $sShortcut
 	EndIf
 
-	Return 1
+	_Destination_CreateDir($sShortcut)
+	If @error Then
+		Return SetError(2, 0, $sMainArray) ; Failed.
+	EndIf
+	_Sorting_UpdateGUI($sElementsGUI, 1, $sShortcut) ; Reset Single Progress Bar And Show Second Line.
+
+	FileCreateShortcut($sSource, $sShortcut)
+	If @error Then
+		Return SetError(2, 0, $sMainArray) ; Failed.
+	EndIf
+
+	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ShortcutFile
 
-Func _Sorting_UploadFile($sSource, $sDestination, $sElementsGUI, $sProfile, $sSize)
-	Local $sLabel_2 = $sElementsGUI[1], $sProgress_1 = $sElementsGUI[2], $sProgress_2 = $sElementsGUI[3], $sPercent_1 = $sElementsGUI[4], $sPercent_2 = $sElementsGUI[5]
-	Local $sFileName, $sStringSplit, $sDirectory, $sOpen, $sConn, $sListArray, $sPassword_Code = $G_Global_PasswordKey
+Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+	Local $sFailed, $sFileName, $sSource, $sSize, $sDate, $sStringSplit, $sDirectory, $sOpen, $sConn, $sListArray, $sPassword_Code = $G_Global_PasswordKey, $sDestination = $sMainArray[$sFrom][4]
+	Local $sProgress_1 = $sElementsGUI[2], $sProgress_2 = $sElementsGUI[3], $sPercent_1 = $sElementsGUI[4], $sPercent_2 = $sElementsGUI[5]
 
 	$sStringSplit = StringSplit($sDestination, "|") ; Remove FTP Settings From The End Of The String.
 	$sDirectory = $sStringSplit[1]
@@ -4694,85 +5366,110 @@ Func _Sorting_UploadFile($sSource, $sDestination, $sElementsGUI, $sProfile, $sSi
 	If StringRight($sDirectory, 1) = "/" Then
 		$sDirectory = StringTrimRight($sDirectory, 1)
 	EndIf
-	$sFileName = __GetFileName($sSource)
-	$sDestination = $sDirectory & "/" & $sFileName
 	If $sStringSplit[4] <> "" Then
 		$sStringSplit[4] = _StringEncrypt(0, $sStringSplit[4], $sPassword_Code)
 	EndIf
 
-	GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_UPLOAD', 'Upload') & ' =>  ' & $sStringSplit[1] & $sDestination, 70))
-
 	If $sStringSplit[5] = "SFTP" Then
 		$sOpen = _SFTP_Open(@ScriptDir & '\Lib\psftp\psftp.exe')
 		$sConn = _SFTP_Connect($sOpen, $sStringSplit[1], $sStringSplit[3], $sStringSplit[4], $sStringSplit[2])
-		$sListArray = _SFTP_ListToArrayEx($sConn, $sDirectory)
 		If @error Then
 			_SFTP_Close($sOpen)
-			Return SetError(1, 0, 0)
+			Return SetError(2, 0, $sMainArray) ; All Failed.
 		EndIf
-		If $sListArray[0][0] > 0 Then
-			For $A = 1 To $sListArray[0][0]
-				If $sFileName = $sListArray[$A][0] Then
-					$sDestination = $sDirectory & "/" & __Duplicate_ProcessOnline($sProfile, $sSource, $sStringSplit[1] & $sDirectory, $sListArray[$A][3], $sListArray[$A][1], $sListArray, $sStringSplit[5])
-					If @error Then
-						_SFTP_Close($sOpen)
-						Return SetError(2, 0, 0) ; Skipped.
-					EndIf
-					GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_UPLOAD', 'Upload') & ' =>  ' & $sStringSplit[1] & $sDestination, 70))
-					ExitLoop
-				EndIf
-			Next
-		EndIf
-		__SFTP_ProgressUpload($sConn, $sSource, $sDestination, $sProgress_1, $sProgress_2, $sPercent_1, $sPercent_2, $sSize)
-		_SFTP_Close($sOpen)
-	Else ; FTP.
+		$sListArray = _SFTP_ListToArrayEx($sConn, $sDirectory)
+	Else
 		If $sStringSplit[2] = "" Then
 			$sStringSplit[2] = 0
 		EndIf
 		$sOpen = _FTP_Open('DropIt Upload')
 		$sConn = _FTP_Connect($sOpen, $sStringSplit[1], $sStringSplit[3], $sStringSplit[4], 0, $sStringSplit[2])
-		$sListArray = __FTP_ListToArrayEx($sConn, $sDirectory, 0, 0x84000000) ; $INTERNET_FLAG_NO_CACHE_WRITE + $INTERNET_FLAG_RELOAD.
 		If @error Then
 			_FTP_Close($sOpen)
-			Return SetError(1, 0, 0)
+			Return SetError(2, 0, $sMainArray) ; All Failed.
 		EndIf
+		$sListArray = __FTP_ListToArrayEx($sConn, $sDirectory, 0, 0x84000000) ; $INTERNET_FLAG_NO_CACHE_WRITE + $INTERNET_FLAG_RELOAD.
+	EndIf
+	ReDim $sListArray[$sListArray[0][0] + $sTo - $sFrom + 2][4]
+
+	For $A = $sFrom To $sTo
+		_Sorting_CheckButtons($sMainArray)
+		If @error Then
+			If $sStringSplit[5] = "SFTP" Then
+				_SFTP_Close($sOpen)
+			Else
+				_FTP_Close($sOpen)
+			EndIf
+			Return SetExtended(1, $sMainArray) ; Aborted.
+		EndIf
+
+		If $sMainArray[$A][5] == -9 Then ; Skip Already Processed Item.
+			ContinueLoop
+		EndIf
+		$sSource = $sMainArray[$A][0]
+		$sSize = $sMainArray[$A][1]
+		$sFileName = __GetFileName($sSource)
+		$sDestination = $sDirectory & "/" & $sFileName
+		_Sorting_UpdateGUI($sElementsGUI, 1, $sStringSplit[1] & $sDestination) ; Reset Single Progress Bar And Show Second Line.
+
 		If $sListArray[0][0] > 0 Then
-			For $A = 1 To $sListArray[0][0]
-				If $sFileName = $sListArray[$A][0] Then
-					$sDestination = $sDirectory & "/" & __Duplicate_ProcessOnline($sProfile, $sSource, $sStringSplit[1] & $sDirectory, $sListArray[$A][3], $sListArray[$A][1], $sListArray, $sStringSplit[5])
-					If @error Then
-						_FTP_Close($sOpen)
-						Return SetError(2, 0, 0) ; Skipped.
+			For $B = 1 To $sListArray[0][0]
+				If $sFileName = $sListArray[$B][0] Then
+					$sDestination = __Duplicate_ProcessOnline($sProfile, $sSource, $sStringSplit[1], $sDirectory, $sListArray[$B][3], $sListArray[$B][1], $sListArray, $sStringSplit[5])
+					If @error = 2 Then
+						_Position_SetResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -1)
+						$sMainArray[$A][5] = -9 ; Force Result To Be Not Overwritten.
+						ContinueLoop 2 ; Skipped.
 					EndIf
-					GUICtrlSetData($sLabel_2, _WinAPI_PathCompactPathEx(__GetLang('ACTION_UPLOAD', 'Upload') & ' =>  ' & $sStringSplit[1] & $sDestination, 70))
+					_Sorting_UpdateGUI($sElementsGUI, 1, $sStringSplit[1] & $sDestination) ; Reset Single Progress Bar And Show Second Line.
 					ExitLoop
 				EndIf
 			Next
 		EndIf
-		If _WinAPI_PathIsDirectory($sSource) Then
-			_FTP_DirPutContents($sConn, $sSource, $sDestination, 1)
+
+		If $sStringSplit[5] = "SFTP" Then
+			__SFTP_DirCreateEx($sConn, $sDirectory) ; Create Remote Directory If Does Not Exist.
+			__SFTP_ProgressUpload($sConn, $sSource, $sDestination, $sProgress_1, $sProgress_2, $sPercent_1, $sPercent_2, $sSize)
 		Else
-			__FTP_ProgressUpload($sConn, $sSource, $sDestination, $sProgress_1, $sProgress_2, $sPercent_1, $sPercent_2, $sSize)
+			__FTP_DirCreateEx($sConn, $sDirectory) ; Create Remote Directory If Does Not Exist.
+			If _WinAPI_PathIsDirectory($sSource) Then
+				_FTP_DirPutContents($sConn, $sSource, $sDestination, 1)
+			Else
+				__FTP_ProgressUpload($sConn, $sSource, $sDestination, $sProgress_1, $sProgress_2, $sPercent_1, $sPercent_2, $sSize)
+			EndIf
 		EndIf
+		If @error Then
+			_Position_SetResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2) ; Failed.
+			$sMainArray[$A][5] = -9 ; Force Result To Be Not Overwritten.
+			$sFailed = 1 ; At Least One Item Failed.
+			ContinueLoop
+		EndIf
+		_Position_SetResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, 0) ; OK.
+		$sMainArray[$A][5] = -9 ; Force Result To Be Not Overwritten.
+
+		$sListArray[0][0] += 1
+		$sListArray[$sListArray[0][0]][0] = __GetFileName($sDestination)
+		$sListArray[$sListArray[0][0]][1] = $sSize
+		$sDate = FileGetTime($sSource)
+		$sListArray[$sListArray[0][0]][3] = $sDate[0] & "/" & $sDate[1] & "/" & $sDate[2] & " " & $sDate[3] & ":" & $sDate[4] ; YYYY/MM/DD[ HH:MM]
+	Next
+	If $sStringSplit[5] = "SFTP" Then
+		_SFTP_Close($sOpen)
+	Else
 		_FTP_Close($sOpen)
 	EndIf
-	If @error Then
-		Return SetError(1, 0, 0)
-	EndIf
 
-	Return $sStringSplit[1] & $sDestination
+	If $sFailed Then
+		Return SetError(3, 0, $sMainArray) ; Some Failed.
+	EndIf
+	Return $sMainArray
 EndFunc   ;==>_Sorting_UploadFile
 
-Func _Sorting_ProgressArchive($sProcess, $sSize, $sDecrypt_Password, $sElementsGUI)
+Func _Sorting_ProgressArchive($sProcess, $sSize, $sElementsGUI)
 	Local $sProgress_1 = $sElementsGUI[2], $sProgress_2 = $sElementsGUI[3], $sPercent_1 = $sElementsGUI[4], $sPercent_2 = $sElementsGUI[5]
-
-	Sleep(50) ; Needed, Otherwise Progress Bar Could Be Not Updated.
-	If $sDecrypt_Password <> "" Then
-		Sleep(400) ; Needed, Otherwise Process Could Be Not Ends.
-	EndIf
-
 	Local $sPercent, $sPreviousPercent = -1
 	Local $sPercentHandle = __7Zip_OpenPercent($sProcess)
+
 	While 1
 		$sPercent = __7Zip_ReadPercent($sPercentHandle)
 		If $sPercent > 0 And $sPreviousPercent <> $sPercent Then
@@ -4791,7 +5488,7 @@ Func _Sorting_ProgressArchive($sProcess, $sSize, $sDecrypt_Password, $sElementsG
 		If $G_Global_AbortSorting Then
 			ProcessClose($sProcess)
 			ProcessWaitClose($sProcess)
-			Return SetError(1, 0, 0)
+			Return SetError(1, 0, 0) ; Aborted.
 		EndIf
 
 		If ProcessExists($sProcess) = 0 Then
@@ -4803,36 +5500,42 @@ Func _Sorting_ProgressArchive($sProcess, $sSize, $sDecrypt_Password, $sElementsG
 	Return 1
 EndFunc   ;==>_Sorting_ProgressArchive
 
-Func _Sorting_ProgressCopy($sElementsGUI)
+Func _Sorting_ProgressCopy($sMainArray, $sElementsGUI)
 	Local $sProgress_1 = $sElementsGUI[2], $sProgress_2 = $sElementsGUI[3], $sPercent_1 = $sElementsGUI[4], $sPercent_2 = $sElementsGUI[5]
-	Local $sPercent, $sState
+	Local $sData, $sState
 
 	While 1
-		If $G_Global_PauseSorting Then
-			_Copy_Pause(True)
-			_Sorting_Pause()
-			_Copy_Pause(False)
-		EndIf
-		If $G_Global_AbortSorting Then
+		_Sorting_CheckButtons($sMainArray, 1)
+		If @error Then
 			_Copy_Abort()
+			Return SetError(1, 0, 0) ; Aborted.
 		EndIf
+
 		$sState = _Copy_GetState()
 		If $sState[0] Then
-			$sPercent = Round($sState[1] / $sState[2] * 100)
-			If GUICtrlRead($sProgress_2) <> $sPercent Then
-				GUICtrlSetData($sProgress_2, $sPercent)
-				GUICtrlSetData($sPercent_2, $sPercent & ' %')
-				$sPercent = __GetPercent($sState[1], 0)
-				If GUICtrlRead($sProgress_1) <> $sPercent Then
-					GUICtrlSetData($sProgress_1, $sPercent)
-					GUICtrlSetData($sPercent_1, $sPercent & ' %')
+			If $sState[0] = -1 Then
+                ; Preparing.
+            Else
+				$sData = Round($sState[1] / $sState[2] * 100)
+				If GUICtrlRead($sProgress_2) <> $sData Then
+					GUICtrlSetData($sProgress_2, $sData)
+					GUICtrlSetData($sPercent_2, $sData & ' %')
+					$sData = __GetPercent($sState[1], 0)
+					If GUICtrlRead($sProgress_1) <> $sData Then
+						GUICtrlSetData($sProgress_1, $sData)
+						GUICtrlSetData($sPercent_1, $sData & ' %')
+					EndIf
+				Else
+					Sleep(50)
 				EndIf
-			Else
-				Sleep(50)
+				$sData = StringRegExpReplace($sState[6], '^.*', '')
+				If $sData <> "" And GUICtrlRead($sElementsGUI[1]) <> $sData Then
+					_Sorting_UpdateGUI($sElementsGUI, 1, $sData) ; Reset Single Progress Bar And Show Second Line.
+				EndIf
 			EndIf
 		Else
 			If $sState[5] <> 0 Then
-				Return SetError(1, 0, 0)
+				Return SetError(2, 0, 0) ; Failed.
 			EndIf
 			GUICtrlSetData($sProgress_2, 100)
 			GUICtrlSetData($sPercent_2, '100 %')
@@ -4840,21 +5543,17 @@ Func _Sorting_ProgressCopy($sElementsGUI)
 		EndIf
 	WEnd
 
-	Return $sState[2]
+	Return 1
 EndFunc   ;==>_Sorting_ProgressCopy
 #EndRegion >>>>> Processing Functions <<<<<
 
 #Region >>>>> General Functions <<<<<
 Func _Main()
+	Local $mProfileList, $mCurrentProfile, $mMsg
 	Local $mINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Local $mProfileList, $mCurrentProfile, $mMsg, $mStringSplit, $mLoadedFolder[2] = [1, 0]
-	Local $mMonitored, $mTime_Diff, $mTime_Now = TimerInit()
+	Local $mTime_Now = TimerInit()
 
-	$Global_Timer = 0 ; Monitoring Disabled.
-	If __Is("Monitoring") Then
-		$Global_Timer = IniRead($mINI, "General", "MonitoringTime", "60")
-	EndIf
-
+	_MonitoringConfig($mINI) ; Load Global Monitoring Configuration.
 	__InstalledCheck() ; Check To See If DropIt Is Installed.
 	__IsProfile() ; Check If A Default Profile Is Available.
 	_Main_Create() ; Create The Main GUI, ContextMenu & TrayMenu.
@@ -4869,64 +5568,20 @@ Func _Main()
 
 	_WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
 	While 1
-		; Monitored Folders Scanning:
-		If $Global_Timer <> 0 Then
-			$mTime_Diff = TimerDiff($mTime_Now)
-			If $mTime_Diff > ($Global_Timer * 1000) Then
-				$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
-				If @error = 0 Then
-					$Global_MenuDisable = 1
-					TraySetClick(0)
-					For $A = 1 To $mMonitored[0][0]
-						$mLoadedFolder[1] = $mMonitored[$A][0]
-						$mStringSplit = StringSplit($mMonitored[$A][1], "|")
-						ReDim $mStringSplit[3]
-						If $mStringSplit[2] == "Disabled" Then
-							ContinueLoop ; Skip Folder If It Is Disabled.
-						EndIf
-						__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1])
-						If $Global_GUI_State = 1 Then ; GUI Is Visible.
-							GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
-						EndIf
-						_DropEvent($mLoadedFolder, $mStringSplit[1], 1)
-						GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
-					Next
-					TraySetClick(8)
-					$Global_MenuDisable = 0
-				EndIf
-				$mTime_Now = TimerInit()
-			EndIf
+		If $Global_Monitoring <> 0 Then
+			$mTime_Now = _MonitoringFolders($mINI, $mTime_Now)
 		EndIf
-
-		; Switch Profiles With Mouse Scroll Wheel:
-		If $Global_Wheel <> 0 Then
+		If $Global_Wheel <> 0 Then ; Switch Profiles With Mouse Scroll Wheel.
 			$mProfileList = __ProfileList_Get() ; Get Array Of All Profiles.
 			$mCurrentProfile = __GetCurrentProfile() ; Get Current Profile From The Settings INI File.
-			For $A = 1 To $mProfileList[0]
-				If $mProfileList[$A] = $mCurrentProfile Then
-					If $Global_Wheel = 1 Then ; Down.
-						If $A = $mProfileList[0] Then ; If Current Is The Last.
-							$A = 0
-						EndIf
-						$mCurrentProfile = $mProfileList[$A + 1]
-					Else ; Up.
-						If $A = 1 Then ; If Current Is The First.
-							$A = $mProfileList[0] + 1
-						EndIf
-						$mCurrentProfile = $mProfileList[$A - 1]
-					EndIf
-					ExitLoop
-				EndIf
-			Next
-			__SetCurrentProfile($mCurrentProfile)
-			_Refresh(1)
+			_SwitchProfiles($mProfileList, $mCurrentProfile)
+			_Refresh(0, 1)
 			$Global_Wheel = 0
-			_WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
 		EndIf
 
 		$mMsg = GUIGetMsg()
 		Switch $mMsg
-			Case $GUI_EVENT_CLOSE, $Global_ContextMenu[9][0] ; Exit DropIt If An Exit Event Is Called.
+			Case $GUI_EVENT_CLOSE, $Global_ContextMenu[10][0] ; Exit DropIt If An Exit Event Is Called.
 				ExitLoop
 
 			Case $GUI_EVENT_DROPPED
@@ -4942,45 +5597,53 @@ Func _Main()
 				_Refresh() ; Refresh The Main GUI & TrayMenu, Including Translation Strings & ContextMenu.
 				GUICtrlSetState($Global_Icon_1, $GUI_ENABLE) ; Enable Main Icon.
 
-			Case $Global_ContextMenu[13][0]
+			Case $Global_ContextMenu[14][0]
 				GUICtrlSetState($Global_Icon_1, $GUI_DISABLE)
 				$mProfileList = _Customize_GUI($Global_GUI_1, $mProfileList) ; Open Customize GUI.
-				_Refresh(1) ; Refresh The Main GUI Icon & TrayMenu, Including Translation Strings & ContextMenu.
+				_Refresh(1, 1) ; Refresh The Main GUI Icon & TrayMenu, Including Translation Strings & ContextMenu.
 				GUICtrlSetState($Global_Icon_1, $GUI_ENABLE)
 
 			Case $Global_ContextMenu[5][0]
 				GUICtrlSetState($Global_Icon_1, $GUI_DISABLE)
 				_Options($Global_GUI_1) ; Open Options.
-				_Refresh() ; Refresh The Main GUI & TrayMenu, Including Translation Strings & ContextMenu.
+				_Refresh(1) ; Refresh The Main GUI & TrayMenu, Including Translation Strings & ContextMenu.
 				GUICtrlSetState($Global_Icon_1, $GUI_ENABLE)
 
-			Case $Global_ContextMenu[6][0]
+			Case $Global_ContextMenu[7][0]
 				_TrayMenu_ShowTray() ; Show The TrayMenu.
 
-			Case $Global_ContextMenu[10][0]
+			Case $Global_ContextMenu[11][0]
 				If FileExists(@ScriptDir & "\Guide.pdf") Then
 					ShellExecute(@ScriptDir & "\Guide.pdf")
 				EndIf
 
-			Case $Global_ContextMenu[11][0]
+			Case $Global_ContextMenu[12][0]
 				If FileExists(@ScriptDir & "\Readme.txt") Then
 					ShellExecute(@ScriptDir & "\Readme.txt")
 				EndIf
 
-			Case $Global_ContextMenu[12][0]
+			Case $Global_ContextMenu[13][0]
 				_About()
 
 			Case Else
-				If $mMsg >= $Global_ContextMenu[14][0] And $mMsg <= $Global_ContextMenu[$Global_ContextMenu[0][0]][0] Then
-					For $A = 14 To $Global_ContextMenu[0][0]
+				If $mMsg >= $Global_ContextMenu[15][0] And $mMsg <= $Global_ContextMenu[15 + $Global_ContextMenu[4][1]][0] Then
+					For $A = 15 To 15 + $Global_ContextMenu[4][1]
 						If $mMsg = $Global_ContextMenu[$A][0] Then
-							__Log_Write(__GetLang('MAIN_TIP_1', 'Changed Profile To'), $Global_ContextMenu[$A][1])
+							__Log_Write(__GetLang('MAIN_TIP_1', 'Changed profile to'), $Global_ContextMenu[$A][1])
 							__SetCurrentProfile($Global_ContextMenu[$A][1]) ; Write Selected Profile Name To The Settings INI File.
 							ExitLoop
 						EndIf
 					Next
 					__SetCurrentPosition() ; Set Current Coordinates/Position Of DropIt.
-					_Refresh(1)
+					_Refresh(0, 1)
+				ElseIf $mMsg > $Global_ContextMenu[15 + $Global_ContextMenu[4][1]][0] And $mMsg <= $Global_ContextMenu[15 + $Global_ContextMenu[4][1] + $Global_ContextMenu[6][1]][0] Then
+					For $A = 15 + $Global_ContextMenu[4][1] + 1 To 15 + $Global_ContextMenu[4][1] + $Global_ContextMenu[6][1]
+						If $mMsg = $Global_ContextMenu[$A][0] Then
+							__SetCurrentLanguage($Global_ContextMenu[$A][1]) ; Set The Selected Language To The Settings INI File.
+							ExitLoop
+						EndIf
+					Next
+					_Refresh()
 				EndIf
 
 		EndSwitch
@@ -5028,11 +5691,81 @@ Func _Main_Create()
 	Else
 		GUISetState(@SW_SHOW, $rGUI_1)
 	EndIf
+	__SendTo_Install()
 
 	Return 1
 EndFunc   ;==>_Main_Create
 
-Func _Refresh($rImage = 0)
+Func _MonitoringConfig($mINI)
+	If __Is("Monitoring") Then
+		$Global_Monitoring = 1
+	Else
+		$Global_Monitoring = 0
+	EndIf
+	$Global_MonitoringTimer = IniRead($mINI, "General", "MonitoringTime", "")
+	If $Global_MonitoringTimer = "" Or $Global_MonitoringTimer = 0 Then
+		$Global_MonitoringTimer = 30
+	EndIf
+	$Global_MonitoringSizer = IniRead($mINI, "General", "MonitoringSize", "")
+	If $Global_MonitoringSizer = "" Then
+		$Global_MonitoringSizer = 0
+	EndIf
+EndFunc   ;==>_MonitoringConfig
+
+Func _MonitoringFolders($mINI, $mTime_Now)
+	Local $mMonitored, $mStringSplit, $mLoadedFolder[2] = [1, 0]
+	If TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
+		$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
+		If @error = 0 Then
+			$Global_MenuDisable = 1
+			TraySetClick(0)
+			For $A = 1 To $mMonitored[0][0]
+				$mLoadedFolder[1] = $mMonitored[$A][0]
+				If FileExists($mLoadedFolder[1]) = 0 Or DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer Then
+					ContinueLoop ; Skip Folder If Does Not Exist Or Smaller Than Defined Size.
+				EndIf
+				$mStringSplit = StringSplit($mMonitored[$A][1], "|")
+				ReDim $mStringSplit[3]
+				If $mStringSplit[2] == "Disabled" Then
+					ContinueLoop ; Skip Folder If It Is Disabled.
+				EndIf
+				__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1])
+				If $Global_GUI_State = 1 Then ; GUI Is Visible.
+					GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
+				EndIf
+				_DropEvent($mLoadedFolder, $mStringSplit[1], 1)
+				GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
+			Next
+			TraySetClick(8)
+			$Global_MenuDisable = 0
+		EndIf
+		$mTime_Now = TimerInit()
+	EndIf
+	Return $mTime_Now
+EndFunc   ;==>_MonitoringFolders
+
+Func _SwitchProfiles($mProfileList, $mCurrentProfile)
+	For $A = 1 To $mProfileList[0]
+		If $mProfileList[$A] = $mCurrentProfile Then
+			If $Global_Wheel = 1 Then ; Down.
+				If $A = $mProfileList[0] Then ; If Current Is The Last.
+					$A = 0
+				EndIf
+				$mCurrentProfile = $mProfileList[$A + 1]
+			Else ; Up.
+				If $A = 1 Then ; If Current Is The First.
+					$A = $mProfileList[0] + 1
+				EndIf
+				$mCurrentProfile = $mProfileList[$A - 1]
+			EndIf
+			ExitLoop
+		EndIf
+	Next
+	__SetCurrentProfile($mCurrentProfile)
+	Return 1
+EndFunc   ;==>_SwitchProfiles
+
+Func _Refresh($rSendTo = 0, $rImage = 0)
 	If $rImage = 1 Then
 		_Refresh_Image() ; Refresh Target Image.
 	EndIf
@@ -5041,11 +5774,11 @@ Func _Refresh($rImage = 0)
 	If __Is("CustomTrayIcon") Then
 		__Tray_SetIcon(__IsProfile(-1, 2))
 	EndIf
-	If __Is("UseSendTo") Then
-		__SendTo_Uninstall() ; Remove SendTo Integration.
-		__SendTo_Install() ; Create SendTo Integration.
+	If $rSendTo = 1 Then
+		__SendTo_Install()
 	EndIf
 	GUIRegisterMsg($WM_COMMAND, "WM_LBUTTONDBLCLK") ; $WM_LBUTTONDBLCLK As Command Doesn't Work.
+	_WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
 	Return 1
 EndFunc   ;==>_Refresh
 
@@ -5061,62 +5794,72 @@ EndFunc   ;==>_Refresh_Image
 
 Func _ContextMenu_Create($cHandle = $Global_Icon_1)
 	Local $cCurrentProfile = __GetCurrentProfile() ; Get Current Profile From The Settings INI File.
+	Local $cCurrentLanguage = __GetCurrentLanguage() ; Get Current Language From The Settings INI File.
+	Local $cLanguageDir = __GetDefault(1024) ; Get Default Language Directory.
 	Local $cContextMenu = _ContextMenu_Delete($cHandle, $cCurrentProfile) ; Delete The Current ContextMenu Items.
+	Local $cProfileList = __ProfileList_Get() ; Get Array Of All Profiles.
+	Local $cLanguageList = __LangList_Get() ; Get Array Of All Profiles.
 
 	$cHandle = $Global_Icon_1
-	Local $cProfileList = __ProfileList_Get() ; Get Array Of All Profiles.
 	$cContextMenu[1][0] = GUICtrlCreateContextMenu($cHandle)
 	$cContextMenu[2][0] = GUICtrlCreateMenuItem(__GetLang('ASSOCIATIONS', 'Associations'), $cContextMenu[1][0], 0)
 	$cContextMenu[3][0] = GUICtrlCreateMenuItem("", $cContextMenu[1][0], 1)
 	$cContextMenu[4][0] = GUICtrlCreateMenu(__GetLang('PROFILES', 'Profiles'), $cContextMenu[1][0], 2)
+	$cContextMenu[4][1] = $cProfileList[0] ; Save Number Of Profiles.
 	$cContextMenu[5][0] = GUICtrlCreateMenuItem(__GetLang('OPTIONS', 'Options'), $cContextMenu[1][0], 3)
-	$cContextMenu[6][0] = GUICtrlCreateMenuItem(__GetLang('HIDE', 'Hide'), $cContextMenu[1][0], 4)
-	$cContextMenu[7][0] = GUICtrlCreateMenu(__GetLang('HELP', 'Help'), $cContextMenu[1][0], 5)
-	$cContextMenu[8][0] = GUICtrlCreateMenuItem("", $cContextMenu[1][0], 6)
-	$cContextMenu[9][0] = GUICtrlCreateMenuItem(__GetLang('EXIT', 'Exit'), $cContextMenu[1][0], 7)
+	$cContextMenu[6][0] = GUICtrlCreateMenu(__GetLang('LANGUAGES', 'Languages'), $cContextMenu[1][0], 4)
+	$cContextMenu[6][1] = $cLanguageList[0] ; Save Number Of Language Files.
+	$cContextMenu[7][0] = GUICtrlCreateMenuItem(__GetLang('HIDE', 'Hide'), $cContextMenu[1][0], 5)
+	$cContextMenu[8][0] = GUICtrlCreateMenu(__GetLang('HELP', 'Help'), $cContextMenu[1][0], 6)
+	$cContextMenu[9][0] = GUICtrlCreateMenuItem("", $cContextMenu[1][0], 7)
+	$cContextMenu[10][0] = GUICtrlCreateMenuItem(__GetLang('EXIT', 'Exit'), $cContextMenu[1][0], 8)
 
-	$cContextMenu[10][0] = GUICtrlCreateMenuItem(__GetLang('GUIDE', 'Guide'), $cContextMenu[7][0], 0)
-	$cContextMenu[10][1] = 'GUIDE'
-	$cContextMenu[11][0] = GUICtrlCreateMenuItem(__GetLang('README', 'Readme'), $cContextMenu[7][0], 1)
-	$cContextMenu[11][1] = 'README'
-	$cContextMenu[12][0] = GUICtrlCreateMenuItem(__GetLang('ABOUT', 'About') & "...", $cContextMenu[7][0], 2)
-	$cContextMenu[12][1] = 'ABOUT'
+	$cContextMenu[11][0] = GUICtrlCreateMenuItem(__GetLang('GUIDE', 'Guide'), $cContextMenu[8][0], 0)
+	$cContextMenu[11][1] = 'GUIDE'
+	$cContextMenu[12][0] = GUICtrlCreateMenuItem(__GetLang('README', 'Readme'), $cContextMenu[8][0], 1)
+	$cContextMenu[12][1] = 'README'
+	$cContextMenu[13][0] = GUICtrlCreateMenuItem(__GetLang('ABOUT', 'About') & "...", $cContextMenu[8][0], 2)
+	$cContextMenu[13][1] = 'ABOUT'
 
-	$cContextMenu[13][0] = GUICtrlCreateMenuItem(__GetLang('CUSTOMIZE', 'Customize'), $cContextMenu[4][0], 0)
-	$cContextMenu[14][0] = GUICtrlCreateMenuItem("", $cContextMenu[4][0], 1)
+	$cContextMenu[14][0] = GUICtrlCreateMenuItem(__GetLang('CUSTOMIZE', 'Customize'), $cContextMenu[4][0], 0)
+	$cContextMenu[15][0] = GUICtrlCreateMenuItem("", $cContextMenu[4][0], 1)
 
 	__SetItemImage("ASSO", 0, $cContextMenu[1][0], 0, 1)
 	__SetItemImage("PROF", 2, $cContextMenu[1][0], 0, 1)
 	__SetItemImage("OPT", 3, $cContextMenu[1][0], 0, 1)
-	__SetItemImage("HIDE", 4, $cContextMenu[1][0], 0, 1)
-	__SetItemImage("HELP", 5, $cContextMenu[1][0], 0, 1)
-	__SetItemImage("CLOSE", 7, $cContextMenu[1][0], 0, 1)
-	__SetItemImage("GUIDE", 0, $cContextMenu[7][0], 0, 1)
-	__SetItemImage("READ", 1, $cContextMenu[7][0], 0, 1)
-	__SetItemImage("ABOUT", 2, $cContextMenu[7][0], 0, 1)
+	__SetItemImage("FLAGS", 4, $cContextMenu[1][0], 0, 1)
+	__SetItemImage("HIDE", 5, $cContextMenu[1][0], 0, 1)
+	__SetItemImage("HELP", 6, $cContextMenu[1][0], 0, 1)
+	__SetItemImage("CLOSE", 8, $cContextMenu[1][0], 0, 1)
+	__SetItemImage("GUIDE", 0, $cContextMenu[8][0], 0, 1)
+	__SetItemImage("READ", 1, $cContextMenu[8][0], 0, 1)
+	__SetItemImage("ABOUT", 2, $cContextMenu[8][0], 0, 1)
 	__SetItemImage("CUST", 0, $cContextMenu[4][0], 0, 1)
 
-	Local $B = $cContextMenu[0][0] + 1
+	$cContextMenu[0][0] = 15 ; To Correctly Restore Counter Of Only Main Items.
+	ReDim $cContextMenu[$cContextMenu[0][0] + $cContextMenu[4][1] + 1][$cContextMenu[0][1]]
 	For $A = 1 To $cProfileList[0]
-		If UBound($cContextMenu, 1) <= $cContextMenu[0][0] + 1 Then
-			ReDim $cContextMenu[UBound($cContextMenu, 1) * 2][$cContextMenu[0][1]] ; ReDim $cContextMenu If More Items Are Required.
-		EndIf
-		$cContextMenu[$B][0] = GUICtrlCreateMenuItem($cProfileList[$A], $cContextMenu[4][0], $A + 1, 1)
-		__SetItemImage(__IsProfile($cProfileList[$A], 2), $A + 1, $cContextMenu[4][0], 0, 0, 20, 20)
-		$cContextMenu[$B][1] = $cProfileList[$A]
-		If $cProfileList[$A] = $cCurrentProfile Then
-			GUICtrlSetState($cContextMenu[$B][0], 1)
-		EndIf
 		$cContextMenu[0][0] += 1
-		$B += 1
+		$cContextMenu[$cContextMenu[0][0]][0] = GUICtrlCreateMenuItem($cProfileList[$A], $cContextMenu[4][0], $A + 1, 1)
+		__SetItemImage(__IsProfile($cProfileList[$A], 2), $A + 1, $cContextMenu[4][0], 0, 0, 20, 20)
+		$cContextMenu[$cContextMenu[0][0]][1] = $cProfileList[$A]
+		If $cProfileList[$A] = $cCurrentProfile Then
+			GUICtrlSetState($cContextMenu[$cContextMenu[0][0]][0], 1)
+		EndIf
+	Next
+	ReDim $cContextMenu[$cContextMenu[0][0] + $cContextMenu[6][1] + 1][$cContextMenu[0][1]]
+	For $A = 1 To $cLanguageList[0]
+		$cContextMenu[0][0] += 1
+		$cContextMenu[$cContextMenu[0][0]][0] = GUICtrlCreateMenuItem($cLanguageList[$A], $cContextMenu[6][0], $A - 1, 1)
+		__SetItemImage($cLanguageDir & $cLanguageList[$A] & ".gif", $A - 1, $cContextMenu[6][0], 0, 0, 18, 12)
+		$cContextMenu[$cContextMenu[0][0]][1] = $cLanguageList[$A]
+		If $cLanguageList[$A] = $cCurrentLanguage Then
+			GUICtrlSetState($cContextMenu[$cContextMenu[0][0]][0], 1)
+		EndIf
 	Next
 
-	ReDim $cContextMenu[$cContextMenu[0][0] + 1][$cContextMenu[0][1]] ; Delete Empty Rows.
 	$Global_ContextMenu = $cContextMenu
 
-	If @error Then
-		Return SetError(1, 0, 0)
-	EndIf
 	Return 1
 EndFunc   ;==>_ContextMenu_Create
 
@@ -5132,7 +5875,7 @@ Func _ContextMenu_Delete($cHandle, $cCurrentProfile)
 	$cHandle = GUICtrlCreateLabel("", 0, 0, $cControlGetPos[2], $cControlGetPos[3], $SS_NOTIFY, $GUI_WS_EX_PARENTDRAG)
 	$Global_Icon_1 = $cHandle
 	GUICtrlSetState($cHandle, $GUI_DROPACCEPTED)
-	GUICtrlSetTip($cHandle, __GetLang('TITLE_TOOLTIP', 'Sort your files with a drop!'), "DropIt [" & $cCurrentProfile & "]")
+	GUICtrlSetTip($cHandle, __GetLang('TITLE_TOOLTIP', 'Process your files with a drop!'), "DropIt [" & $cCurrentProfile & "]")
 	_WinAPI_SetFocus(GUICtrlGetHandle($cHandle)) ; Set The $Global_Icon_1 Label As Having Focus, Used For The HotKeys.
 	Local $cContextMenu = $Global_ContextMenu
 	Local $cReturn_ContextMenu[$cContextMenu[0][0] + 1][$cContextMenu[0][1]] = [[$cContextMenu[0][0], $cContextMenu[0][1]]]
@@ -5140,17 +5883,26 @@ Func _ContextMenu_Delete($cHandle, $cCurrentProfile)
 EndFunc   ;==>_ContextMenu_Delete
 
 Func _About($aHandle = -1)
-	Local $aClose, $aGUI, $aIcon_GUI, $aIcon_Label, $aLicense, $aUpdate, $aUpdateProgress, $aUpdateText
+	Local $aClose, $aGUI, $aIcon_GUI, $aIcon_Label, $aLicense, $aUpdate, $aUpdateProgress, $aUpdateText, $aTranslator
 
-	$aGUI = GUICreate(__GetLang('ABOUT', 'About'), 400, 155, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($aHandle))
+	$aTranslator = StringTrimLeft(FileReadLine(__GetDefault(1024) & __GetCurrentLanguage() & ".lng", 2), StringLen(";TranslatorName"))
+	If StringLeft($aTranslator, 1) = "=" Then
+		$aTranslator = StringTrimLeft($aTranslator, 1)
+	Else
+		$aTranslator = "-"
+	EndIf
+
+	$aGUI = GUICreate(__GetLang('ABOUT', 'About'), 400, 190, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($aHandle))
 	GUICtrlCreateLabel("DropIt", 80, 10, 310, 25)
 	GUICtrlSetFont(-1, 18)
 	GUICtrlCreateLabel("(v" & $G_Global_CurrentVersion & ")", 80, 40, 310, 17)
 	GUICtrlCreateLabel("", 80, 60, 310, 1) ; Single Line.
 	GUICtrlSetBkColor(-1, 0x000000)
-	GUICtrlCreateLabel(__GetLang('MAIN_TIP_0', 'Software developed by %DropItTeam%.') & @LF & __GetLang('MAIN_TIP_2', 'Released under %DropItLicense%.'), 80, 70, 310, 45)
+	GUICtrlCreateLabel(__GetLang('MAIN_TIP_0', 'Software developed by %DropItTeam%.'), 80, 70, 310, 18)
+	GUICtrlCreateLabel(__GetLang('MAIN_TIP_2', 'Released under %DropItLicense%.'), 80, 70 + 19, 310, 18)
+	GUICtrlCreateLabel(__GetLang('MAIN_TIP_3', 'Current translation by') & ": " & $aTranslator, 80, 70 + 19 + 19, 310, 18)
 
-	$aUpdateText = GUICtrlCreateLabel("", 80, 101, 310, 18)
+	$aUpdateText = GUICtrlCreateLabel("", 80, 133, 310, 18)
 	If __IsWindowsVersion() = 0 Then
 		$aUpdateProgress = GUICtrlCreateProgress(200, 16, 190, 14, 0x01)
 		GUICtrlSetState($aUpdateProgress, $GUI_HIDE)
@@ -5158,12 +5910,12 @@ Func _About($aHandle = -1)
 		$aUpdateProgress = GUICtrlCreatePic("", 200, 16, 190, 14)
 	EndIf
 
-	$aUpdate = GUICtrlCreateButton(__GetLang('CHECK_UPDATE', 'Check Update'), 10, 120, 120, 25)
-	$aLicense = GUICtrlCreateButton(__GetLang('LICENSE', 'License'), 250, 120, 65, 25)
+	$aUpdate = GUICtrlCreateButton(__GetLang('CHECK_UPDATE', 'Check Update'), 10, 155, 120, 25)
+	$aLicense = GUICtrlCreateButton(__GetLang('LICENSE', 'License'), 250, 155, 65, 25)
 	If FileExists(@ScriptDir & "\License.txt") = 0 Then
 		GUICtrlSetState($aLicense, $GUI_HIDE)
 	EndIf
-	$aClose = GUICtrlCreateButton(__GetLang('CLOSE', 'Close'), 325, 120, 65, 25)
+	$aClose = GUICtrlCreateButton(__GetLang('CLOSE', 'Close'), 325, 155, 65, 25)
 
 	$aIcon_GUI = GUICreate("", 64, 64, 10, 10, $WS_POPUP, BitOR($WS_EX_MDICHILD, $WS_EX_LAYERED, $WS_EX_TOPMOST), $aGUI)
 	GUISetBkColor(0x000001)
@@ -5211,22 +5963,22 @@ EndFunc   ;==>_About
 Func _Options($oHandle = -1)
 	Local $oINI = __IsSettingsFile() ; Get Default Settings INI File.
 
-	Local $oCheckItems[28] = [27], $oCheckModeItems[3] = [2], $oComboItems[9] = [8], $oGroup[9] = [8], $oCurrent[9] = [8]
-	Local $oINI_TrueOrFalse_Array[28][3] = [ _
-			[27, 3], _
+	Local $oCheckItems[31] = [30], $oCheckModeItems[3] = [2], $oComboItems[8] = [7], $oGroup[8] = [7], $oCurrent[8] = [7]
+	Local $oINI_TrueOrFalse_Array[31][3] = [ _
+			[30, 3], _
 			["General", "OnTop", 1], _
 			["General", "LockPosition", 1], _
 			["General", "MultipleInstances", 1], _
 			["General", "UseSendTo", 1], _
 			["General", "CreateLog", 1], _
-			["General", "DirForFolders", 1], _
+			["General", "FolderAsFile", 1], _
 			["General", "IgnoreNew", 1], _
 			["General", "AutoDup", 1], _
 			["General", "ShowSorting", 1], _
 			["General", "ProfileEncryption", 1], _
 			["General", "CustomTrayIcon", 1], _
 			["General", "StartAtStartup", 1], _
-			["General", "IntegrityCheck", 1], _
+			["General", "ShowListView", 1], _
 			["General", "AlertSize", 1], _
 			["General", "AlertDelete", 1], _
 			["General", "WaitOpened", 1], _
@@ -5240,14 +5992,16 @@ Func _Options($oHandle = -1)
 			["General", "ListLightbox", 1], _
 			["General", "AmbiguitiesCheck", 1], _
 			["General", "UseRegEx", 1], _
-			["General", "PlaySound", 1]]
+			["General", "PlaySound", 1], _
+			["General", "AutoStart", 1], _
+			["General", "AutoClose", 1], _
+			["General", "ShowMonitored", 1]]
 	Local $oINI_Various_Array[14][2] = [ _
 			[13, 2], _
 			["General", "SendToMode"], _
 			["General", "DupMode"], _
 			["General", "MasterPassword"], _
 			["General", "MonitoringTime"], _
-			["General", "ListTheme"], _
 			["General", "ZIPLevel"], _
 			["General", "ZIPMethod"], _
 			["General", "ZIPEncryption"], _
@@ -5255,97 +6009,81 @@ Func _Options($oHandle = -1)
 			["General", "7ZLevel"], _
 			["General", "7ZMethod"], _
 			["General", "7ZEncryption"], _
-			["General", "7ZPassword"]]
+			["General", "7ZPassword"], _
+			["General", "MonitoringSize"]]
 
 	Local $oPW, $oPW_Code = $G_Global_PasswordKey
 	Local $oBackupDirectory = __GetDefault(32) ; Get Default Backup Directory.
 	Local $oLogFile = __GetDefault(513) ; Get Default Directory & LogFile File Name.
-	Local $oThemeFolder = @ScriptDir & "\Lib\list\themes\"
-	Local $oGUI, $oOK, $oCancel, $oMsg, $oMsgBox, $oLanguage, $oLanguageCombo, $oImageList, $oLogRemove, $oLogView, $oLogWrite, $oTab_1, $oCreateTab
+	Local $oGUI, $oOK, $oCancel, $oMsg, $oMsgBox, $oLogRemove, $oLogView, $oLogWrite
+	Local $oListView, $oListView_Handle, $oIndex_Selected, $oFolder_Selected, $oMn_Add, $oMn_Edit, $oMn_Remove, $oScanTime, $oScanSize
 	Local $oZIPPassword, $oShowZIPPassword, $o7ZPassword, $oShow7ZPassword, $oMasterPassword, $oShowMasterPassword, $oDisablePassword
-	Local $oState, $oBk_Backup, $oBk_Restore, $oBk_Remove, $oNewDummy, $oEnterDummy, $oThemePreview, $oNoPreview
-	Local $oListView, $oListView_Handle, $oIndex_Selected, $oFolder_Selected, $oMn_Add, $oMn_Edit, $oMn_Remove, $oScanTime
+	Local $oState, $oBk_Backup, $oBk_Restore, $oBk_Remove, $oNewDummy, $oEnterDummy
 
-	$oGUI = GUICreate(__GetLang('OPTIONS', 'Options'), 380, 360, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($oHandle))
+	$oGUI = GUICreate(__GetLang('OPTIONS', 'Options'), 380, 490, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($oHandle))
 
-	$oCreateTab = GUICtrlCreateTab(0, 0, 380, 323) ; Create Tab Menu.
+	GUICtrlCreateTab(0, 0, 380, 453) ; Create Tab Menu.
 
 	; MAIN Tab:
-	$oTab_1 = GUICtrlCreateTabItem(__GetLang('OPTIONS_TAB_0', 'Main'))
+	GUICtrlCreateTabItem(__GetLang('OPTIONS_TAB_0', 'Main'))
 	GUICtrlSetState(-1, $GUI_SHOW) ; Show This Tab At Options Opening.
 
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_16', 'Interface'), 10, 30, 359, 125)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_16', 'Interface'), 10, 30, 359, 165)
 	$oCheckItems[1] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_0', 'Show target image always on top'), 25, 30 + 15)
 	$oCheckItems[2] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_7', 'Lock target image position'), 25, 30 + 15 + 20)
-	$oCheckItems[11] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_13', 'Use profile icon in traybar'), 25, 30 + 15 + 40)
-	$oCheckItems[9] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_11', 'Show progress bar during process'), 25, 30 + 15 + 60)
-	$oCheckItems[27] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_30', 'Play sound when process is complete'), 25, 30 + 15 + 80)
+	$oCheckItems[9] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_11', 'Show progress window during process'), 25, 30 + 15 + 40)
+	$oCheckItems[28] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_33', 'Start the process after loading'), 25, 30 + 15 + 60)
+	$oCheckItems[13] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_31', 'Show list of loaded files by default'), 25, 30 + 15 + 80)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_19', 'The list of processed items is visible by default.'))
+	$oCheckItems[29] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_34', 'Close progress window when process is complete'), 25, 30 + 15 + 100)
+	$oCheckItems[27] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_30', 'Play sound when process is complete'), 25, 30 + 15 + 120)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_3', 'Usage'), 10, 160, 359, 85)
-	$oCheckItems[12] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_14', 'Start on system startup'), 25, 160 + 15)
-	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_3', 'Note that this is a not portable feature.'))
-	$oCheckItems[19] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_21', 'Start minimized to system tray'), 25, 160 + 15 + 20)
-	$oCheckItems[4] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_6', 'Integrate in SendTo menu'), 25, 160 + 15 + 40, 290, 20)
-	$oCheckModeItems[1] = GUICtrlCreateCheckbox("", 25 + 295, 160 + 15 + 40, 20, 20)
-	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_1', 'This integration is created at DropIt startup and removed at closing.'), __GetLang('OPTIONS_PORTABLE_MODE', 'Portable Mode'), 0)
-	$oCheckModeItems[2] = GUICtrlCreateIcon(@ScriptFullPath, -16, 25 + 315, 160 + 15 + 40 + 1, 16, 16)
-	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_1', 'This integration is created at DropIt startup and removed at closing.'), __GetLang('OPTIONS_PORTABLE_MODE', 'Portable Mode'), 0)
-	GUICtrlCreateGroup('', -99, -99, 1, 1)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_TAB_1', 'Processing'), 10, 200, 359, 165)
+	$oCheckItems[6] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_32', 'Process folders as files'), 25, 200 + 15)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_20', 'Always consider folders as files to be processed instead of scan them.'))
+	$oCheckItems[20] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_22', 'Scan also subfolders'), 25, 200 + 15 + 20)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_11', 'It does not work if folders are processed as files.'))
+	$oCheckItems[7] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_3', 'Ignore unassociated files/folders'), 25, 200 + 15 + 40)
+	$oCheckItems[25] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_28', 'Select ambiguities checkbox by default'), 25, 200 + 15 + 60)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_18', 'Checkbox that apply selection to all ambiguities of a drop is selected by default.'))
+	$oCheckItems[14] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_16', 'Confirm for large loaded files'), 25, 200 + 15 + 80)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_15', 'It requires a confirmation if more than 2 GB of files are loaded.'))
+	$oCheckItems[15] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_23', 'Confirm for Delete actions'), 25, 200 + 15 + 100)
+	$oCheckItems[16] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_18', 'Pause until opened file is closed'), 25, 200 + 15 + 120)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_8', 'Pause the process at each "Open With" action.'))
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_1', 'Language'), 10, 250, 359, 52)
-	$oLanguageCombo = _GUICtrlComboBoxEx_Create($oGUI, "", 25, 250 + 15 + 3, 330, 260, 0x0003)
-	$oImageList = _GUIImageList_Create(16, 16, 5, 3) ; Create An ImageList.
-	_GUICtrlComboBoxEx_SetImageList($oLanguageCombo, $oImageList)
-	$G_Global_ImageList = $oImageList
-	__LangList_Combo($oLanguageCombo)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_5', 'Manage Duplicates'), 10, 370, 359, 72)
+	$oCheckItems[8] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_5', 'Use automatic choice for duplicates'), 25, 370 + 15)
+	$oComboItems[1] = GUICtrlCreateCombo("", 25, 370 + 15 + 20 + 3, 330, 20, 0x0003)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 	; MONITORING Tab:
 	GUICtrlCreateTabItem(__GetLang('OPTIONS_TAB_4', 'Monitoring'))
 
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_15', 'Folder Monitoring'), 10, 30, 359, 270)
-	$oCheckItems[17] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_19', 'Scan every') & ":", 25, 30 + 15 + 2, 230, 20)
-	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_10', 'Schedule a scan of selected folders with a defined time interval.'))
-	$oScanTime = GUICtrlCreateInput("", 25 + 240, 30 + 15, 90, 20, 0x2000)
-	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_9', 'Time interval in seconds'))
-	$oListView = GUICtrlCreateListView(__GetLang('MONITORED_FOLDER', 'Monitored Folder') & "|" & __GetLang('ASSOCIATED_PROFILE', 'Associated Profile'), 20, 30 + 15 + 30, 340, 185, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
-	$oMn_Add = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_4', 'Add'), 25, 250 + 15 + 3, 90, 22)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_15', 'Folder Monitoring'), 10, 30, 359, 410)
+	$oCheckItems[17] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_36', 'Enable scan of monitored folders'), 25, 30 + 15 + 2, 230, 20)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_19', 'Time interval in seconds') & ":", 25, 30 + 15 + 25 + 2, 230, 20)
+	$oScanTime = GUICtrlCreateInput("", 25 + 240, 30 + 15 + 25, 90, 20, 0x2000)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_10', 'Scan monitored folders with a defined time interval.'))
+	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_20', 'Minimum size in KB') & ":", 25, 30 + 15 + 50 + 2, 230, 20)
+	$oScanSize = GUICtrlCreateInput("", 25 + 240, 30 + 15 + 50, 90, 20, 0x2000)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_21', 'Scan monitored folders if bigger than defined size.'))
+	$oCheckItems[30] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_35', 'Show progress window for monitored folders'), 25, 30 + 15 + 80 + 2)
+	$oListView = GUICtrlCreateListView(__GetLang('MONITORED_FOLDER', 'Monitored Folder') & "|" & __GetLang('ASSOCIATED_PROFILE', 'Associated Profile'), 20, 30 + 15 + 110, 340, 240, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
+	$oMn_Add = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_4', 'Add'), 25, 385 + 15 + 3, 90, 22)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_BUTTON_4', 'Add'))
-	$oMn_Edit = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_5', 'Edit'), 25 + 120, 250 + 15 + 3, 90, 22)
+	$oMn_Edit = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_5', 'Edit'), 25 + 120, 385 + 15 + 3, 90, 22)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_BUTTON_5', 'Edit'))
-	$oMn_Remove = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_3', 'Remove'), 25 + 240, 250 + 15 + 3, 90, 22)
+	$oMn_Remove = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_3', 'Remove'), 25 + 240, 385 + 15 + 3, 90, 22)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_BUTTON_3', 'Remove'))
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-	; SORTING Tab:
-	GUICtrlCreateTabItem(__GetLang('OPTIONS_TAB_1', 'Sorting'))
+	; ARCHIVES & LISTS Tab:
+	GUICtrlCreateTabItem(__GetLang('OPTIONS_TAB_6', 'Archives and Lists'))
 
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_0', 'General'), 10, 30, 359, 185)
-	$oCheckItems[6] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_2', 'Enable associations for folders'), 25, 30 + 15)
-	$oCheckItems[20] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_22', 'Scan also subfolders'), 25, 30 + 15 + 20)
-	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_11', 'It does not work if folders association is enabled.'))
-	$oCheckItems[7] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_3', 'Ignore unassociated files/folders'), 25, 30 + 15 + 40)
-	$oCheckItems[25] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_28', 'Select ambiguities checkbox by default'), 25, 30 + 15 + 60)
-	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_18', 'Checkbox that apply selection to all ambiguities of a drop is selected by default.'))
-	$oCheckItems[14] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_16', 'Confirm for large loaded files'), 25, 30 + 15 + 80)
-	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_15', 'It requires a confirmation if more than 2 GB of files are loaded.'))
-	$oCheckItems[15] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_23', 'Confirm for Delete actions'), 25, 30 + 15 + 100)
-	$oCheckItems[13] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_4', 'Check moved/copied files integrity'), 25, 30 + 15 + 120)
-	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_4', 'Activating MD5 check will slow down the sorting process.'))
-	$oCheckItems[16] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_18', 'Pause until opened file is closed'), 25, 30 + 15 + 140)
-	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_8', 'Pause the sorting process at each "Open With" action.'))
-	GUICtrlCreateGroup("", -99, -99, 1, 1)
-
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_5', 'Manage Duplicates'), 10, 220, 359, 72)
-	$oCheckItems[8] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_5', 'Use automatic choice for duplicates'), 25, 220 + 15)
-	$oComboItems[1] = GUICtrlCreateCombo("", 25, 220 + 15 + 20 + 3, 330, 20, 0x0003)
-	GUICtrlCreateGroup("", -99, -99, 1, 1)
-
-	; COMPRESSION Tab:
-	GUICtrlCreateTabItem(__GetLang('OPTIONS_TAB_2', 'Compression'))
-
-	GUICtrlCreateGroup("ZIP", 10, 30, 359, 135)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_TAB_2', 'Compression') & ": ZIP", 10, 30, 359, 135)
 	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_11', 'Level') & ":", 25, 30 + 15 + 4, 110, 20)
 	$oComboItems[2] = GUICtrlCreateCombo("", 25 + 120, 30 + 15, 210, 20, 0x0003)
 	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_12', 'Method') & ":", 25, 30 + 15 + 30 + 4, 110, 20)
@@ -5358,7 +6096,7 @@ Func _Options($oHandle = -1)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_2', 'Show/Hide the password'))
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-	GUICtrlCreateGroup("7Z / EXE", 10, 170, 359, 135)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_TAB_2', 'Compression') & ": 7Z / EXE", 10, 170, 359, 135)
 	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_11', 'Level') & ":", 25, 170 + 15 + 4, 110, 20)
 	$oComboItems[5] = GUICtrlCreateCombo("", 25 + 120, 170 + 15, 210, 20, 0x0003)
 	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_12', 'Method') & ":", 25, 170 + 15 + 30 + 4, 110, 20)
@@ -5371,57 +6109,57 @@ Func _Options($oHandle = -1)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_2', 'Show/Hide the password'))
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-	; LISTS Tab:
-	GUICtrlCreateTabItem(__GetLang('OPTIONS_TAB_5', 'Lists'))
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_0', 'General'), 10, 30, 359, 105)
-	$oCheckItems[21] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_24', 'Create sortable HTML lists'), 25, 30 + 15)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_TAB_5', 'List Creation'), 10, 310, 359, 105)
+	$oCheckItems[21] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_24', 'Create sortable HTML lists'), 25, 310 + 15)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_12', 'Allow to sort table content when you click the column header fields.'))
-	$oCheckItems[22] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_25', 'Add filter to HTML lists'), 25, 30 + 15 + 20)
+	$oCheckItems[22] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_25', 'Add filter to HTML lists'), 25, 310 + 15 + 20)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_13', 'Add a box where you can type words to filter table content.'))
-	$oCheckItems[24] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_27', 'Add lightbox to HTML lists'), 25, 30 + 15 + 40)
+	$oCheckItems[24] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_27', 'Add lightbox to HTML lists'), 25, 310 + 15 + 40)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_14', 'Open images from Absolute and Relative Links in an overlapped preview.'))
-	$oCheckItems[23] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_26', 'Add header to TXT and CSV lists'), 25, 30 + 15 + 60)
-	GUICtrlCreateGroup("", -99, -99, 1, 1)
-
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_17', 'HTML Theme'), 10, 140, 359, 162)
-	$oComboItems[8] = GUICtrlCreateCombo("", 25, 140 + 15 + 3, 330, 20, $WS_VSCROLL + $CBS_DROPDOWNLIST)
-	$oThemePreview = GUICtrlCreatePic($oThemeFolder & "Default.jpg", 25, 140 + 15 + 35, 330, 100)
-	$oNoPreview = GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_18', 'Preview Not Available'), 25 + 85, 140 + 15 + 75, 130, 40)
-	GUICtrlSetState($oNoPreview, $GUI_HIDE)
+	$oCheckItems[23] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_26', 'Add header to TXT and CSV lists'), 25, 310 + 15 + 60)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
 	; VARIOUS Tab:
 	GUICtrlCreateTabItem(__GetLang('OPTIONS_TAB_3', 'Various'))
 
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_0', 'General'), 10, 30, 359, 85)
-	$oCheckItems[3] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_8', 'Enable multiple instances'), 25, 30 + 15)
-	$oCheckItems[18] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_20', 'Check for updates at DropIt startup'), 25, 30 + 15 + 20)
-	$oCheckItems[26] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_29', 'Consider rules as Regular Expressions'), 25, 30 + 15 + 40)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_3', 'Usage'), 10, 30, 359, 165)
+	$oCheckItems[12] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_14', 'Start on system startup'), 25, 30 + 15)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_3', 'Note that this is a not portable feature.'))
+	$oCheckItems[19] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_21', 'Start minimized to system tray'), 25, 30 + 15 + 20)
+	$oCheckItems[11] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_13', 'Use profile icon in traybar'), 25, 30 + 15 + 40)
+	$oCheckItems[4] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_6', 'Integrate in SendTo menu'), 25, 30 + 15 + 60, 290, 20)
+	$oCheckModeItems[1] = GUICtrlCreateCheckbox("", 25 + 295, 30 + 15 + 60, 20, 20)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_1', 'This integration is created at DropIt startup and removed at closing.'), __GetLang('OPTIONS_PORTABLE_MODE', 'Portable Mode'), 0)
+	$oCheckModeItems[2] = GUICtrlCreateIcon(@ScriptFullPath, -16, 25 + 315, 30 + 15 + 60 + 1, 16, 16)
+	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_1', 'This integration is created at DropIt startup and removed at closing.'), __GetLang('OPTIONS_PORTABLE_MODE', 'Portable Mode'), 0)
+	$oCheckItems[3] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_8', 'Enable multiple instances'), 25, 30 + 15 + 80)
+	$oCheckItems[18] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_20', 'Check for updates at DropIt startup'), 25, 30 + 15 + 100)
+	$oCheckItems[26] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_29', 'Consider rules as Regular Expressions'), 25, 30 + 15 + 120)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_16', 'Pay attention because rules created with normal syntax will not work.'))
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_14', 'Security'), 10, 120, 359, 75)
-	$oCheckItems[10] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_12', 'Encrypt profiles at DropIt closing'), 25, 120 + 15)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_14', 'Security'), 10, 200, 359, 75)
+	$oCheckItems[10] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_12', 'Encrypt profiles at DropIt closing'), 25, 200 + 15)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_6', 'Password will be requested at DropIt startup.'))
-	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_13', 'Password') & ":", 25, 120 + 15 + 30, 110, 20)
-	$oMasterPassword = GUICtrlCreateInput("", 25 + 120, 120 + 15 + 27, 196, 20, 0x0020)
-	$oShowMasterPassword = GUICtrlCreateButton("", 25 + 120 + 196, 120 + 15 + 27, 14, 20)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_13', 'Password') & ":", 25, 200 + 15 + 30, 110, 20)
+	$oMasterPassword = GUICtrlCreateInput("", 25 + 120, 200 + 15 + 27, 196, 20, 0x0020)
+	$oShowMasterPassword = GUICtrlCreateButton("", 25 + 120 + 196, 200 + 15 + 27, 14, 20)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_2', 'Show/Hide the password'))
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_7', 'Activity Log'), 10, 200, 359, 50)
-	$oCheckItems[5] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_1', 'Write log file'), 25, 200 + 15 + 3, 190, 20)
-	$oLogRemove = GUICtrlCreateIcon(@ScriptFullPath, -17, 25 + 216, 200 + 15 + 4, 16, 16)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_7', 'Activity Log'), 10, 280, 359, 50)
+	$oCheckItems[5] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_1', 'Write log file'), 25, 280 + 15 + 3, 190, 20)
+	$oLogRemove = GUICtrlCreateIcon(@ScriptFullPath, -17, 25 + 216, 280 + 15 + 4, 16, 16)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_17', 'Remove log file'))
-	$oLogView = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_0', 'View'), 25 + 240, 200 + 15 + 2, 90, 22)
+	$oLogView = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_0', 'View'), 25 + 240, 280 + 15 + 2, 90, 22)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_2', 'Settings Backup'), 10, 255, 359, 50)
-	$oBk_Backup = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_1', 'Back up'), 25, 255 + 15 + 3, 90, 22)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_2', 'Settings Backup'), 10, 335, 359, 50)
+	$oBk_Backup = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_1', 'Back up'), 25, 335 + 15 + 3, 90, 22)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_BUTTON_1', 'Back up'))
-	$oBk_Restore = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_2', 'Restore'), 25 + 120, 255 + 15 + 3, 90, 22)
+	$oBk_Restore = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_2', 'Restore'), 25 + 120, 335 + 15 + 3, 90, 22)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_BUTTON_2', 'Restore'))
-	$oBk_Remove = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_3', 'Remove'), 25 + 240, 255 + 15 + 3, 90, 22)
+	$oBk_Remove = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_3', 'Remove'), 25 + 240, 335 + 15 + 3, 90, 22)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_BUTTON_3', 'Remove'))
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
@@ -5475,21 +6213,7 @@ Func _Options($oHandle = -1)
 		$oCurrent[7] = __GetLang('COMPRESS_ENCRYPT', 'None')
 	EndIf
 
-	$oGroup[8] = __ThemeList_Combo()
-	$oCurrent[8] = IniRead($oINI, "General", "ListTheme", "Default")
-	If StringInStr($oGroup[8], $oCurrent[8]) = 0 Then
-		$oCurrent[8] = "Default"
-	EndIf
-	If FileExists($oThemeFolder & $oCurrent[8] & ".jpg") Then
-		GUICtrlSetImage($oThemePreview, $oThemeFolder & $oCurrent[8] & ".jpg")
-		GUICtrlSetState($oThemePreview, $GUI_SHOW)
-		GUICtrlSetState($oNoPreview, $GUI_HIDE)
-	Else
-		GUICtrlSetState($oThemePreview, $GUI_HIDE)
-		GUICtrlSetState($oNoPreview, $GUI_SHOW)
-	EndIf
-
-	For $A = 1 To 8
+	For $A = 1 To 7
 		GUICtrlSetData($oComboItems[$A], $oGroup[$A], $oCurrent[$A])
 	Next
 
@@ -5512,6 +6236,14 @@ Func _Options($oHandle = -1)
 		GUICtrlSetState($oLogRemove, $GUI_DISABLE)
 		GUICtrlSetState($oLogView, $GUI_DISABLE)
 	EndIf
+
+	; Process Settings:
+	$oState = $GUI_DISABLE
+	If GUICtrlRead($oCheckItems[9]) = 1 Then
+		$oState = $GUI_ENABLE
+	EndIf
+	GUICtrlSetState($oCheckItems[28], $oState)
+	GUICtrlSetState($oCheckItems[29], $oState)
 
 	; Folder Association Settings:
 	$oState = $GUI_ENABLE
@@ -5579,14 +6311,22 @@ Func _Options($oHandle = -1)
 		$oState = $GUI_ENABLE
 	EndIf
 	GUICtrlSetState($oScanTime, $oState)
+	GUICtrlSetState($oScanSize, $oState)
+	GUICtrlSetState($oCheckItems[30], $oState)
 	GUICtrlSetState($oListView, $oState)
 	GUICtrlSetState($oMn_Add, $oState)
 	GUICtrlSetState($oMn_Edit, $oState)
 	GUICtrlSetState($oMn_Remove, $oState)
 	$oState = IniRead($oINI, "General", "MonitoringTime", "")
-	If $oState <> "" Then
-		GUICtrlSetData($oScanTime, $oState)
+	If $oState = "" And $oState = 0 Then
+		$oState = 30
 	EndIf
+	GUICtrlSetData($oScanTime, $oState)
+	$oState = IniRead($oINI, "General", "MonitoringSize", "")
+	If $oState = "" Then
+		$oState = 0
+	EndIf
+	GUICtrlSetData($oScanSize, $oState)
 
 	; ListView Settings:
 	$oListView_Handle = GUICtrlGetHandle($oListView)
@@ -5605,8 +6345,8 @@ Func _Options($oHandle = -1)
 	$oEnterDummy = GUICtrlCreateDummy()
 	$Global_ListViewFolders_Enter = $oEnterDummy
 
-	$oOK = GUICtrlCreateButton(__GetLang('OK', 'OK'), 190 - 30 - 90, 328, 90, 26)
-	$oCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 190 + 30, 328, 90, 26)
+	$oOK = GUICtrlCreateButton(__GetLang('OK', 'OK'), 190 - 30 - 90, 458, 90, 26)
+	$oCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 190 + 30, 458, 90, 26)
 	GUICtrlSetState($oOK, $GUI_DEFBUTTON)
 
 	$Global_ListViewIndex = -1 ; Set As No Item Selected.
@@ -5645,19 +6385,6 @@ Func _Options($oHandle = -1)
 			GUICtrlSetState($oShow7ZPassword, $oState)
 		EndIf
 
-		; Update Image Preview If Theme Changes:
-		If GUICtrlRead($oComboItems[8]) <> $oCurrent[8] And Not _GUICtrlComboBox_GetDroppedState($oComboItems[8]) Then
-			$oCurrent[8] = GUICtrlRead($oComboItems[8])
-			If FileExists($oThemeFolder & $oCurrent[8] & ".jpg") Then
-				GUICtrlSetImage($oThemePreview, $oThemeFolder & $oCurrent[8] & ".jpg")
-				GUICtrlSetState($oThemePreview, $GUI_SHOW)
-				GUICtrlSetState($oNoPreview, $GUI_HIDE)
-			Else
-				GUICtrlSetState($oThemePreview, $GUI_HIDE)
-				GUICtrlSetState($oNoPreview, $GUI_SHOW)
-			EndIf
-		EndIf
-
 		; Update Monitoring Buttons State:
 		If $oIndex_Selected = -1 Then ; Nothing Selected.
 			If GUICtrlGetState($oMn_Edit) = 80 Then
@@ -5680,16 +6407,6 @@ Func _Options($oHandle = -1)
 			Case $GUI_EVENT_CLOSE, $oCancel
 				SetError(1, 0, 0)
 				ExitLoop
-
-			Case $oCreateTab ; Move Combo When Switching Tabs.
-				Switch GUICtrlRead($oCreateTab, 1)
-					Case $oTab_1
-						ControlMove($oGUI, "", $oLanguageCombo, 25, 250 + 15 + 3)
-					Case Else
-						If $oLanguageCombo Then
-							ControlMove($oGUI, "", $oLanguageCombo, -99, -99)
-						EndIf
-				EndSwitch
 
 			Case $oCheckModeItems[2]
 				$oState = $GUI_CHECKED
@@ -5722,6 +6439,16 @@ Func _Options($oHandle = -1)
 				EndIf
 				GUICtrlSetState($oComboItems[1], $oState)
 
+			Case $oCheckItems[9] ; Process Checkbox.
+				$oState = $GUI_ENABLE
+				If GUICtrlRead($oCheckItems[9]) <> 1 Then
+					$oState = $GUI_DISABLE
+					GUICtrlSetState($oCheckItems[28], $GUI_CHECKED)
+					GUICtrlSetState($oCheckItems[29], $GUI_CHECKED)
+				EndIf
+				GUICtrlSetState($oCheckItems[28], $oState)
+				GUICtrlSetState($oCheckItems[29], $oState)
+
 			Case $oCheckItems[10] ; Security Checkbox.
 				$oState = $GUI_DISABLE
 				If GUICtrlRead($oCheckItems[10]) = 1 Then
@@ -5736,6 +6463,8 @@ Func _Options($oHandle = -1)
 					$oState = $GUI_ENABLE
 				EndIf
 				GUICtrlSetState($oScanTime, $oState)
+				GUICtrlSetState($oScanSize, $oState)
+				GUICtrlSetState($oCheckItems[30], $oState)
 				GUICtrlSetState($oListView, $oState)
 				GUICtrlSetState($oMn_Add, $oState)
 				GUICtrlSetState($oMn_Edit, $oState)
@@ -5800,30 +6529,22 @@ Func _Options($oHandle = -1)
 
 			Case $oOK
 				__IniWriteEx($oINI, $oINI_Various_Array[2][0], $oINI_Various_Array[2][1], __GetDuplicateMode(GUICtrlRead($oComboItems[1])))
-				__IniWriteEx($oINI, $oINI_Various_Array[6][0], $oINI_Various_Array[6][1], __GetCompressionLevel(GUICtrlRead($oComboItems[2])))
-				__IniWriteEx($oINI, $oINI_Various_Array[10][0], $oINI_Various_Array[10][1], __GetCompressionLevel(GUICtrlRead($oComboItems[5])))
-				__IniWriteEx($oINI, $oINI_Various_Array[5][0], $oINI_Various_Array[5][1], GUICtrlRead($oComboItems[8]))
-				__IniWriteEx($oINI, $oINI_Various_Array[7][0], $oINI_Various_Array[7][1], GUICtrlRead($oComboItems[3]))
-				__IniWriteEx($oINI, $oINI_Various_Array[11][0], $oINI_Various_Array[11][1], GUICtrlRead($oComboItems[6]))
+				__IniWriteEx($oINI, $oINI_Various_Array[5][0], $oINI_Various_Array[5][1], __GetCompressionLevel(GUICtrlRead($oComboItems[2])))
+				__IniWriteEx($oINI, $oINI_Various_Array[9][0], $oINI_Various_Array[9][1], __GetCompressionLevel(GUICtrlRead($oComboItems[5])))
+				__IniWriteEx($oINI, $oINI_Various_Array[6][0], $oINI_Various_Array[6][1], GUICtrlRead($oComboItems[3]))
+				__IniWriteEx($oINI, $oINI_Various_Array[10][0], $oINI_Various_Array[10][1], GUICtrlRead($oComboItems[6]))
 
 				$oState = GUICtrlRead($oComboItems[4])
 				If $oState = __GetLang('COMPRESS_ENCRYPT', 'None') Then
 					$oState = "None"
 				EndIf
-				__IniWriteEx($oINI, $oINI_Various_Array[8][0], $oINI_Various_Array[8][1], $oState)
+				__IniWriteEx($oINI, $oINI_Various_Array[7][0], $oINI_Various_Array[7][1], $oState)
 
 				$oState = GUICtrlRead($oComboItems[7])
 				If $oState = __GetLang('COMPRESS_ENCRYPT', 'None') Then
 					$oState = "None"
 				EndIf
-				__IniWriteEx($oINI, $oINI_Various_Array[12][0], $oINI_Various_Array[12][1], $oState)
-
-				_GUICtrlComboBoxEx_GetItemText($oLanguageCombo, _GUICtrlComboBoxEx_GetCurSel($oLanguageCombo), $oLanguage)
-				__SetCurrentLanguage($oLanguage) ; Set The Selected Language To The Settings INI File.
-
-				If __Is("UseSendTo", $oINI) And GUICtrlRead($oCheckItems[4]) <> 1 Then
-					__SendTo_Uninstall() ; Remove SendTo Integration If It Is Been Disabled Now.
-				EndIf
+				__IniWriteEx($oINI, $oINI_Various_Array[11][0], $oINI_Various_Array[11][1], $oState)
 
 				If __Is("CreateLog", $oINI) And GUICtrlRead($oCheckItems[5]) <> 1 And FileExists($oLogFile[1][0] & $oLogFile[2][0]) Then
 					__Log_Write("===== " & __GetLang('LOG_DISABLED', 'Log Disabled') & " =====")
@@ -5863,17 +6584,15 @@ Func _Options($oHandle = -1)
 				EndIf
 				__IniWriteEx($oINI, $oINI_Various_Array[1][0], $oINI_Various_Array[1][1], $oState)
 
-				$Global_Timer = GUICtrlRead($oScanTime)
-				__IniWriteEx($oINI, $oINI_Various_Array[4][0], $oINI_Various_Array[4][1], $Global_Timer)
-				If GUICtrlRead($oCheckItems[17]) <> 1 Then
-					$Global_Timer = 0 ; Monitoring Disabled.
-				EndIf
+				__IniWriteEx($oINI, $oINI_Various_Array[4][0], $oINI_Various_Array[4][1], GUICtrlRead($oScanTime))
+				__IniWriteEx($oINI, $oINI_Various_Array[13][0], $oINI_Various_Array[13][1], GUICtrlRead($oScanSize))
+				_MonitoringConfig($oINI) ; Load Global Monitoring Configuration.
 
 				$oPW = ""
 				If StringIsSpace(GUICtrlRead($oZIPPassword)) = 0 And GUICtrlRead($oZIPPassword) <> "" Then
 					$oPW = _StringEncrypt(1, GUICtrlRead($oZIPPassword), $oPW_Code)
 				EndIf
-				__IniWriteEx($oINI, $oINI_Various_Array[9][0], $oINI_Various_Array[9][1], $oPW)
+				__IniWriteEx($oINI, $oINI_Various_Array[8][0], $oINI_Various_Array[8][1], $oPW)
 				If $oPW = "" And BitAND(GUICtrlGetState($oZIPPassword), $GUI_ENABLE) Then
 					$oDisablePassword = 1
 				EndIf
@@ -5882,7 +6601,7 @@ Func _Options($oHandle = -1)
 				If StringIsSpace(GUICtrlRead($o7ZPassword)) = 0 And GUICtrlRead($o7ZPassword) <> "" Then
 					$oPW = _StringEncrypt(1, GUICtrlRead($o7ZPassword), $oPW_Code)
 				EndIf
-				__IniWriteEx($oINI, $oINI_Various_Array[13][0], $oINI_Various_Array[13][1], $oPW)
+				__IniWriteEx($oINI, $oINI_Various_Array[12][0], $oINI_Various_Array[12][1], $oPW)
 				If $oPW = "" And BitAND(GUICtrlGetState($o7ZPassword), $GUI_ENABLE) Then
 					$oDisablePassword = 1
 				EndIf
@@ -5903,10 +6622,10 @@ Func _Options($oHandle = -1)
 						ContinueLoop
 					EndIf
 					If GUICtrlRead($oZIPPassword) = "" Then
-						__IniWriteEx($oINI, $oINI_Various_Array[8][0], $oINI_Various_Array[8][1], "None")
+						__IniWriteEx($oINI, $oINI_Various_Array[7][0], $oINI_Various_Array[7][1], "None")
 					EndIf
 					If GUICtrlRead($o7ZPassword) = "" Then
-						__IniWriteEx($oINI, $oINI_Various_Array[12][0], $oINI_Various_Array[12][1], "None")
+						__IniWriteEx($oINI, $oINI_Various_Array[11][0], $oINI_Various_Array[11][1], "None")
 					EndIf
 					If GUICtrlRead($oMasterPassword) = "" Then
 						__IniWriteEx($oINI, $oINI_TrueOrFalse_Array[10][0], $oINI_TrueOrFalse_Array[10][1], "False")
@@ -5917,7 +6636,6 @@ Func _Options($oHandle = -1)
 		EndSwitch
 	WEnd
 	GUIDelete($oGUI)
-	_GUIImageList_Destroy($oImageList)
 
 	__SetCurrentPosition() ; Set Current Coordinates/Position Of DropIt.
 	__IsOnTop() ; Set GUI "OnTop" If True.
@@ -5943,11 +6661,11 @@ Func _ExitEvent()
 	__Log_Write("===== " & __GetLang('DROPIT_CLOSED', 'DropIt Closed') & " =====")
 
 	If __CheckMultipleInstances() = 0 Then ; Check The Number Of Multiple Instances.
-		If __Is("UseSendTo", $eINI) And IniRead($eINI, "General", "SendToMode", "Portable") = "Portable" Then
-			__SendTo_Uninstall() ; Remove SendTo Integration If In Portable Mode.
+		If IniRead($eINI, "General", "SendToMode", "Portable") = "Portable" Then
+			__SendTo_Uninstall()
 		EndIf
 		If __Is("ProfileEncryption", $eINI) Then
-			__EncryptionFolder(0) ; Encrypt Profiles.
+			__EncryptionFolder(0)
 		EndIf
 	EndIf
 	_GDIPlus_Shutdown()
@@ -5957,72 +6675,84 @@ EndFunc   ;==>_ExitEvent
 
 #Region >>>>> TrayMenu Functions <<<<<
 Func _TrayMenu_Create()
+	Local $tCurrentProfile = __GetCurrentProfile() ; Get Current Profile From The Settings INI File.
+	Local $tCurrentLanguage = __GetCurrentLanguage() ; Get Current Language From The Settings INI File.
+	Local $tLanguageDir = __GetDefault(1024) ; Get Default Language Directory.
 	Local $tTrayMenu = _TrayMenu_Delete() ; Delete The Current TrayMenu Items.
 	Local $tProfileList = __ProfileList_Get() ; Get Array Of All Profiles.
+	Local $tLanguageList = __LangList_Get() ; Get Array Of All Profiles.
 
 	$tTrayMenu[1][0] = TrayCreateItem(__GetLang('ASSOCIATIONS', 'Associations'), -1, 0)
 	$tTrayMenu[2][0] = TrayCreateItem("", -1, 1)
 	$tTrayMenu[3][0] = TrayCreateMenu(__GetLang('PROFILES', 'Profiles'), -1, 2)
+	$tTrayMenu[3][1] = $tProfileList[0] ; Save Number Of Profiles.
 	$tTrayMenu[4][0] = TrayCreateItem(__GetLang('OPTIONS', 'Options'), -1, 3)
-	$tTrayMenu[5][0] = TrayCreateItem(__GetLang('SHOW', 'Show'), -1, 4)
-	$tTrayMenu[6][0] = TrayCreateMenu(__GetLang('HELP', 'Help'), -1, 5)
-	$tTrayMenu[7][0] = TrayCreateItem("", -1, 6)
-	$tTrayMenu[8][0] = TrayCreateItem(__GetLang('EXIT', 'Exit'), -1, 7)
+	$tTrayMenu[5][0] = TrayCreateMenu(__GetLang('LANGUAGES', 'Languages'), -1, 4)
+	$tTrayMenu[5][1] = $tLanguageList[0] ; Save Number Of Language Files.
+	$tTrayMenu[6][0] = TrayCreateItem(__GetLang('SHOW', 'Show'), -1, 5)
+	$tTrayMenu[7][0] = TrayCreateMenu(__GetLang('HELP', 'Help'), -1, 6)
+	$tTrayMenu[8][0] = TrayCreateItem("", -1, 7)
+	$tTrayMenu[9][0] = TrayCreateItem(__GetLang('EXIT', 'Exit'), -1, 8)
 
-	$tTrayMenu[9][0] = TrayCreateItem(__GetLang('GUIDE', 'Guide'), $tTrayMenu[6][0], 0)
-	$tTrayMenu[9][1] = 'GUIDE'
-	$tTrayMenu[10][0] = TrayCreateItem(__GetLang('README', 'Readme'), $tTrayMenu[6][0], 1)
-	$tTrayMenu[10][1] = 'README'
-	$tTrayMenu[11][0] = TrayCreateItem(__GetLang('ABOUT', 'About') & "...", $tTrayMenu[6][0], 2)
-	$tTrayMenu[11][1] = 'ABOUT'
+	$tTrayMenu[10][0] = TrayCreateItem(__GetLang('GUIDE', 'Guide'), $tTrayMenu[7][0], 0)
+	$tTrayMenu[10][1] = 'GUIDE'
+	$tTrayMenu[11][0] = TrayCreateItem(__GetLang('README', 'Readme'), $tTrayMenu[7][0], 1)
+	$tTrayMenu[11][1] = 'README'
+	$tTrayMenu[12][0] = TrayCreateItem(__GetLang('ABOUT', 'About') & "...", $tTrayMenu[7][0], 2)
+	$tTrayMenu[12][1] = 'ABOUT'
 
-	$tTrayMenu[12][0] = TrayCreateItem(__GetLang('CUSTOMIZE', 'Customize'), $tTrayMenu[3][0], 0)
-	$tTrayMenu[13][0] = TrayCreateItem("", $tTrayMenu[3][0], 1)
+	$tTrayMenu[13][0] = TrayCreateItem(__GetLang('CUSTOMIZE', 'Customize'), $tTrayMenu[3][0], 0)
+	$tTrayMenu[14][0] = TrayCreateItem("", $tTrayMenu[3][0], 1)
 
 	Local $tMenuHandle = TrayItemGetHandle(0) ; Get Main Menu Handle.
 	__SetItemImage("ASSO", 0, $tMenuHandle, 2, 1)
 	__SetItemImage("PROF", 2, $tMenuHandle, 2, 1)
 	__SetItemImage("OPT", 3, $tMenuHandle, 2, 1)
-	__SetItemImage("SHOW", 4, $tMenuHandle, 2, 1)
-	__SetItemImage("HELP", 5, $tMenuHandle, 2, 1)
-	__SetItemImage("CLOSE", 7, $tMenuHandle, 2, 1)
-	__SetItemImage("GUIDE", 0, $tTrayMenu[6][0], 1, 1)
-	__SetItemImage("READ", 1, $tTrayMenu[6][0], 1, 1)
-	__SetItemImage("ABOUT", 2, $tTrayMenu[6][0], 1, 1)
+	__SetItemImage("FLAGS", 4, $tMenuHandle, 2, 1)
+	__SetItemImage("SHOW", 5, $tMenuHandle, 2, 1)
+	__SetItemImage("HELP", 6, $tMenuHandle, 2, 1)
+	__SetItemImage("CLOSE", 8, $tMenuHandle, 2, 1)
+	__SetItemImage("GUIDE", 0, $tTrayMenu[7][0], 1, 1)
+	__SetItemImage("READ", 1, $tTrayMenu[7][0], 1, 1)
+	__SetItemImage("ABOUT", 2, $tTrayMenu[7][0], 1, 1)
 	__SetItemImage("CUST", 0, $tTrayMenu[3][0], 1, 1)
 
-	Local $B = $tTrayMenu[0][0] + 1
+	$tTrayMenu[0][0] = 14 ; To Correctly Restore Counter Of Only Main Items.
+	ReDim $tTrayMenu[$tTrayMenu[0][0] + $tTrayMenu[3][1] + 1][$tTrayMenu[0][1]]
 	For $A = 1 To $tProfileList[0]
-		If UBound($tTrayMenu, 1) <= $tTrayMenu[0][0] + 1 Then
-			ReDim $tTrayMenu[UBound($tTrayMenu, 1) * 2][$tTrayMenu[0][1]] ; ReDim $tTrayMenu If More Items Are Required.
-		EndIf
-		$tTrayMenu[$B][0] = TrayCreateItem($tProfileList[$A], $tTrayMenu[3][0], $A + 1, 1)
-		__SetItemImage(__IsProfile($tProfileList[$A], 2), $A + 1, $tTrayMenu[3][0], 1, 0, 20, 20)
-		$tTrayMenu[$B][1] = $tProfileList[$A]
-		TrayItemSetOnEvent($tTrayMenu[$B][0], "_ProfileEvent")
-		If $tProfileList[$A] = __GetCurrentProfile() Then ; Get Current Profile From The Settings INI File.
-			TrayItemSetState($tTrayMenu[$B][0], 1)
-		EndIf
 		$tTrayMenu[0][0] += 1
-		$B += 1
+		$tTrayMenu[$tTrayMenu[0][0]][0] = TrayCreateItem($tProfileList[$A], $tTrayMenu[3][0], $A + 1, 1)
+		__SetItemImage(__IsProfile($tProfileList[$A], 2), $A + 1, $tTrayMenu[3][0], 1, 0, 20, 20)
+		$tTrayMenu[$tTrayMenu[0][0]][1] = $tProfileList[$A]
+		TrayItemSetOnEvent($tTrayMenu[$tTrayMenu[0][0]][0], "_ProfileEvent")
+		If $tProfileList[$A] = $tCurrentProfile Then
+			TrayItemSetState($tTrayMenu[$tTrayMenu[0][0]][0], 1)
+		EndIf
+	Next
+	ReDim $tTrayMenu[$tTrayMenu[0][0] + $tTrayMenu[5][1] + 1][$tTrayMenu[0][1]]
+	For $A = 1 To $tLanguageList[0]
+		$tTrayMenu[0][0] += 1
+		$tTrayMenu[$tTrayMenu[0][0]][0] = TrayCreateItem($tLanguageList[$A], $tTrayMenu[5][0], $A - 1, 1)
+		__SetItemImage($tLanguageDir & $tLanguageList[$A] & ".gif", $A - 1, $tTrayMenu[5][0], 1, 0, 18, 12)
+		$tTrayMenu[$tTrayMenu[0][0]][1] = $tLanguageList[$A]
+		TrayItemSetOnEvent($tTrayMenu[$tTrayMenu[0][0]][0], "_LanguageEvent")
+		If $tLanguageList[$A] = $tCurrentLanguage Then
+			TrayItemSetState($tTrayMenu[$tTrayMenu[0][0]][0], 1)
+		EndIf
 	Next
 
 	TrayItemSetOnEvent($tTrayMenu[1][0], "_ManageEvent")
 	TrayItemSetOnEvent($tTrayMenu[4][0], "_OptionsEvent")
-	TrayItemSetOnEvent($tTrayMenu[5][0], "_TrayMenu_ShowGUI")
-	TrayItemSetOnEvent($tTrayMenu[8][0], "_ExitEvent")
-	TrayItemSetOnEvent($tTrayMenu[9][0], "_HelpEvent")
+	TrayItemSetOnEvent($tTrayMenu[6][0], "_TrayMenu_ShowGUI")
+	TrayItemSetOnEvent($tTrayMenu[9][0], "_ExitEvent")
 	TrayItemSetOnEvent($tTrayMenu[10][0], "_HelpEvent")
 	TrayItemSetOnEvent($tTrayMenu[11][0], "_HelpEvent")
-	TrayItemSetOnEvent($tTrayMenu[12][0], "_CustomizeEvent")
+	TrayItemSetOnEvent($tTrayMenu[12][0], "_HelpEvent")
+	TrayItemSetOnEvent($tTrayMenu[13][0], "_CustomizeEvent")
 	TraySetOnEvent(-13, "_TrayMenu_ShowGUI")
 
-	ReDim $tTrayMenu[$tTrayMenu[0][0] + 1][$tTrayMenu[0][1]] ; Delete Empty Rows.
 	$Global_TrayMenu = $tTrayMenu
 
-	If @error Then
-		Return SetError(1, 0, 0)
-	EndIf
 	Return 1
 EndFunc   ;==>_TrayMenu_Create
 
@@ -6075,7 +6805,7 @@ EndFunc   ;==>_TrayMenu_ShowGUI
 
 Func _CustomizeEvent()
 	_Customize_GUI($Global_GUI_1) ; Open Customize GUI.
-	_Refresh()
+	_Refresh(1)
 
 	If @error Then
 		Return SetError(1, 0, 0)
@@ -6086,17 +6816,17 @@ EndFunc   ;==>_CustomizeEvent
 Func _HelpEvent()
 	Local $hTrayMenu = $Global_TrayMenu
 	Switch @TRAY_ID
-		Case $hTrayMenu[9][0]
+		Case $hTrayMenu[10][0]
 			If FileExists(@ScriptDir & "\Guide.pdf") Then
 				ShellExecute(@ScriptDir & "\Guide.pdf")
 			EndIf
 
-		Case $hTrayMenu[10][0]
+		Case $hTrayMenu[11][0]
 			If FileExists(@ScriptDir & "\Readme.txt") Then
 				ShellExecute(@ScriptDir & "\Readme.txt")
 			EndIf
 
-		Case $hTrayMenu[11][0]
+		Case $hTrayMenu[12][0]
 			_About()
 
 	EndSwitch
@@ -6106,6 +6836,22 @@ Func _HelpEvent()
 	EndIf
 	Return 1
 EndFunc   ;==>_HelpEvent
+
+Func _LanguageEvent()
+	Local $pTrayMenu = $Global_TrayMenu
+	For $A = 14 + $Global_TrayMenu[3][1] To 14 + $Global_TrayMenu[3][1] + $pTrayMenu[5][1]
+		If @TRAY_ID = $pTrayMenu[$A][0] Then
+			__SetCurrentLanguage($pTrayMenu[$A][1]) ; Set The Selected Language To The Settings INI File.
+			ExitLoop
+		EndIf
+	Next
+	_Refresh()
+
+	If @error Then
+		Return SetError(1, 0, 0)
+	EndIf
+	Return 1
+EndFunc   ;==>_LanguageEvent
 
 Func _ManageEvent()
 	_Manage_GUI() ; Open Manage GUI.
@@ -6119,7 +6865,7 @@ EndFunc   ;==>_ManageEvent
 
 Func _OptionsEvent()
 	_Options() ; Open Options GUI.
-	_Refresh()
+	_Refresh(1)
 
 	If @error Then
 		Return SetError(1, 0, 0)
@@ -6129,9 +6875,9 @@ EndFunc   ;==>_OptionsEvent
 
 Func _ProfileEvent()
 	Local $pTrayMenu = $Global_TrayMenu
-	For $A = 13 To $pTrayMenu[0][0]
+	For $A = 14 To 14 + $pTrayMenu[3][1]
 		If @TRAY_ID = $pTrayMenu[$A][0] Then
-			__Log_Write(__GetLang('MAIN_TIP_1', 'Changed Profile To'), $pTrayMenu[$A][1])
+			__Log_Write(__GetLang('MAIN_TIP_1', 'Changed profile to'), $pTrayMenu[$A][1])
 			__SetCurrentProfile($pTrayMenu[$A][1]) ; Write Selected Profile Name To The Settings INI File.
 			TraySetToolTip("DropIt [" & $pTrayMenu[$A][1] & "]")
 			ExitLoop
@@ -6162,11 +6908,11 @@ Func WM_COMMAND($hWnd, $iMsg, $iwParam, $ilParam)
 				Case $CBN_EDITCHANGE
 					$Global_ListViewIndex = -1
 					$Global_ListViewRules_ComboBoxChange = 1
-					_Manage_Update($Global_ListViewRules, GUICtrlRead($cIDFrom))
+					_Manage_Populate($Global_ListViewRules, GUICtrlRead($cIDFrom))
 				Case $CBN_SELCHANGE
 					$Global_ListViewIndex = -1
 					$Global_ListViewRules_ComboBoxChange = 1
-					_Manage_Update($Global_ListViewRules, GUICtrlRead($cIDFrom))
+					_Manage_Populate($Global_ListViewRules, GUICtrlRead($cIDFrom))
 			EndSwitch
 	EndSwitch
 	Return $GUI_RUNDEFMSG
@@ -6281,6 +7027,7 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 	Local $nListViewProfiles = $Global_ListViewProfiles
 	Local $nListViewRules = $Global_ListViewRules
 	Local $nListViewFolders = $Global_ListViewFolders
+	Local $nListViewProcess = $Global_ListViewProcess
 
 	If IsHWnd($nListViewProfiles) = 0 Then
 		$nListViewProfiles = GUICtrlGetHandle($nListViewProfiles)
@@ -6291,14 +7038,17 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 	If IsHWnd($nListViewFolders) = 0 Then
 		$nListViewFolders = GUICtrlGetHandle($nListViewFolders)
 	EndIf
+	If IsHWnd($nListViewProcess) = 0 Then
+		$nListViewProcess = GUICtrlGetHandle($nListViewProcess)
+	EndIf
 
 	Local $tNMHDR = DllStructCreate($tagNMHDR, $ilParam)
 	Local $nWndFrom = HWnd(DllStructGetData($tNMHDR, "hWndFrom"))
 	Local $nCode = DllStructGetData($tNMHDR, "Code")
 
 	Local $nInfo = DllStructCreate($tagNMITEMACTIVATE, $ilParam)
-	Local $nIndex = DllStructGetData($nInfo, "Index") ; The 'Row' Number  Selected E.G. Select The 1st Item Will Return 0
-	Local $nSubItem = DllStructGetData($nInfo, "SubItem") ; The 'Column' Number  Selected E.G. Select The 2nd Item Will Return 1
+	Local $nIndex = DllStructGetData($nInfo, "Index") ; The 'Row' Number Selected E.G. Select The 1st Item Will Return 0
+	Local $nSubItem = DllStructGetData($nInfo, "SubItem") ; The 'Column' Number Selected E.G. Select The 2nd Item Will Return 1
 
 	Switch $nWndFrom
 		Case $nListViewProfiles
@@ -6367,6 +7117,15 @@ Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 						EndSwitch
 					EndIf
 			EndSwitch
+
+		Case $nListViewProcess
+			Switch $nCode
+				Case $NM_RCLICK
+					If $G_Global_PauseSorting = 2 Then ; To Allow Show RightClick Menu Only If In Pause.
+						$Global_ListViewIndex = $nIndex
+						_Sorting_Pause_ContextMenu($nListViewProcess, $nIndex, $nSubItem) ; Show Process GUI RightClick Menu.
+					EndIf
+			EndSwitch
 	EndSwitch
 	Return $GUI_RUNDEFMSG
 EndFunc   ;==>WM_NOTIFY
@@ -6383,22 +7142,26 @@ EndFunc   ;==>WM_SYSCOMMAND
 #EndRegion >>>>> WM_MESSAGES Functions <<<<<
 
 #Region >>>>> INTERNAL: Installation Functions <<<<<
-Func __SendTo_Install() ; Taken From: http://www.autoitscript.com/forum/topic/129818-sendto-create-a-shortcut-in-the-sendto-folder/
+Func __SendTo_Install() ; Modified From: http://www.autoitscript.com/forum/topic/129818-sendto-create-a-shortcut-in-the-sendto-folder/
 	#cs
 		Description: Create Shortcuts In The SendTo Folder. [DropIt (Profile_Name).lnk]
 		Returns: 1
 	#ce
+	__SendTo_Uninstall()
 	Local $aFileListToArray = __ProfileList_Get() ; Get Array Of All Profiles.
 	If IsArray($aFileListToArray) = 0 Then
 		Return SetError(1, 0, 0)
 	EndIf
 	For $A = 1 To $aFileListToArray[0]
+		If __Is("UseSendTo", -1, "False", $aFileListToArray[$A]) = 0 Then
+			ContinueLoop
+		EndIf
 		FileCreateShortcut(@AutoItExe, _WinAPI_ShellGetSpecialFolderPath($CSIDL_SENDTO) & "\DropIt (" & $aFileListToArray[$A] & ").lnk", @ScriptDir, "-" & $aFileListToArray[$A])
 	Next
 	Return 1
 EndFunc   ;==>__SendTo_Install
 
-Func __SendTo_Uninstall() ; Taken From: http://www.autoitscript.com/forum/topic/129818-sendto-create-a-shortcut-in-the-sendto-folder/
+Func __SendTo_Uninstall() ; Modified From: http://www.autoitscript.com/forum/topic/129818-sendto-create-a-shortcut-in-the-sendto-folder/
 	#cs
 		Description: Delete Shortcuts In The SendTo Folder. [DropIt (Profile_Name).lnk]
 		Returns: 1
@@ -6430,9 +7193,7 @@ Func __Uninstall()
 		Description: Uninstall Files Etc... If The Uninstall Commandline Parameter Is Called. [DropIt.exe /Uninstall]
 		Returns: 1
 	#ce
-	If __Is("UseSendTo") Then
-		__SendTo_Uninstall() ; SendTo Integration Is Removed If Was Used By The Installed Version.
-	EndIf
+	__SendTo_Uninstall()
 	If __IsInstalled() And FileExists(@AppDataDir & "\DropIt") Then
 		Local $uMsgBox = MsgBox(0x4, __GetLang('UNINSTALL_MSGBOX_0', 'Remove settings'), __GetLang('UNINSTALL_MSGBOX_1', 'Do you want to remove also your settings and profiles?'))
 		If $uMsgBox = 6 Then
@@ -6455,10 +7216,10 @@ Func __Upgrade()
 	EndIf
 
 	FileMove($uINI, $uINI & ".old", 1) ; Rename The Old INI.
-	__IsSettingsFile(-1, 0) ; Create A New Upgraded INI, Skipping Language Selection.
+	__IsSettingsFile(-1) ; Create A New Upgraded INI.
 
-	Local $uINI_Array[50][3] = [ _
-			[49, 3], _
+	Local $uINI_Array[53][3] = [ _
+			[52, 3], _
 			["General", "Profile", 1], _
 			["General", "Language", 1], _
 			["General", "PosX", 1], _
@@ -6478,15 +7239,18 @@ Func __Upgrade()
 			["General", "UseSendTo", 1], _
 			["General", "SendToMode", 1], _
 			["General", "ShowSorting", 1], _
+			["General", "ShowMonitored", 1], _
+			["General", "AutoStart", 1], _
+			["General", "AutoClose", 1], _
 			["General", "ProfileEncryption", 1], _
 			["General", "ScanSubfolders", 1], _
-			["General", "DirForFolders", 1], _
+			["General", "FolderAsFile", 1], _
 			["General", "IgnoreNew", 1], _
 			["General", "AutoDup", 1], _
 			["General", "DupMode", 1], _
 			["General", "UseRegEx", 1], _
 			["General", "CreateLog", 1], _
-			["General", "IntegrityCheck", 1], _
+			["General", "ShowListView", 1], _
 			["General", "AmbiguitiesCheck", 1], _
 			["General", "SizeMessage", "AlertSize"], _
 			["General", "AlertSize", 1], _
@@ -6495,10 +7259,10 @@ Func __Upgrade()
 			["General", "ListSortable", 1], _
 			["General", "ListFilter", 1], _
 			["General", "ListLightbox", 1], _
-			["General", "ListTheme", 1], _
 			["General", "CheckUpdates", 1], _
 			["General", "Monitoring", 1], _
 			["General", "MonitoringTime", 1], _
+			["General", "MonitoringSize", 1], _
 			["General", "ZIPLevel", 1], _
 			["General", "ZIPMethod", 1], _
 			["General", "ZIPEncryption", 1], _

@@ -5,6 +5,8 @@
 /* ---------------------------------------------------------- */
 
 html { background-color: #373B3E; }
+span.highlighted { color: #FF5F08; }
+
 #dropitList { color: #fff; font-size: 11px; font-family: "Tahoma", "Verdana", "Arial"; }
 #di-container { padding: 10px 20px 20px; }
 

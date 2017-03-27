@@ -3,6 +3,8 @@
 /* Author: tpr
 /* ---------------------------------------------------------- */
 
+span.highlighted { color: #000; background-color: #FFFF96; }
+
 #dropitList { color: #222; font-family: Arial; }
 
 #dropitList #di-bg-header {

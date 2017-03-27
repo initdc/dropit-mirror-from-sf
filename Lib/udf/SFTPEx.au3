@@ -1,7 +1,8 @@
 
-; !!! VERSION 1.0 BETA 7 - NOT COMPLETE !!!
+; !!! VERSION 1.0 BETA 8 - NOT COMPLETE !!!
 
 #include-once
+#include <Constants.au3>
 #include <Date.au3>
 #include <String.au3>
 
@@ -57,7 +58,7 @@ Global $__gsLocalDir_SFTP, $__gsRemoteDir_SFTP
 ; Return values .: Success - 1
 ;                  Failure - 0, sets @error
 ;                  |1 - Fails to close the session
-; Author ........: Lupo73
+; Author ........: Lupo73, IgneusJotunn
 ; Modified.......:
 ; Remarks .......:
 ; Related .......: _SFTP_Open
@@ -68,6 +69,7 @@ Func _SFTP_Close($hSession)
 	If ProcessExists($hSession) = 0 Then
 		Return 1
 	EndIf
+	StdinWrite($hSession, "bye")
 
 	ProcessClose($hSession)
 	If @error Then
@@ -909,7 +911,7 @@ EndFunc   ; ==>_SFTP_FilePut
 ;                  |3 - Error splitting the list of files
 ;                  |4 - Wrong ReturnType value
 ;                  |5 - Other error
-; Author ........: Lupo73
+; Author ........: Lupo73, TCR
 ; Modified.......:
 ; Remarks .......:
 ; Related .......: _SFTP_Connect
@@ -917,18 +919,15 @@ EndFunc   ; ==>_SFTP_FilePut
 ; Example .......: No
 ; ===============================================================================================================================
 Func _SFTP_ListToArray($hConnection, $sRemoteDir = "", $ReturnType = 0)
-	Local $aArray[1]
+	Local $aArray[1] = [0]
 	If ProcessExists($hConnection) = 0 Then
-		$aArray[0] = 0
 		Return SetError(1, 0, $aArray)
 	EndIf
-
 	If $ReturnType < 0 Or $ReturnType > 2 Then
-		$aArray[0] = 0
 		Return SetError(4, 0, $aArray)
 	EndIf
 
-	Local $sLine, $aStringSplit, $aSubStringSplit, $B, $iArrayIndex = 0
+	Local $sLine, $aStringSplit, $aSubStringSplit
 	If $sRemoteDir <> "" Then
 		$sRemoteDir = ' "' & $sRemoteDir & '"'
 	EndIf
@@ -936,13 +935,10 @@ Func _SFTP_ListToArray($hConnection, $sRemoteDir = "", $ReturnType = 0)
 	While 1
 		$sLine &= StdoutRead($hConnection)
 		If ProcessExists($hConnection) = 0 Then
-			$aArray[0] = 0
 			Return SetError(1, 0, $aArray)
 		ElseIf StringInStr($sLine, "Unable to open") Then
-			$aArray[0] = 0
 			Return SetError(2, 0, $aArray)
 		ElseIf StringInStr($sLine, "Multiple-level wildcards") Or StringInStr($sLine, ": canonify: ") Then
-			$aArray[0] = 0
 			Return SetError(5, 0, $aArray)
 		ElseIf StringInStr($sLine, "psftp>") Then
 			ExitLoop
@@ -952,30 +948,20 @@ Func _SFTP_ListToArray($hConnection, $sRemoteDir = "", $ReturnType = 0)
 
 	$aStringSplit = StringSplit(StringStripCR($sLine), @LF)
 	If IsArray($aStringSplit) = 0 Then
-		$aArray[0] = 0
 		Return SetError(3, 0, $aArray)
 	EndIf
-	$aArray[0] = $aStringSplit[0] - 4
-	If $aArray[0] < 1 Then
-		$aArray[0] = 0
-		Return $aArray
-	EndIf
-	ReDim $aArray[$aArray[0] + 1]
+	ReDim $aArray[$aStringSplit[0] + 1]
 
-	For $A = 4 To $aStringSplit[0] - 1
+	For $A = 1 To $aStringSplit[0]
 		If ($ReturnType = 1 And StringLeft($aStringSplit[$A], 1) <> "d") Or ($ReturnType = 2 And StringLeft($aStringSplit[$A], 1) <> "-") Then
-			$iArrayIndex += 1
-			$aArray[0] -= 1
 			ContinueLoop
 		EndIf
-		$B = $A - 3 - $iArrayIndex
 		$aSubStringSplit = _StringExplode(StringStripWS($aStringSplit[$A], 7), " ", 8)
 		If UBound($aSubStringSplit) < 9 Then
-			$iArrayIndex += 1
-			$aArray[0] -= 1
 			ContinueLoop
 		EndIf
-		$aArray[$B] = $aSubStringSplit[8]
+		$aArray[0] += 1
+		$aArray[$aArray[0]] = $aSubStringSplit[8]
 	Next
 	ReDim $aArray[$aArray[0] + 1]
 
@@ -997,7 +983,7 @@ EndFunc   ; ==>_SFTP_ListToArray
 ;                  |3 - Error splitting the list of files
 ;                  |4 - Wrong ReturnType value
 ;                  |5 - Other error
-; Author ........: Lupo73
+; Author ........: Lupo73, TCR
 ; Modified.......:
 ; Remarks .......: Array[0][0] = number of found entries
 ;                  Array[x][0] Filename
@@ -1011,17 +997,15 @@ EndFunc   ; ==>_SFTP_ListToArray
 ; ===============================================================================================================================
 Func _SFTP_ListToArrayEx($hConnection, $sRemoteDir = "", $ReturnType = 0, $fTimeFormat = 1)
 	Local $aArray[1][5]
+	$aArray[0][0] = 0
 	If ProcessExists($hConnection) = 0 Then
-		$aArray[0][0] = 0
 		Return SetError(1, 0, $aArray)
 	EndIf
-
 	If $ReturnType < 0 Or $ReturnType > 2 Then
-		$aArray[0][0] = 0
 		Return SetError(4, 0, $aArray)
 	EndIf
 
-	Local $sLine, $sTime, $aStringSplit, $aSubStringSplit, $B, $iArrayIndex = 0
+	Local $sLine, $sTime, $aStringSplit, $aSubStringSplit
 	If $sRemoteDir <> "" Then
 		$sRemoteDir = ' "' & $sRemoteDir & '"'
 	EndIf
@@ -1029,13 +1013,10 @@ Func _SFTP_ListToArrayEx($hConnection, $sRemoteDir = "", $ReturnType = 0, $fTime
 	While 1
 		$sLine &= StdoutRead($hConnection)
 		If ProcessExists($hConnection) = 0 Then
-			$aArray[0][0] = 0
 			Return SetError(1, 0, $aArray)
 		ElseIf StringInStr($sLine, "Unable to open") Then
-			$aArray[0][0] = 0
 			Return SetError(2, 0, $aArray)
 		ElseIf StringInStr($sLine, "Multiple-level wildcards") Or StringInStr($sLine, ": canonify:") Then
-			$aArray[0][0] = 0
 			Return SetError(5, 0, $aArray)
 		ElseIf StringInStr($sLine, "psftp>") Then
 			ExitLoop
@@ -1045,35 +1026,25 @@ Func _SFTP_ListToArrayEx($hConnection, $sRemoteDir = "", $ReturnType = 0, $fTime
 
 	$aStringSplit = StringSplit(StringStripCR($sLine), @LF)
 	If IsArray($aStringSplit) = 0 Then
-		$aArray[0][0] = 0
 		Return SetError(3, 0, $aArray)
 	EndIf
-	$aArray[0][0] = $aStringSplit[0] - 4
-	If $aArray[0][0] < 1 Then
-		$aArray[0][0] = 0
-		Return $aArray
-	EndIf
-	ReDim $aArray[$aArray[0][0] + 1][5]
+	ReDim $aArray[$aStringSplit[0] + 1][5]
 
-	For $A = 4 To $aStringSplit[0] - 1
+	For $A = 1 To $aStringSplit[0]
 		If ($ReturnType = 1 And StringLeft($aStringSplit[$A], 1) <> "d") Or ($ReturnType = 2 And StringLeft($aStringSplit[$A], 1) <> "-") Then
-			$iArrayIndex += 1
-			$aArray[0][0] -= 1
 			ContinueLoop
 		EndIf
-		$B = $A - 3 - $iArrayIndex
 		$aSubStringSplit = _StringExplode(StringStripWS($aStringSplit[$A], 7), " ", 8)
 		If UBound($aSubStringSplit) < 9 Then
-			$iArrayIndex += 1
-			$aArray[0][0] -= 1
 			ContinueLoop
 		EndIf
-		$aArray[$B][0] = $aSubStringSplit[8]
-		$aArray[$B][1] = 0
+		$aArray[0][0] += 1
+		$aArray[$aArray[0][0]][0] = $aSubStringSplit[8]
+		$aArray[$aArray[0][0]][1] = 0
 		If StringLeft($aSubStringSplit[0], 1) <> "d" Then ; Is A File.
-			$aArray[$B][1] = $aSubStringSplit[4]
+			$aArray[$aArray[0][0]][1] = $aSubStringSplit[4]
 		EndIf
-		$aArray[$B][2] = $aSubStringSplit[0]
+		$aArray[$aArray[0][0]][2] = $aSubStringSplit[0]
 		$sTime = ""
 		$aSubStringSplit[6] = StringRight("0" & $aSubStringSplit[6], 2)
 		If StringInStr($aSubStringSplit[7], ":") Then ; Is A Time.
@@ -1084,12 +1055,12 @@ Func _SFTP_ListToArrayEx($hConnection, $sRemoteDir = "", $ReturnType = 0, $fTime
 			EndIf
 		EndIf
 		If $fTimeFormat = 1 Then
-			$aArray[$B][3] = $aSubStringSplit[7] & "/" & __MonthToNumber($aSubStringSplit[5]) & "/" & $aSubStringSplit[6] & $sTime
+			$aArray[$aArray[0][0]][3] = $aSubStringSplit[7] & "/" & __MonthToNumber($aSubStringSplit[5]) & "/" & $aSubStringSplit[6] & $sTime
 		Else
-			$aArray[$B][3] = __MonthToNumber($aSubStringSplit[5]) & "/" & $aSubStringSplit[6] & "/" & $aSubStringSplit[7] & $sTime
+			$aArray[$aArray[0][0]][3] = __MonthToNumber($aSubStringSplit[5]) & "/" & $aSubStringSplit[6] & "/" & $aSubStringSplit[7] & $sTime
 		EndIf
 		; <<<<<<<<<<<<<<<<<<<<<<<<<<< it may needs to update time based on timezone offset
-		$aArray[$B][4] = $aSubStringSplit[2] & " " & $aSubStringSplit[3]
+		$aArray[$aArray[0][0]][4] = $aSubStringSplit[2] & " " & $aSubStringSplit[3]
 	Next
 	ReDim $aArray[$aArray[0][0] + 1][5]
 

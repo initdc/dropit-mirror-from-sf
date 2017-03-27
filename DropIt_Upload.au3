@@ -8,6 +8,40 @@
 #include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\WinAPIEx.au3"
 
+Func __FTP_DirCreateEx($l_FTPSession, $s_RemoteDir)
+	If $l_FTPSession = 0 Then
+		Return SetError(1, 0, 0)
+	EndIf
+
+	Local $sDirectory = "/", $aStringSplit = StringSplit($s_RemoteDir, "/")
+	For $A = 1 To $aStringSplit[0]
+		If $aStringSplit[$A] == "" Then
+			ContinueLoop
+		EndIf
+		$sDirectory &= $aStringSplit[$A] & "/"
+		_FTP_DirCreate($l_FTPSession, $sDirectory)
+	Next
+
+	Return 1
+EndFunc   ;==>__FTP_DirCreateEx
+
+Func __SFTP_DirCreateEx($l_SFTPSession, $s_RemoteDir)
+	If $l_SFTPSession = 0 Then
+		Return SetError(1, 0, 0)
+	EndIf
+
+	Local $sDirectory = "/", $aStringSplit = StringSplit($s_RemoteDir, "/")
+	For $A = 1 To $aStringSplit[0]
+		If $aStringSplit[$A] == "" Then
+			ContinueLoop
+		EndIf
+		$sDirectory &= $aStringSplit[$A] & "/"
+		_SFTP_DirCreate($l_SFTPSession, $sDirectory)
+	Next
+
+	Return 1
+EndFunc   ;==>__SFTP_DirCreateEx
+
 Func __FTP_ListToArrayEx($l_FTPSession, $s_RemoteDir = "", $ReturnType = 0, $iFlags = 0, $fTimeFormat = 1)
 	If $l_FTPSession = 0 Then
 		Return SetError(1, 0, 0)

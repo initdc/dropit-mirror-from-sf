@@ -4,6 +4,7 @@
 /* ---------------------------------------------------------- */
 
 html { background-color: #f7f7f7; }
+span.highlighted { color: #000; background-color: #FFFF96; }
 
 #dropitList { background-color: #f7f7f7; color: #282828; font-family: Verdana, sans-serif; }
 
