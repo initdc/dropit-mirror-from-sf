@@ -2,7 +2,7 @@
 ;TranslatorName=Lupo73
 ;Contact=http://www.lupopensuite.com/contact.htm
 ;TranslatorURL=http://www.lupopensuite.com/
-;LastUpdated=JUNE 13, 2011
+;LastUpdated=JUNE 28, 2011
 
 [English]
 ABOUT=About
@@ -73,6 +73,7 @@ ENV_VAR_17=song genre ["Rock"]
 ENV_VAR_18=song track number ["3"]
 ENV_VAR_19=song title ["Hey You"]
 ENV_VAR_20=song year ["1979"]
+ENV_VAR_21=subdirectory structure ["\SubFolder"]
 ENV_VAR_LABEL_0=List of supported internal environment variables:
 ENV_VAR_LABEL_1=° supported only by Open With action
 EXAMPLES=Examples
@@ -217,6 +218,7 @@ POSITIONPROCESS_1=Loading
 POSITIONPROCESS_2=Abort
 POSITIONPROCESS_DUPLICATE_0=Item Already Exists
 POSITIONPROCESS_DUPLICATE_1=This item already exists in destination folder:
+POSITIONPROCESS_DUPLICATE_2=Apply to all items of this drop
 POSITIONPROCESS_LOG_0=Folder Loaded
 POSITIONPROCESS_LOG_1=File Loaded
 POSITIONPROCESS_LOG_2=Not Sorted
