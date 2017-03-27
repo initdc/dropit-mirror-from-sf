@@ -4,3 +4,15 @@ http://www.autoitscript.com/forum/topic/121833-copy-udf/
 
 Embedding Library (Resources.au3)
 http://www.autoitscript.com/forum/topic/51103-resources-udf/
+
+
+ShellAll Library (ShellAll.au3)
+http://www.autoitscript.com/forum/topic/133942-shellall-create-an-entry-in-the-shell-contextmenu-when-selecting-a-file-and-folder-includes-the-program-icon-as-well/
+
+
+Startup Library (Startup.au3)
+http://www.autoitscript.com/forum/topic/124508-startup-create-startup-entries-in-the-startup-folder-or-registry/
+
+
+WinAPI Extended Library (WinAPIEx.au3)
+http://www.autoitscript.com/forum/topic/98712-winapiex-udf/

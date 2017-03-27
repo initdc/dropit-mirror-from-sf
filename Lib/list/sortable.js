@@ -1,4 +1,11 @@
-// <![CDATA[
+var mainTable = document.getElementById('mainTable');
+mainTable.className = "sortable";
+
+for(i=0; i < mainTable.getElementsByTagName("TH").length; i++) {
+	var headValue = mainTable.getElementsByTagName("TH")[i].innerHTML;
+	mainTable.getElementsByTagName("TH")[i].innerHTML = "<div>" + headValue + "</div>";
+}
+
 function SortableTable(tableEl) {
 	this.tbody = tableEl.getElementsByTagName('tbody');
 	this.thead = tableEl.getElementsByTagName('thead');
@@ -23,11 +30,23 @@ function SortableTable(tableEl) {
 	    var itm = this.getInnerText(this.tbody[0].rows[1].cells[column]);
 		var sortfn = this.sortCaseInsensitive;
 
-		if (itm.match(/^(\d\d?)[\/\.-](\d\d?)[\/\.-]((\d\d)?\d\d)(\s\d\d[:]\d\d)?$/)) sortfn = this.sortDate; // 23/08/2007 11:49
-		if (itm.match(/^([\d\.,]+)\s*(b|kb|mb|gb|tb)/i)) sortfn = this.sortSize; // 120.43 MB
+		if (itm.match(/^(\d\d?)[\/\.-](\d\d?)[\/\.-]((\d\d)?\d\d)(\s\d\d[:]\d\d)?$/)) sortfn = this.sortDate;
+		if (itm.match(/^([\d\.,]+)\s*(b|kb|mb|gb|tb)/i)) sortfn = this.sortSize;
 		if (itm.replace(/^\s+|\s+$/g,"").match(/^[\d\.]+$/)) sortfn = this.sortNumeric;
 
 		this.sortColumnIndex = column;
+		cells = document.getElementsByTagName('TD');
+		for (i=0;i<cells.length;i++) {
+			removeClass(cells[i], "activeColumn");
+		}
+		
+		var zebra = "odd";
+		
+		for (i=0;i<this.tbody[0].rows.length;i++) {
+			addClass(this.tbody[0].rows[i].cells[column], "activeColumn");		
+		}
+		
+		
 	    var newRows = new Array();
 	    for (i=0;i<this.tbody[0].rows.length;i++) {
 			newRows[i] = this.tbody[0].rows[i];
@@ -63,7 +82,8 @@ function SortableTable(tableEl) {
 			cell.setAttribute('sortdir','down');
 			spanEl.appendChild(document.createTextNode(' \u25b2'));
 		}
-		cell.appendChild(spanEl);
+
+		cell.getElementsByTagName('DIV')[0].appendChild(spanEl);
 		for (i=0;i<newRows.length;i++) {
 			this.tbody[0].appendChild(newRows[i]);
 		}
@@ -136,10 +156,44 @@ function SortableTable(tableEl) {
 		sortRow.cells[i].sTable = this;
 		sortRow.cells[i].onclick = function () {
 			this.sTable.sort(this);
+			theads = this.parentNode.getElementsByTagName('TH');
+			for (j=0; j < theads.length; j++) {
+				removeClass(theads[j], "active");
+			}
+			addClass(this, "active");
+			zebraStripes();
 			return false;
+		}
+		
+	}
+}
+
+var zebraStripes = function () {
+	var zebra = "odd";
+	var counter = 0;
+	for (var r = 1; r < mainTable.rows.length; r++) {
+		if(mainTable.rows[r].style.display == '') {
+			if(counter == 0) zebra = "odd";
+			mainTable.rows[r].className = zebra;
+			(zebra == "odd") ? zebra = "even" : zebra = "odd";
+			counter++;
 		}
 	}
 }
-// ]]>
 
-var t = new SortableTable(document.getElementById('myTable'), 100);
+var t = new SortableTable(mainTable, 100);
+
+function hasClass(ele,cls) {
+	return ele.className.match(new RegExp('(\\s|^)'+cls+'(\\s|$)'));
+}
+
+function addClass(ele,cls) {
+	if (!this.hasClass(ele,cls)) ele.className += " "+cls;
+}
+
+function removeClass(ele,cls) {
+	if (hasClass(ele,cls)) {
+    	var reg = new RegExp('(\\s|^)'+cls+'(\\s|$)');
+		ele.className=ele.className.replace(reg,' ');
+	}
+}

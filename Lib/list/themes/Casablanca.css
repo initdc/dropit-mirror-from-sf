@@ -1,0 +1,63 @@
+/* ---------------------------------------------------------- */
+/* Theme: Casablanca
+/* Author: tpr
+/* based on Casablanca table style by Rodrigo Castilho Galvao Ferreira
+/* ---------------------------------------------------------- */
+
+body { color: #666666; font-family: "Trebuchet MS", "Verdana", sans-serif; }
+
+a { color: #CC3300; text-decoration: none; font-weight: bold; border-bottom: 1px dotted #E63C1E; }
+a:hover { color: #E63C1E; }
+
+a#top { color: #666; border: none; font-weight: normal; }
+a#top:hover { color: #333; }
+
+h1 { color: #E63C1E; }
+
+#infoline li { border-right-color: #ccc; }
+
+#container { margin: 0 auto; }
+
+#mainTable {
+  border: none;
+  border-top: 30px solid #E63C1E;
+  padding: 0;
+  margin-top: 0px;
+  border-collapse: collapse;
+}
+
+td { padding-top: 15px; padding-bottom: 15px; }
+
+th {
+	background-color: #CC3300;
+	font-weight: bold;
+    border: none;
+    color: #FFB3A6;
+	text-transform: uppercase;
+	line-height: 16px;
+}
+
+.sortable th:hover { color: #fff; }
+
+.sortable th.active { color: #fff; }
+
+tr:nth-child(2n) { background-color: #F7F7F7; }
+tr.odd { background-color: #fff; }
+tr.even { background-color: #F7F7F7; }
+
+td.activeColumn { color: #333; font-weight: bold; }
+
+.tableSortArrow { top: -1px; }
+
+form.filter input.searchField {
+    background-color: #f7f7f7;
+	color: #999;
+	border: 1px solid #dedede;
+}
+
+form.filter input:focus { border-color: #ccc; color: #333; }
+
+input.clearFilterButton:hover { color: #CC3300; }
+input.clearFilterButton { color: #aaa; }
+
+a.clearFilterLink:hover { color: #CC3300; }

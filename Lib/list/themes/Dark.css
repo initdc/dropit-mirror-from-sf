@@ -1,0 +1,45 @@
+/* ---------------------------------------------------------- */
+/* Theme: Dark
+/* Author: tpr
+/* ---------------------------------------------------------- */
+
+html { background-color: #3B4747; }
+body { color: #A3ADAD;  border-top: 42px solid #1F2C2C; width: 100% !important; }
+
+a { color: #93C763; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+a#top { color: #999; }
+a#top:hover { color: #93C763; }
+
+h1 { background-color: transparent; margin-bottom: 0px; margin-top: 40px; display: inline-block; color: #93C763; text-transform: uppercase; font-family: Verdana; }
+
+#infoline { margin-bottom: 25px; position: absolute; left: 	0px; top: 10px; }
+#infoline li { border-right: 1px dotted #A3ADAD; color: #A3ADAD; }
+
+#header-wrap { margin-bottom: 10px; margin-top: 0; }
+#mainTable { border-bottom-color: #1F2C2C; }
+#mainTable a { font-weight: bold; }
+
+th { border: none; background-color: #1F2C2C; text-transform: uppercase; font-size: 10px; }
+
+tr:nth-child(2n) { background-color: #424D4D; }
+tr.odd { background-color: transparent; }
+tr.even { background-color: #424D4D; }
+
+td.activeColumn { color: #A3ADAD; font-weight: bold; }
+
+.sortable thead th:hover, th.active { color: #A3ADAD; }
+
+.tableSortArrow { top: 0px; }
+
+form.filter { top: -50px; }
+form.filter#fixed { top: 8px; }
+
+form.filter input { color: #333; }
+
+form.filter input.searchField { background-color: #313D3D; border: none; color: #6D7777; }
+form.filter input.searchField:focus { color: #A3ADAD; }
+
+form.filter input.clearFilterButton { color: #707A7A; }
+form.filter input.clearFilterButton:hover { color: #93C763; }

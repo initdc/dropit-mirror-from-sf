@@ -1,4 +1,4 @@
-#define MyAppVer "3.7"
+#define MyAppVer "3.8"
 
 [Setup]
 AppName=DropIt
@@ -26,7 +26,6 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "associate"; Description: "Add ""Sort with DropIt"" in the Context menu"; GroupDescription: "Shell integration:"; Flags: unchecked
 
 [Files]
 Source: "..\DropIt_v{#MyAppVer}_Portable\DropIt.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -39,13 +38,6 @@ Name: "{group}\Readme"; Filename: "{app}\Readme.txt"; Comment: "Open Readme file
 Name: "{group}\{cm:UninstallProgram,DropIt}"; Filename: "{uninstallexe}"; Comment: "Remove DropIt";
 Name: "{userdesktop}\DropIt"; Filename: "{app}\DropIt.exe"; Comment: "Launch DropIt"; Tasks: desktopicon
 Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\DropIt"; Filename: "{app}\DropIt.exe"; Comment: "Launch DropIt"; Tasks: quicklaunchicon
-
-[Registry]
-Root: HKCR; Subkey: "*\Shell"; ValueType: string; ValueName: ""; ValueData: ""; Flags: uninsdeletekey; Tasks: associate
-Root: HKCR; Subkey: "*\Shell\Sort with DropIt"; ValueType: string; ValueName: ""; ValueData: "Sort with DropIt"; Flags: uninsdeletekey; Tasks: associate
-Root: HKCR; Subkey: "*\Shell\Sort with DropIt\command"; ValueType: string; ValueName: ""; ValueData: """{app}\DropIt.exe"" ""%1"""; Flags: uninsdeletekey; Tasks: associate
-Root: HKCR; Subkey: "Directory\Shell\Sort with DropIt"; ValueType: string; ValueName: ""; ValueData: ""; Flags: uninsdeletekey; Tasks: associate
-Root: HKCR; Subkey: "Directory\Shell\Sort with DropIt\command"; ValueType: string; ValueName: ""; ValueData: """{app}\DropIt.exe"" ""%1"""; Flags: uninsdeletekey; Tasks: associate
 
 [Run]
 Filename: "{app}\DropIt.exe"; Description: "{cm:LaunchProgram,DropIt}"; Flags: nowait postinstall skipifsilent unchecked

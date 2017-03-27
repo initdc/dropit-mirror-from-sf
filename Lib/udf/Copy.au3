@@ -6,17 +6,19 @@
     Filename:       Copy.au3
     Description:    Copies a files and folders without pausing a script
     Author:         Yashied
-    Version:        1.3
+    Version:        1.4
     Requirements:   AutoIt v3.3 +, Developed/Tested on WindowsXP Pro Service Pack 2
     Uses:           None
-    Notes:          This library requires Copy.dll (v1.3.x.x)
+    Notes:          This library requires Copy.dll (v1.4.x.x)
 
     Available functions:
 
 	_Copy_Abort
+    _Copy_CallbackDlg
 	_Copy_CloseDll
 	_Copy_CopyDir
 	_Copy_CopyFile
+	_Copy_GetAction
 	_Copy_GetState
 	_Copy_MoveDir
 	_Copy_MoveFile
@@ -240,7 +242,7 @@
                     EndIf
                     $Path = $Destination & '\' & StringRegExpReplace($Source, '^.*\\', '')
                     If FileExists($Path) Then
-                        If MsgBox(52, '', $Path & ' already exists.' & @CR & @CR & 'Do you want to replace it?', 0, $hForm) <> 6 Then
+                        If MsgBox(51, 'Copy', $Path & ' already exists.' & @CR & @CR & 'Do you want to merge folders?', 0, $hForm) <> 6 Then
                             ContinueLoop
                         EndIf
                     EndIf
@@ -249,7 +251,7 @@
                     GUICtrlSetState($Button4, $GUI_ENABLE)
                     GUICtrlSetData($Label, 'Preparing...')
                     GUICtrlSetData($Button3, 'Abort')
-                    _Copy_CopyDir($Source, $Path)
+                    _Copy_CopyDir($Source, $Path, 0, 0, 0, '_Copy_CallbackDlg', $hForm)
                     $Copy = 1
                 EndIf
             Case $Button4
@@ -289,13 +291,18 @@ Global Const $MOVE_FILE_WRITE_THROUGH = 0x0008
 
 #ce
 
+Global Const $COPY_OVERWRITE_YES = 0x00000001
+Global Const $COPY_OVERWRITE_NO = 0x00000000
+Global Const $COPY_OVERWRITE_ABORT = 0x00000002
+Global Const $COPY_OVERWRITE_ALL = 0x00001000
+Global Const $COPY_OVERWRITE_CALLBACK = 0x10000000
+Global Const $COPY_OVERWRITE_ERROR = 0xFFFFFFFF
+
 #EndRegion Global Variables and Constants
 
 #Region Local Variables and Constants
 
-Global $__Slot[256]
-Global $__DLL = -1
-Global $__CALLBACKSTATUS = _
+Global Const $tagCALLBACKSTATUS = _
 		'UINT64 TotalBytesTransferred;' & _
 		'UINT64 TotalSize;' & _
 		'UINT64 FileBytesTransferred;' & _
@@ -305,17 +312,28 @@ Global $__CALLBACKSTATUS = _
 		'INT    Abort;' & _
 		'INT    SystemErrorCode;' & _
 		'INT    Progress;' & _
+		'INT    Callback;' & _
+		'INT    Result;' & _
 		'INT    Reserved;' & _
 		'WCHAR  Source[512];' & _
 		'WCHAR  Destination[512];'
 
+#cs
+
+$cpSlot[i][0]   - CALLBACKSTATUS structure
+       [i][1]   - User function
+       [i][2]   - User data
+       [i][3]   - Action (0 - _Copy_CopyDir(); 1 - _Copy_CopyFile(); 2 - _Copy_MoveDir(); 3 - _Copy_MoveFile())
+       [i][4]   - Reserved
+
+#ce
+
+Global $cpSlot[256][5]
+Global $cpCall = 0
+Global $cpPrevent = 1
+Global $cpDLL = -1
+
 #EndRegion Local Variables and Constants
-
-#Region Initialization
-
-OnAutoItExitRegister('__CP_AutoItExit')
-
-#EndRegion Initialization
 
 #Region Public Functions
 
@@ -326,7 +344,7 @@ OnAutoItExitRegister('__CP_AutoItExit')
 ; Parameters.....: $iID    - The slot identifier that has been specified in the _Copy_Copy... or _Copy_Move... funtions. If this
 ;                            parameter is (-1), all running processes will be aborted.
 ; Return values..: Success - 1.
-;                  Failure - 0 and sets the @error flag to non-zero (see above).
+;                  Failure - 0 and sets the @error flag to non-zero.
 ; Author.........: Yashied
 ; Modified.......:
 ; Remarks........: If the copying or moving files was completed, the function has no effect.
@@ -336,30 +354,30 @@ OnAutoItExitRegister('__CP_AutoItExit')
 ; ===============================================================================================================================
 
 Func _Copy_Abort($iID = 0)
-	If $__DLL = -1 Then
+	If $cpDLL = -1 Then
 		Return SetError(1, 0, 0)
 	EndIf
-	If (Not IsNumber($iID)) Or ($iID < -1) Or ($iID > UBound($__Slot) - 1) Then
+	If (Not IsNumber($iID)) Or ($iID < -1) Or ($iID > UBound($cpSlot) - 1) Then
 		Return SetError(2, 0, 0)
 	EndIf
 	If $iID = -1 Then
-		For $i = 0 To UBound($__Slot) - 1
-			If (IsDllStruct($__Slot[$i])) And (DllStructGetData($__Slot[$i], 'Progress')) Then
-				DllStructSetData($__Slot[$i], 'Abort', 1)
-				DllStructSetData($__Slot[$i], 'Pause', 0)
-				While DllStructGetData($__Slot[$i], 'Progress')
+		For $i = 0 To UBound($cpSlot) - 1
+			If (IsDllStruct($cpSlot[$i][0])) And (DllStructGetData($cpSlot[$i][0], 'Progress')) Then
+				DllStructSetData($cpSlot[$i][0], 'Abort', 1)
+				DllStructSetData($cpSlot[$i][0], 'Pause', 0)
+				While DllStructGetData($cpSlot[$i][0], 'Progress')
 					Sleep(10)
 				WEnd
 			EndIf
 		Next
 	Else
-		If Not IsDllStruct($__Slot[$iID]) Then
+		If Not IsDllStruct($cpSlot[$iID][0]) Then
 			Return SetError(3, 0, 0)
 		EndIf
-		If DllStructGetData($__Slot[$iID], 'Progress') Then
-			DllStructSetData($__Slot[$iID], 'Abort', 1)
-			DllStructSetData($__Slot[$iID], 'Pause', 0)
-			While DllStructGetData($__Slot[$iID], 'Progress')
+		If DllStructGetData($cpSlot[$iID][0], 'Progress') Then
+			DllStructSetData($cpSlot[$iID][0], 'Abort', 1)
+			DllStructSetData($cpSlot[$iID][0], 'Pause', 0)
+			While DllStructGetData($cpSlot[$iID][0], 'Progress')
 				Sleep(10)
 			WEnd
 		EndIf
@@ -368,15 +386,211 @@ Func _Copy_Abort($iID = 0)
 EndFunc   ;==>_Copy_Abort
 
 ; #FUNCTION# ====================================================================================================================
+; Name...........: _Copy_CallbackDlg
+; Description....: Displays a dialog to confirm overwriting the existing file.
+; Syntax.........: _Copy_CallbackDlg ( $aState, $iID, $hParent )
+; Parameters.....: $aState  - An array containing the current copying status information, same as retured by _Copy_GetState()
+;                             function when $iIndex parameter is set to (-1).
+;                  $iID     - The current slot identifier that using in the _Copy_CopyDir() or _Copy_MoveDir() funtions.
+;                  $hParent - A handle to the parent window, or zero.
+; Return values..:
+; Author.........: Yashied
+; Modified.......:
+; Remarks........: The _Copy_CallbackDlg() is a default callback function that can be using when you call the _Copy_CopyDir()
+;                  or _Copy_MoveDir() function (see its description). You cannot use _Copy_CallbackDlg() directly. This function
+;                  will be called automatically when conflicts occur in the process of copying or moving files. To use this
+;                  function, just specify its name when calling the _Copy_CopyDir() or _Copy_MoveDir(). For example:
+;
+;                  _Copy_MoveDir("C:\Source", "D:\Destination", BitOR($MOVE_FILE_COPY_ALLOWED, $MOVE_FILE_REPLACE_EXISTING), 0, 0, "_Copy_CallbackDlg")
+;
+;                  or
+;
+;                  _Copy_CopyDir("C:\Source", "D:\Destination", 0, 0, 0, "_Copy_CallbackDlg")
+;
+; Related........:
+; Link...........:
+; Example........: Yes
+; ===============================================================================================================================
+
+Func _Copy_CallbackDlg($aState, $iID, $hParent)
+
+	If $cpPrevent Then
+		Return SetError(0xDEAD, 0xBEEF, $COPY_OVERWRITE_ERROR)
+	EndIf
+
+	Local $hDlg, $hBtn, $Button[4]
+	Local $hWnd, $hDC, $hFile, $hFont, $hPrev, $Data, $Date, $Ret, $Time, $Title
+	Local $hIcon[2] = [0, 0], $hDefault = 0, $Result = 0
+	Local $Opt1 = Opt('GUIOnEventMode', 0)
+	Local $Opt2 = Opt('GUICloseOnESC', 1)
+	Local $tSHFI = DllStructCreate('ptr;int;dword;wchar[260];wchar[80]')
+	Local $tSHSI = DllStructCreate('dword;ptr;int;int;wchar[260];')
+	Local $tData = DllStructCreate('wchar[1024]')
+	Local $pData = DllStructGetPtr($tData)
+	Local $tSize = DllStructCreate('long[2]')
+	Local $pSize = DllStructGetPtr($tSize)
+	Local $tFT = DllStructCreate('dword[2]')
+	Local $pFT = DllStructGetPtr($tFT)
+	Local $tLT = DllStructCreate('dword[2]')
+	Local $pLT = DllStructGetPtr($tLT)
+	Local $tST = DllStructCreate('short[8]')
+	Local $pST = DllStructGetPtr($tST)
+
+	Switch _Copy_GetAction($iID)
+		Case 0
+			$Title = 'Copy File'
+		Case 1
+			$Title = 'Move File'
+		Case Else
+
+	EndSwitch
+	If $hParent Then
+		GUISetState(@SW_DISABLE, $hParent)
+	EndIf
+	$hDlg = GUICreate($Title, 442, 313, -1, -1, 0x80C80000, 0x00000001, $hParent)
+	GUISetFont(8.5, 400, 0, 'MS Shell Dlg', $hDlg)
+	GUISetBkColor(0xFFFFFF, $hDlg)
+	GUICtrlCreateLabel('There is already a file with the same name in this location. Would you like to replace the existing file', 15, 15, 412, 42)
+	GUICtrlCreateLabel('with this one?', 15, 142, 412, 14)
+	For $i = 0 To 1
+		Do
+			$Ret = DllCall('shell32.dll', 'dword_ptr', 'SHGetFileInfoW', 'wstr', $aState[7 - $i], 'dword', 0, 'ptr', DllStructGetPtr($tSHFI), 'uint', DllStructGetSize($tSHFI), 'uint', 0x00000100)
+			If (Not @error) And ($Ret[0]) Then
+				$hIcon[$i] = DllStructGetData($tSHFI, 1)
+				ExitLoop
+			EndIf
+			If $hDefault Then
+				$hIcon[$i] = $hDefault
+				ExitLoop
+			EndIf
+			DllStructSetData($tSHSI, 1, DllStructGetSize($tSHSI))
+			$Ret = DllCall('shell32.dll', 'uint', 'SHGetStockIconInfo', 'int', 0, 'uint', 0x00000100, 'ptr', DllStructGetPtr($tSHSI))
+			If (Not @error) And (Not $Ret[0]) Then
+				$hDefault = DllStructGetData($tSHSI, 2)
+			Else
+				$Ret = DllCall('shell32.dll', 'int', 'SHExtractIconsW', 'wstr', @SystemDir & '\shell32.dll', 'int', 0, 'int', 32, 'int', 32, 'ptr*', 0, 'ptr*', 0, 'int', 1, 'int', 0)
+				If (Not @error) And ($Ret[0]) Then
+					$hDefault = $Ret[5]
+				EndIf
+			EndIf
+			If $hDefault Then
+				$hIcon[$i] = $hDefault
+			EndIf
+		Until 1
+		GUICtrlCreateIcon('', 0, 35, 64 + 113 * $i, 32, 32)
+		GUICtrlSendMsg(-1, 0x0170, $hIcon[$i], 0)
+		GUICtrlSetState(-1, 128)
+		GUICtrlCreateLabel(StringRegExpReplace($aState[7 - $i], '^.*\\', ''), 76, 61 + 113 * $i, 351, 14)
+		GUICtrlSetFont(-1, 8.5, 800, 0, 'Tahoma')
+		GUICtrlCreateLabel('', 76, 77 + 113 * $i, 351, 14)
+		DllStructSetData($tData, 1, $aState[7 - $i])
+		DllCall('shlwapi.dll', 'none', 'PathRemoveFileSpecW', 'ptr', $pData)
+		$hWnd = GUICtrlGetHandle(-1)
+		$hFont = GUICtrlSendMsg(-1, 0x0031, 0, 0)
+		$hDC = DllCall('user32.dll', 'hwnd', 'GetDC', 'hwnd', $hWnd)
+		$hPrev = DllCall('gdi32.dll', 'ptr', 'SelectObject', 'ptr', $hDC[0], 'ptr', $hFont)
+		DllCall('gdi32.dll', 'int', 'GetTextExtentPoint32W', 'ptr', $hDC[0], 'wstr', 'Location: ', 'int', 10, 'ptr', $pSize)
+		DllCall('shlwapi.dll', 'int', 'PathCompactPathW', 'hwnd', $hDC[0], 'ptr', $pData, 'int', 351 - DllStructGetData($tSize, 1))
+		DllCall('gdi32.dll', 'ptr', 'SelectObject', 'ptr', $hDC[0], 'ptr', $hPrev)
+		DllCall('user32.dll', 'int', 'ReleaseDC', 'hwnd', $hWnd, 'ptr', $hDC[0])
+		GUICtrlSetData(-1, 'Location: ' & DllStructGetData($tData, 1))
+		GUICtrlCreateLabel('Size: ' & StringRegExpReplace(FileGetSize($aState[7 - $i]), '(?<=\d)(?=(\d{3})+\z)', ',') & ' bytes', 76, 93 + 113 * $i, 351, 14)
+		$hFile = 0
+		Do
+			$Data = ''
+			$Ret = DllCall('kernel32.dll', 'ptr', 'CreateFileW', 'wstr', $aState[7 - $i], 'dword', 0x80000000, 'dword', 0x06, 'ptr', 0, 'dword', 3, 'dword', 0, 'ptr', 0)
+			If (@error) Or ($Ret[0] = Ptr(-1)) Then
+				ExitLoop
+			EndIf
+			$hFile = $Ret[0]
+			$Ret = DllCall('kernel32.dll', 'int', 'GetFileTime', 'ptr', $hFile, 'ptr', 0, 'ptr', 0, 'ptr', $pFT)
+			If (@error) Or (Not $Ret[0]) Then
+				ExitLoop
+			EndIf
+			$Ret = DllCall('kernel32.dll', 'int', 'FileTimeToLocalFileTime', 'ptr', $pFT, 'ptr', $pLT)
+			If (@error) Or (Not $Ret[0]) Then
+				ExitLoop
+			EndIf
+			$Ret = DllCall('kernel32.dll', 'int', 'FileTimeToSystemTime', 'ptr', $pLT, 'ptr', $pST)
+			If (@error) Or (Not $Ret[0]) Then
+				ExitLoop
+			EndIf
+			$Ret = DllCall('kernel32.dll', 'int', 'GetDateFormatW', 'ulong', 0x0400, 'dword', 0, 'ptr', $pST, 'ptr', 0, 'ptr', $pData, 'int', 1024)
+			If (@error) Or (Not $Ret[0]) Then
+				ExitLoop
+			EndIf
+			$Date = DllStructGetData($tData, 1)
+			$Ret = DllCall('kernel32.dll', 'int', 'GetTimeFormatW', 'ulong', 0x0400, 'dword', 0, 'ptr', $pST, 'ptr', 0, 'ptr', $pData, 'int', 1024)
+			If (@error) Or (Not $Ret[0]) Then
+				ExitLoop
+			EndIf
+			$Time = DllStructGetData($tData, 1)
+			$Data = $Date & ' ' & $Time
+		Until 1
+		If $hFile Then
+			DllCall('kernel32.dll', 'int', 'CloseHandle', 'ptr', $hFile)
+		EndIf
+		GUICtrlCreateLabel('Date modified: ' & $Data, 76, 109 + 113 * $i, 351, 14)
+	Next
+	$hBtn = GUICreate('Copy File', 442, 48, 0, 265, 0x40010000, -1, $hDlg)
+	GUISetFont(8.5, 400, 0, 'MS Shell Dlg', $hBtn)
+	GUICtrlCreateGraphic(0, 0, 442, 1)
+	GUICtrlSetBkColor(-1, 0xDFDFDF)
+	$Button[0] = GUICtrlCreateCheckBox('Apply for the next conflicts', 12, 14, 144, 21)
+	$Button[1] = GUICtrlCreateButton('Yes', 189, 12, 76, 25)
+	$Button[2] = GUICtrlCreateButton('No', 272, 12, 76, 25)
+	$Button[3] = GUICtrlCreateButton('Abort', 355, 12, 76, 25)
+	GUICtrlSetState($Button[1], 768)
+	GUISetState(@SW_SHOW, $hBtn)
+	GUISetState(@SW_SHOW, $hDlg)
+	While 1
+		Switch GUIGetMsg()
+			Case  0
+				ContinueLoop
+			Case -3
+				ExitLoop
+			Case $Button[1]
+				$Result = $COPY_OVERWRITE_YES
+				If GUICtrlRead($Button[0]) = 1 Then
+					$Result = BitOR($Result, $COPY_OVERWRITE_ALL)
+				EndIf
+				ExitLoop
+			Case $Button[2]
+				$Result = $COPY_OVERWRITE_NO
+				If GUICtrlRead($Button[0]) = 1 Then
+					$Result = BitOR($Result, $COPY_OVERWRITE_ALL)
+				EndIf
+				ExitLoop
+			Case $Button[3]
+				$Result = $COPY_OVERWRITE_ABORT
+				ExitLoop
+		EndSwitch
+	WEnd
+	If $hParent Then
+		GUISetState(@SW_ENABLE, $hParent)
+	EndIf
+	GUIDelete($hDlg)
+	GUIDelete($hBtn)
+	Opt('GUIOnEventMode', $Opt1)
+	Opt('GUICloseOnESC', $Opt2)
+	For $i = 0 To 1
+		If $hIcon[$i] Then
+			DllCall('user32.dll', 'int', 'DestroyIcon', 'ptr', $hIcon[$i])
+		EndIf
+	Next
+	Return $Result
+EndFunc   ;==>_Copy_CallbackDlg
+
+; #FUNCTION# ====================================================================================================================
 ; Name...........: _Copy_CloseDll
 ; Description....: Closes a Copy.dll if it's no longer required.
 ; Syntax.........: _Copy_CloseDll ( )
 ; Parameters.....: None
 ; Return values..: Success - 1.
-;                  Failure - 0 and sets the @error flag to non-zero (see above).
+;                  Failure - 0 and sets the @error flag to non-zero.
 ; Author.........: Yashied
 ; Modified.......:
-; Remarks........: Note, if any process of copying or moving files is not completed, the function fails. Use _Copy_Abort() before
+; Remarks........: If any process of copying or moving files is not completed, the function fails. Use _Copy_Abort() before
 ;                  calling this function.
 ; Related........:
 ; Link...........:
@@ -384,55 +598,111 @@ EndFunc   ;==>_Copy_Abort
 ; ===============================================================================================================================
 
 Func _Copy_CloseDll()
-	If $__DLL = -1 Then
+
+	Local $aResult
+
+	If $cpDLL = -1 Then
 		Return SetError(1, 0, 0)
 	EndIf
-	For $i = 0 To UBound($__Slot) - 1
-		If (IsDllStruct($__Slot[$i])) And (DllStructGetData($__Slot[$i], 'Progress')) Then
-			Return SetError(4, 0, 0)
-		EndIf
-	Next
-	DllClose($__DLL)
-	$__DLL = -1
+	$aResult = DllCall($cpDLL, 'int', 'GetThreadCountInfo', 'ptr', 0, 'dword*', 0)
+	If @error Then
+		Return SetError(5, 0, 0)
+	EndIf
+	;If $aResult[2] Then ; <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< It Seems To Bypass The Issue.
+	;	Return SetError(4, 0, 0)
+	;EndIf
+	OnAutoItExitUnRegister('__CP_AutoItExit')
+	DllClose($cpDLL)
+	$cpDLL = -1
 	Return 1
 EndFunc   ;==>_Copy_CloseDll
 
 ; #FUNCTION# ====================================================================================================================
 ; Name...........: _Copy_CopyDir
 ; Description....: Copies a directory and all sub-directories and files to another directory.
-; Syntax.........: _Copy_CopyDir ( $sSource, $sDestination [, $iFlags [, $iID]] )
-; Parameters.....: $sSource      - The path to the source directory that to be copied.
-;                  $sDestination - The path to the destination directory.
-;                  $iFlags       - Flags that specify how the file is to be copied. It can be one or more of the following values.
+; Syntax.........: _Copy_CopyDir ( $sSource, $sDestination [, $iFlags [, $iExFlags [, $iID [, $sCallbackFunc [, $lParam]]]]] )
+; Parameters.....: $sSource       - The path to the source directory that to be copied.
+;                  $sDestination  - The path to the destination directory.
+;                  $iFlags        - The flags that specify how the file is to be copied. It can be one or more of the following values.
 ;
-;                                  $COPY_FILE_ALLOW_DECRYPTED_DESTINATION
-;                                  $COPY_FILE_COPY_SYMLINK
-;                                  $COPY_FILE_FAIL_IF_EXISTS
-;                                  $COPY_FILE_NO_BUFFERING
-;                                  $COPY_FILE_OPEN_SOURCE_FOR_WRITE
+;                                   $COPY_FILE_ALLOW_DECRYPTED_DESTINATION
+;                                   $COPY_FILE_COPY_SYMLINK
+;                                   $COPY_FILE_FAIL_IF_EXISTS
+;                                   $COPY_FILE_NO_BUFFERING
+;                                   $COPY_FILE_OPEN_SOURCE_FOR_WRITE
 ;
-;                  $iID          - The slot identifier (ID) to receiving the copying status. The value of this parameter must be
-;                                  between 0 and 255. If the slot with the specified ID is already in use, the function fails.
-;                                  This slot can not be used as long as the copying will not be completed or will not be aborted
-;                                  by user. The maximum number of copying files or folders at once is 256. To retrieve the
-;                                  copying status, you must call the _Copy_GetState() function with ID that has been specified
-;                                  in this function.
-; Return values..: Success       - 1.
-;                  Failure       - 0 and sets the @error flag to non-zero (see above).
+;                  $iExFlags      - The extended flags that indicates what action should be taken if the file of the same name as the
+;                                   currently copying file already exists in the destination directory. An action will be applied to
+;                                   all conflicts in the current job. If a callback is used (see below), this parameter is ignored.
+;                                   This parameter can be only one of the following values.
+;
+;                                   $COPY_OVERWRITE_YES
+;                                   $COPY_OVERWRITE_NO
+;                                   $COPY_OVERWRITE_ABORT
+;
+;                  $iID           - The slot identifier (ID) to receiving the copying status. The value of this parameter must be
+;                                   between 0 and 255. If the slot with the specified ID is already in use, the function fails.
+;                                   This slot can not be used as long as the copying will not be completed or will not be aborted
+;                                   by using the _Copy_Abort(). The maximum number of copying files or folders at once is 256.
+;                                   To retrieve the copying status, you must call the _Copy_GetState() with ID that has been
+;                                   specified in this function.
+;                  $sCallbackFunc - The name of the user-defined function to call when a file of the same name as the currently
+;                                   copying file already exists in the destination directory. Because directory are copied recursively,
+;                                   you cannot know in advance whether exist a file of the same name in the target directory.
+;                                   This callback can help you decide whether to overwrite an existing file, or not.
+;
+;                                   You have to define user function with maximum 3 function parameters, otherwise the function
+;                                   won't be called. For example:
+;
+;                                   Func MyCallbackDlg($aState, $iID, $lParam)
+;                                   ...
+;                                   EndFunc
+;
+;                                   When the user function is called then these 3 parameters have the following values:
+;
+;                                   $aState - An array containing the current copying status information, same as retured by _Copy_GetState() function.
+;                                   $iID    - The identifier of the current slot.
+;                                   $lParam - A data that was passed to the _Copy_CopyDir() function (see below).
+;
+;                                   To continue the copying process, the user function should return one of the following values that
+;                                   indicate what action should be taken for a given file. Any other values will be ignored.
+;
+;                                   $COPY_OVERWRITE_YES
+;                                   $COPY_OVERWRITE_NO
+;                                   $COPY_OVERWRITE_ABORT
+;
+;                                   If you want to apply this action for other conflicts, and no longer receive this message, you
+;                                   can combine this value with the following by using BitOR().
+;
+;                                   $COPY_OVERWRITE_ALL
+;
+;                                   WARNING: Do not call any _Copy_* functions from the user function, otherwise script may hang.
+;
+;                                   If the user function is not specified or is empty string, the action will be taken in accordance
+;                                   with the value specified in $iExFlags parameter, and will be applied to all conflicts.
+;                  $lParam        - Any data that must be passed to the user-defined function.
+; Return values..: Success        - 1.
+;                  Failure        - 0 and sets the @error flag to non-zero.
 ; Author.........: Yashied
 ; Modified.......:
 ; Remarks........: This function preserves extended attributes, OLE structured storage, NTFS file system alternate data streams,
 ;                  and file attributes. Security attributes for the existing file are not copied to the new file.
 ;
-;                  This function fails with ERROR_ACCESS_DENIED (5) if the destination file already exists and has the
-;                  FILE_ATTRIBUTE_HIDDEN or FILE_ATTRIBUTE_READONLY attribute set.
+;                  If the $COPY_FILE_FAIL_IF_EXISTS flag is set, the copy operation fails if the target file already exists,
+;                  even if you specify the $COPY_OVERWRITE_YES action in the $iExFlags parameter.
+;
+;                  If you use a callback function, you should periodically call from a loop the _Copy_GeyState() to utilize the
+;                  status information, otherwise the copying process may be suspended. Additionally, the _Copy_GeyState() is
+;                  responsible for calling the callback function.
+;
+;                  Also, you can use the _Copy_CallbackDlg() as a default callback function (see its description).
 ; Related........:
 ; Link...........:
 ; Example........: Yes
 ; ===============================================================================================================================
 
-Func _Copy_CopyDir($sSource, $sDestination, $iFlags = 0, $iID = 0)
-	__CP_CopyMoveProgress($sSource, $sDestination, $iFlags, $iID, 'CopyDirProgress')
+Func _Copy_CopyDir($sSource, $sDestination, $iFlags = 0, $iExFlags = 0, $iID = 0, $sCallbackFunc = '', $lParam = 0)
+	__CP_CopyMoveProgress($sSource, $sDestination, $iFlags, $iExFlags, $iID, 0, StringStripWS($sCallbackFunc, 3), $lParam)
 	If @error Then
 		Return SetError(@error, 0, 0)
 	Else
@@ -446,7 +716,7 @@ EndFunc   ;==>_Copy_CopyDir
 ; Syntax.........: _Copy_CopyFile ( $sSource, $sDestination [, $iFlags [, $iID]] )
 ; Parameters.....: $sSource      - The name of the existing file.
 ;                  $sDestination - The new name of the file.
-;                  $iFlags       - Flags that specify how the file is to be copied. It can be one or more of the following values.
+;                  $iFlags       - The flags that specify how the file is to be copied. It can be one or more of the following values.
 ;
 ;                                  $COPY_FILE_ALLOW_DECRYPTED_DESTINATION
 ;                                  $COPY_FILE_COPY_SYMLINK
@@ -457,11 +727,11 @@ EndFunc   ;==>_Copy_CopyDir
 ;                  $iID          - The slot identifier (ID) to receiving the copying status. The value of this parameter must be
 ;                                  between 0 and 255. If the slot with the specified ID is already in use, the function fails.
 ;                                  This slot can not be used as long as the copying will not be completed or will not be aborted
-;                                  by user. The maximum number of copying files or folders at once is 256. To retrieve the
-;                                  copying status, you must call the _Copy_GetState() function with ID that has been specified
-;                                  in this function.
+;                                  by using the _Copy_Abort(). The maximum number of copying files or folders at once is 256.
+;                                  To retrieve the copying status, you must call the _Copy_GetState() with ID that has been
+;                                  specified in this function.
 ; Return values..: Success       - 1.
-;                  Failure       - 0 and sets the @error flag to non-zero (see above).
+;                  Failure       - 0 and sets the @error flag to non-zero.
 ; Author.........: Yashied
 ; Modified.......:
 ; Remarks........: This function preserves extended attributes, OLE structured storage, NTFS file system alternate data streams,
@@ -475,7 +745,7 @@ EndFunc   ;==>_Copy_CopyDir
 ; ===============================================================================================================================
 
 Func _Copy_CopyFile($sSource, $sDestination, $iFlags = 0, $iID = 0)
-	__CP_CopyMoveProgress($sSource, $sDestination, $iFlags, $iID, 'CopyFileProgress')
+	__CP_CopyMoveProgress($sSource, $sDestination, $iFlags, 0, $iID, 1, '', 0)
 	If @error Then
 		Return SetError(@error, 0, 0)
 	Else
@@ -484,15 +754,53 @@ Func _Copy_CopyFile($sSource, $sDestination, $iFlags = 0, $iID = 0)
 EndFunc   ;==>_Copy_CopyFile
 
 ; #FUNCTION# ====================================================================================================================
+; Name...........: _Copy_GetAction
+; Description....: Retrieves the current action associated with the specified slot identifier (ID).
+; Syntax.........: _Copy_GetAction ( [$iID] )
+; Parameters.....: $iID    - The slot identifier that has been specified in the _Copy_Copy... or _Copy_Move... funtions.
+; Return values..: Success - The current action, it can be one of the following values:
+;
+;                            0 - The files are copying.
+;                            1 - The files are moving.
+;
+;                  Failure - (-1) and sets the @error flag to non-zero.
+; Author.........: Yashied
+; Modified.......:
+; Remarks........: The _Copy_GetAction() just allows you to determine a function (_Copy_Copy... or _Copy_Move...) which currently
+;                  used the specified slot. This can be useful within the user-defined callback function.
+; Related........:
+; Link...........:
+; Example........: Yes
+; ===============================================================================================================================
+
+Func _Copy_GetAction($iID = 0)
+	If $cpDLL = -1 Then
+		Return SetError(1, 0, -1)
+	EndIf
+	If (Not IsNumber($iID)) Or ($iID < 0) Or ($iID > UBound($cpSlot) - 1) Then
+		Return SetError(2, 0, -1)
+	EndIf
+	If Not IsDllStruct($cpSlot[$iID][0]) Then
+		Return SetError(3, 0, -1)
+	EndIf
+	Switch $cpSlot[$iID][3]
+		Case 0, 1
+			Return 0
+		Case 2, 3
+			Return 1
+	EndSwitch
+EndFunc   ;==>_Copy_GetAction
+
+; #FUNCTION# ====================================================================================================================
 ; Name...........: _Copy_GetState
-; Description....: Retrieve a copying status for the specified slot.
-; Syntax.........: _Copy_GetState ( [$iID = 0 [, $iIndex]] )
+; Description....: Retrieves a copying status for the specified slot.
+; Syntax.........: _Copy_GetState ( [$iID [, $iIndex]] )
 ; Parameters.....: $iID    - The slot identifier that has been specified in the _Copy_Copy... or _Copy_Move... funtions.
 ;                  $iIndex - An index of the parameter that is of interest. If this parameter is (-1) or not specified, the function
 ;                            returns an array of all possible parameters (see below).
 ; Return values..: Success - A value of the required parameter or an array containing the following information.
 ;
-;                            [0] - Current state. (0 - Complete; (-1) - Enumerate; 1 - Progress)
+;                            [0] - The current state. (0 - Complete; (-1) - Prepare; 1 - Progress)
 ;                            [1] - Total bytes transferred.
 ;                            [2] - Total size, in bytes.
 ;                            [3] - The current file's bytes transferred.
@@ -501,15 +809,15 @@ EndFunc   ;==>_Copy_CopyFile
 ;                            [6] - The full path to the source file that in progress.
 ;                            [7] - The full path to the destination file that in progress.
 ;
-;                  Failure - 0 and sets the @error flag to non-zero (see above).
+;                  Failure - 0 and sets the @error flag to non-zero.
 ; Author.........: Yashied
 ; Modified.......:
 ; Remarks........: This function reads the required values from the buffer, and does not affect the process of copying or moving.
 ;                  If you are not interested in additional information about copying, you can call _Copy_GetState() only to
-;                  determine that the copying is complete. For example,
+;                  determine that the copying is complete. For example:
 ;
-;                  While _Copy_GetState($ID, 0)
-;                      ; Anything
+;                  While _Copy_GetState(0, 0)
+;                  ...
 ;                  WEnd
 ;
 ;                  Even after copying is completed, the information about the last state in the buffer will be stored until this
@@ -521,98 +829,115 @@ EndFunc   ;==>_Copy_CopyFile
 
 Func _Copy_GetState($iID = 0, $iIndex = -1)
 
-	Local $aState
+	Local $State[8]
 
-	If $__DLL = -1 Then
+	If $cpDLL = -1 Then
 		Return SetError(1, 0, 0)
 	EndIf
-	If (Not IsNumber($iID)) Or ($iID < 0) Or ($iID > UBound($__Slot) - 1) Then
+	If (Not IsNumber($iID)) Or ($iID < 0) Or ($iID > UBound($cpSlot) - 1) Then
 		Return SetError(2, 0, 0)
 	EndIf
-	If Not IsDllStruct($__Slot[$iID]) Then
+	If Not IsDllStruct($cpSlot[$iID][0]) Then
 		Return SetError(3, 0, 0)
 	EndIf
-	While DllStructGetData($__Slot[$iID], 'Synchronize')
+	While DllStructGetData($cpSlot[$iID][0], 'Synchronize')
 		; Synchronization
 	WEnd
-	DllStructSetData($__Slot[$iID], 'Synchronize', 1)
-	If $iIndex = -1 Then
-		Dim $aState[8]
-		$aState[0] = DllStructGetData($__Slot[$iID], 'Progress')
-		$aState[1] = DllStructGetData($__Slot[$iID], 'TotalBytesTransferred')
-		$aState[2] = DllStructGetData($__Slot[$iID], 'TotalSize')
-		$aState[3] = DllStructGetData($__Slot[$iID], 'FileBytesTransferred')
-		$aState[4] = DllStructGetData($__Slot[$iID], 'FileSize')
-		$aState[5] = DllStructGetData($__Slot[$iID], 'SystemErrorCode')
-		$aState[6] = DllStructGetData($__Slot[$iID], 'Source')
-		$aState[7] = DllStructGetData($__Slot[$iID], 'Destination')
-;~		__CP_Debug($aState)
-	Else
-		Switch $iIndex
-			Case 0
-				$aState = DllStructGetData($__Slot[$iID], 'Progress')
-			Case 1
-				$aState = DllStructGetData($__Slot[$iID], 'TotalBytesTransferred')
-			Case 2
-				$aState = DllStructGetData($__Slot[$iID], 'TotalSize')
-			Case 3
-				$aState = DllStructGetData($__Slot[$iID], 'FileBytesTransferred')
-			Case 4
-				$aState = DllStructGetData($__Slot[$iID], 'FileSize')
-			Case 5
-				$aState = DllStructGetData($__Slot[$iID], 'SystemErrorCode')
-			Case 6
-				$aState = DllStructGetData($__Slot[$iID], 'Source')
-			Case 7
-				$aState = DllStructGetData($__Slot[$iID], 'Destination')
+	DllStructSetData($cpSlot[$iID][0], 'Synchronize', 1)
+	$State[0] = DllStructGetData($cpSlot[$iID][0], 'Progress')
+	$State[1] = DllStructGetData($cpSlot[$iID][0], 'TotalBytesTransferred')
+	$State[2] = DllStructGetData($cpSlot[$iID][0], 'TotalSize')
+	$State[3] = DllStructGetData($cpSlot[$iID][0], 'FileBytesTransferred')
+	$State[4] = DllStructGetData($cpSlot[$iID][0], 'FileSize')
+	$State[5] = DllStructGetData($cpSlot[$iID][0], 'SystemErrorCode')
+	$State[6] = DllStructGetData($cpSlot[$iID][0], 'Source')
+	$State[7] = DllStructGetData($cpSlot[$iID][0], 'Destination')
+	DllStructSetData($cpSlot[$iID][0], 'Synchronize', 0)
+	If __CP_Callback($State, $iID) Then
+		Switch BitAND(DllStructGetData($cpSlot[$iID][0], 'Result'), 0xFF)
+			Case $COPY_OVERWRITE_NO
+				$State[1] += $State[4]
+			Case $COPY_OVERWRITE_ABORT
+				While DllStructGetData($cpSlot[$iID][0], 'Progress')
+					Sleep(10)
+				WEnd
 			Case Else
-				$aState = Default
+
 		EndSwitch
 	EndIf
-	DllStructSetData($__Slot[$iID], 'Synchronize', 0)
-	If $aState = Default Then
-		Return SetError(2, 0, 0)
-	EndIf
-	Return $aState
+	Switch $iIndex
+		Case -1
+			Return $State
+		Case  0 To 7
+			Return $State[$iIndex]
+		Case Else
+			Return SetError(2, 0, 0)
+	EndSwitch
 EndFunc   ;==>_Copy_GetState
 
 ; #FUNCTION# ====================================================================================================================
 ; Name...........: _Copy_MoveDir
 ; Description....: Moves a directory and all sub-directories and files to another directory.
-; Syntax.........: _Copy_MoveDir ( $sSource, $sDestination [, $iFlags [, $iID]] )
-; Parameters.....: $sSource      - The path to the source directory that to be moved.
-;                  $sDestination - The path to the destination directory.
-;                  $iFlags       - Flags that specify how the file is to be moved. It can be one or more of the following values.
+; Syntax.........: _Copy_MoveDir ( $sSource, $sDestination [, $iFlags [, $iExFlags [, $iID [, $sCallbackFunc [, $lParam]]]]] )
+; Parameters.....: $sSource       - The path to the source directory that to be moved.
+;                  $sDestination  - The path to the destination directory.
+;                  $iFlags        - The flags that specify how the file is to be moved. It can be one or more of the following values.
 ;
-;                                  $MOVE_FILE_COPY_ALLOWED
-;                                  $MOVE_FILE_CREATE_HARDLINK
-;                                  $MOVE_FILE_FAIL_IF_NOT_TRACKABLE
-;                                  $MOVE_FILE_REPLACE_EXISTING
-;                                  $MOVE_FILE_WRITE_THROUGH
+;                                   $MOVE_FILE_COPY_ALLOWED
+;                                   $MOVE_FILE_CREATE_HARDLINK
+;                                   $MOVE_FILE_FAIL_IF_NOT_TRACKABLE
+;                                   $MOVE_FILE_REPLACE_EXISTING
+;                                   $MOVE_FILE_WRITE_THROUGH
 ;
-;                  $iID          - The slot identifier (ID) to receiving the copying status. The value of this parameter must be
-;                                  between 0 and 255. If the slot with the specified ID is already in use, the function fails.
-;                                  This slot can not be used as long as the copying will not be completed or will not be aborted
-;                                  by user. The maximum number of copying files or folders at once is 256. To retrieve the
-;                                  copying status, you must call the _Copy_GetState() function with ID that has been specified
-;                                  in this function.
-; Return values..: Success       - 1.
-;                  Failure       - 0 and sets the @error flag to non-zero (see above).
+;                  $iExFlags      - The extended flags that indicates what action should be taken if the file of the same name as the
+;                                   currently copying file already exists in the destination directory. An action will be applied to
+;                                   all conflicts in the current job. If a callback is used (see below), this parameter is ignored.
+;                                   This parameter can be only one of the following values.
+;
+;                                   $COPY_OVERWRITE_YES
+;                                   $COPY_OVERWRITE_NO
+;                                   $COPY_OVERWRITE_ABORT
+;
+;                  $iID           - The slot identifier (ID) to receiving the copying status. The value of this parameter must be
+;                                   between 0 and 255. If the slot with the specified ID is already in use, the function fails.
+;                                   This slot can not be used as long as the copying will not be completed or will not be aborted
+;                                   by using the _Copy_Abort(). The maximum number of copying files or folders at once is 256.
+;                                   To retrieve the copying status, you must call the _Copy_GetState() with ID that has been
+;                                   specified in this function.
+;                  $sCallbackFunc - The name of the user-defined function to call when a file of the same name as the currently
+;                                   copying file already exists in the destination directory. Because directory are moved recursively,
+;                                   you cannot know in advance whether exist a file of the same name in the target directory.
+;                                   This callback can help you decide whether to overwrite an existing file, or not.
+;
+;                                   (See _Copy_CopyDir() for more information)
+;
+;                  $lParam        - Any data that must be passed to the user-defined function.
+; Return values..: Success        - 1.
+;                  Failure        - 0 and sets the @error flag to non-zero.
 ; Author.........: Yashied
 ; Modified.......:
-; Remarks........: Note, if you move a directory within the same drive, it may take more time than moving this directory by using
-;                  the _Copy_MoveFile() function. If the source and destination directories located on a different drives and the
+; Remarks........: If you move a directory within the same drive, it may take more time than moving this directory by using the
+;                  _Copy_MoveFile(). If the source and destination directories located on a different drives and the
 ;                  $MOVEFILE_COPY_ALLOWED flag is not set, the function fails with ERROR_NOT_SAME_DEVICE (17).
 ;
 ;                  If the directory is to be moved to a different volume, the function simulates the move by using the CopyFile(),
-;                  DeleteFile(), CreateDirectory(), and RemoveDirectory() functions.
+;                  DeleteFile(), CreateDirectory(), and RemoveDirectory() API functions.
+;
+;                  If the $MOVE_FILE_REPLACE_EXISTING flag is not set, the move operation fails if the target file already exists,
+;                  even if you specify the $COPY_OVERWRITE_YES action in the $iExFlags parameter.
+;
+;                  If you use a callback function, you should periodically call from a loop the _Copy_GeyState() to utilize the
+;                  status information, otherwise the moving process may be suspended. Additionally, the _Copy_GeyState() is
+;                  responsible for calling the callback function.
+;
+;                  Also, you can use the _Copy_CallbackDlg() as a default callback function (see its description).
 ; Related........:
 ; Link...........:
 ; Example........: Yes
 ; ===============================================================================================================================
 
-Func _Copy_MoveDir($sSource, $sDestination, $iFlags = 0, $iID = 0)
-	__CP_CopyMoveProgress($sSource, $sDestination, $iFlags, $iID, 'MoveDirProgress')
+Func _Copy_MoveDir($sSource, $sDestination, $iFlags = 0, $iExFlags = 0, $iID = 0, $sCallbackFunc = '', $lParam = 0)
+	__CP_CopyMoveProgress($sSource, $sDestination, $iFlags, $iExFlags, $iID, 2, StringStripWS($sCallbackFunc, 3), $lParam)
 	If @error Then
 		Return SetError(@error, 0, 0)
 	Else
@@ -626,7 +951,7 @@ EndFunc   ;==>_Copy_MoveDir
 ; Syntax.........: _Copy_MoveFile ( $sSource, $sDestination [, $iFlags [, $iID]] )
 ; Parameters.....: $sSource      - The name of the existing file or directory.
 ;                  $sDestination - The new name of the file or directory.
-;                  $iFlags       - Flags that specify how the file is to be moved. It can be one or more of the following values.
+;                  $iFlags       - The flags that specify how the file is to be moved. It can be one or more of the following values.
 ;
 ;                                  $MOVE_FILE_COPY_ALLOWED
 ;                                  $MOVE_FILE_CREATE_HARDLINK
@@ -637,26 +962,26 @@ EndFunc   ;==>_Copy_MoveDir
 ;                  $iID          - The slot identifier (ID) to receiving the copying status. The value of this parameter must be
 ;                                  between 0 and 255. If the slot with the specified ID is already in use, the function fails.
 ;                                  This slot can not be used as long as the copying will not be completed or will not be aborted
-;                                  by user. The maximum number of copying files or folders at once is 256. To retrieve the
-;                                  copying status, you must call the _Copy_GetState() function with ID that has been specified
-;                                  in this function.
+;                                  by using the _Copy_Abort(). The maximum number of copying files or folders at once is 256.
+;                                  To retrieve the copying status, you must call the _Copy_GetState() with ID that has been
+;                                  specified in this function.
 ; Return values..: Success       - 1.
-;                  Failure       - 0 and sets the @error flag to non-zero (see above).
+;                  Failure       - 0 and sets the @error flag to non-zero.
 ; Author.........: Yashied
 ; Modified.......:
-; Remarks........: When moving a file, $sDestination can be on a different file system or volume. If $sDestination is on another
-;                  drive, you must set the $MOVEFILE_COPY_ALLOWED flag. When moving a directory, $sSource and $sDestination must
-;                  be on the same drive.
+; Remarks........: When moving a file, $sDestination can be on a different volume. If $sDestination is on another drive, you must
+;                  set the $MOVEFILE_COPY_ALLOWED flag. When moving a directory, $sSource and $sDestination must be on the same
+;                  drive.
 ;
 ;                  If the file is to be moved to a different volume, the function simulates the move by using the CopyFile()
-;                  and DeleteFile() functions.
+;                  and DeleteFile() API functions.
 ; Related........:
 ; Link...........:
 ; Example........: Yes
 ; ===============================================================================================================================
 
 Func _Copy_MoveFile($sSource, $sDestination, $iFlags = 0, $iID = 0)
-	__CP_CopyMoveProgress($sSource, $sDestination, $iFlags, $iID, 'MoveFileProgress')
+	__CP_CopyMoveProgress($sSource, $sDestination, $iFlags, 0, $iID, 3, '', 0)
 	If @error Then
 		Return SetError(@error, 0, 0)
 	Else
@@ -671,7 +996,7 @@ EndFunc   ;==>_Copy_MoveFile
 ; Parameters.....: $sDLL   - The path to the DLL file to open. By default is used Copy.dll for 32-bit and Copy_x64.dll for 64-bit
 ;                            operating systems.
 ; Return values..: Success - 1.
-;                  Failure - 0 and sets the @error flag to non-zero (see above).
+;                  Failure - 0 and sets the @error flag to non-zero.
 ; Author.........: Yashied
 ; Modified.......:
 ; Remarks........: Note, the 64-bit executables cannot load 32-bit DLLs and vice-versa.
@@ -681,28 +1006,32 @@ EndFunc   ;==>_Copy_MoveFile
 ; ===============================================================================================================================
 
 Func _Copy_OpenDll($sDLL = '')
-	If $__DLL <> -1 Then
+	If $cpDLL <> -1 Then
 		Return SetError(6, 0, 0)
 	EndIf
 	If Not $sDLL Then
 		If @AutoItX64 Then
-			;$sDll = @ScriptDir & '\Copy_x64.dll'	original line
-			$sDll = @ScriptDir & '\Lib\copy\Copy_x64.dll' ; <<<<<<< modified for DropIt
+			$sDLL = @ScriptDir & '\Copy_x64.dll'
 		Else
-			;$sDll = @ScriptDir & '\Copy.dll'	original line
-			$sDll = @ScriptDir & '\Lib\copy\Copy.dll' ; <<<<<<< modified for DropIt
+			$sDLL = @ScriptDir & '\Copy.dll'
 		EndIf
 	EndIf
 	If Not FileExists($sDLL) Then
 		Return SetError(8, 0, 0)
 	EndIf
-	If StringRegExpReplace(FileGetVersion($sDLL), '(\d+\.\d+).*', '\1') <> '1.3' Then
+	If StringCompare(StringRegExpReplace(FileGetVersion($sDLL), '(\d+\.\d+).*', '\1'), '1.4') Then
 		Return SetError(7, 0, 0)
 	EndIf
-	$__DLL = DllOpen($sDLL)
-	If $__DLL = -1 Then
+	$cpDLL = DllOpen($sDLL)
+	If $cpDLL = -1 Then
 		Return SetError(1, 0, 0)
 	EndIf
+	OnAutoItExitRegister('__CP_AutoItExit')
+	For $i = 0 To 255
+		For $j = 0 To UBound($cpSlot, 2) - 1
+			$cpSlot[$i][$j] = 0
+		Next
+	Next
 	Return 1
 EndFunc   ;==>_Copy_OpenDll
 
@@ -716,7 +1045,7 @@ EndFunc   ;==>_Copy_OpenDll
 ;                  $iID    - The slot identifier that has been specified in the _Copy_Copy... or _Copy_Move... funtions. If this
 ;                            parameter is (-1), all running processes will be suspended or resumed.
 ; Return values..: Success - 1.
-;                  Failure - 0 and sets the @error flag to non-zero (see above).
+;                  Failure - 0 and sets the @error flag to non-zero.
 ; Author.........: Yashied
 ; Modified.......:
 ; Remarks........: If the copying or moving files was completed, the function has no effect.
@@ -726,22 +1055,21 @@ EndFunc   ;==>_Copy_OpenDll
 ; ===============================================================================================================================
 
 Func _Copy_Pause($fPause, $iID = 0)
-
-	If $__DLL = -1 Then
+	If $cpDLL = -1 Then
 		Return SetError(1, 0, 0)
 	EndIf
-	If (Not IsNumber($iID)) Or ($iID < -1) Or ($iID > UBound($__Slot) - 1) Then
+	If (Not IsNumber($iID)) Or ($iID < -1) Or ($iID > UBound($cpSlot) - 1) Then
 		Return SetError(2, 0, 0)
 	EndIf
 	If $iID = -1 Then
-		For $i = 0 To UBound($__Slot) - 1
-			If (IsDllStruct($__Slot[$i])) And (DllStructGetData($__Slot[$i], 'Progress')) Then
-				DllStructSetData($__Slot[$i], 'Pause', $fPause)
+		For $i = 0 To UBound($cpSlot) - 1
+			If (IsDllStruct($cpSlot[$i][0])) And (DllStructGetData($cpSlot[$i][0], 'Progress')) Then
+				DllStructSetData($cpSlot[$i][0], 'Pause', $fPause)
 			EndIf
 		Next
 	Else
-		If DllStructGetData($__Slot[$iID], 'Progress') Then
-			DllStructSetData($__Slot[$iID], 'Pause', $fPause)
+		If DllStructGetData($cpSlot[$iID][0], 'Progress') Then
+			DllStructSetData($cpSlot[$iID][0], 'Pause', $fPause)
 		Else
 			Return SetError(3, 0, 0)
 		EndIf
@@ -753,44 +1081,77 @@ EndFunc   ;==>_Copy_Pause
 
 #Region Internal Functions
 
-Func __CP_CopyMoveProgress($sSource, $sDestination, $iFlags, $iID, $sFunc)
+Func __CP_Callback(ByRef $aState, $iID)
+
+	Local $Result
+
+	If Not DllStructGetData($cpSlot[$iID][0], 'Callback') Then
+		$cpCall = 0
+	Else
+		If Not $cpCall Then
+			$cpCall = 1
+		Else
+			$cpCall = 0
+			$cpPrevent = 0
+			$Result = Call($cpSlot[$iID][1], $aState, $iID, $cpSlot[$iID][2])
+			$cpPrevent = 1
+			If (@error = 0xDEAD) And (@extended = 0xBEEF) Then
+				$Result = $COPY_OVERWRITE_ERROR
+			Else
+				$Result = BitAND($Result, BitOR($COPY_OVERWRITE_YES, $COPY_OVERWRITE_NO, $COPY_OVERWRITE_ABORT, $COPY_OVERWRITE_ALL))
+			EndIf
+			DllStructSetData($cpSlot[$iID][0], 'Result', $Result)
+			DllStructSetData($cpSlot[$iID][0], 'Callback', 0)
+			If $Result <> $COPY_OVERWRITE_ERROR Then
+				Return 1
+			EndIf
+		EndIf
+	EndIf
+	Return 0
+EndFunc   ;==>__CP_Callback
+
+Func __CP_CopyMoveProgress($sSource, $sDestination, $iFlags, $iExFlags, $iID, $iAction, $sCallbackFunc, $lParam)
 
 	Local $aResult
 
-	If $__DLL = -1 Then
+	If $cpDLL = -1 Then
 		Return SetError(1, 0, 0)
 	EndIf
-	If (Not IsNumber($iID)) Or ($iID < 0) Or ($iID > UBound($__Slot) - 1) Then
+	If (Not IsNumber($iID)) Or ($iID < 0) Or ($iID > UBound($cpSlot) - 1) Then
 		Return SetError(2, 0, 0)
 	EndIf
-	If Not IsDllStruct($__Slot[$iID]) Then
-		$__Slot[$iID] = DllStructCreate($__CALLBACKSTATUS)
+	If Not IsDllStruct($cpSlot[$iID][0]) Then
+		$cpSlot[$iID][0] = DllStructCreate($tagCALLBACKSTATUS)
 	Else
-		If DllStructGetData($__Slot[$iID], 'Progress') Then
+		If DllStructGetData($cpSlot[$iID][0], 'Progress') Then
 			Return SetError(4, 0, 0)
 		EndIf
 	EndIf
-	$aResult = DllCall($__DLL, 'int', $sFunc, 'wstr', $sSource, 'wstr', $sDestination, 'dword', $iFlags, 'ptr', DllStructGetPtr($__Slot[$iID]))
+	If Not $sCallbackFunc Then
+		$iExFlags = BitAND($iExFlags, BitOR($COPY_OVERWRITE_YES, $COPY_OVERWRITE_NO, $COPY_OVERWRITE_ABORT))
+		$cpSlot[$iID][1] = 0
+		$cpSlot[$iID][2] = 0
+	Else
+		$iExFlags = $COPY_OVERWRITE_CALLBACK
+		$cpSlot[$iID][1] = $sCallbackFunc
+		$cpSlot[$iID][2] = $lParam
+	EndIf
+	$cpSlot[$iID][3] = $iAction
+	Switch $iAction
+		Case 0
+			$aResult = DllCall($cpDLL, 'int', 'CopyDirProgress', 'wstr', $sSource, 'wstr', $sDestination, 'dword', $iFlags, 'dword', $iExFlags, 'ptr', DllStructGetPtr($cpSlot[$iID][0]))
+		Case 1
+			$aResult = DllCall($cpDLL, 'int', 'CopyFileProgress', 'wstr', $sSource, 'wstr', $sDestination, 'dword', $iFlags, 'ptr', DllStructGetPtr($cpSlot[$iID][0]))
+		Case 2
+			$aResult = DllCall($cpDLL, 'int', 'MoveDirProgress', 'wstr', $sSource, 'wstr', $sDestination, 'dword', $iFlags, 'dword', $iExFlags, 'ptr', DllStructGetPtr($cpSlot[$iID][0]))
+		Case 3
+			$aResult = DllCall($cpDLL, 'int', 'MoveFileProgress', 'wstr', $sSource, 'wstr', $sDestination, 'dword', $iFlags, 'ptr', DllStructGetPtr($cpSlot[$iID][0]))
+	EndSwitch
 	If (@error) Or (Not $aResult[0]) Then
 		Return SetError(5, 0, 0)
 	EndIf
 	Return 1
 EndFunc   ;==>__CP_CopyMoveProgress
-
-Func __CP_Debug(ByRef $aState)
-
-	Static $Text, $Prev = Default
-
-	$Text = StringFormat('%2s  ', $aState[0])
-	For $i = 1 To 5
-		$Text &= StringFormat('%-12s', $aState[$i])
-	Next
-	$Text &= $aState[6]
-	If $Text <> $Prev Then
-		ConsoleWrite($Text & @CR)
-		$Prev = $Text
-	EndIf
-EndFunc   ;==>__CP_Debug
 
 #EndRegion Internal Functions
 

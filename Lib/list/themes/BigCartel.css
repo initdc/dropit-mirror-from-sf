@@ -1,0 +1,59 @@
+/* ---------------------------------------------------------- */
+/* Theme: BigCartel
+/* Author: tpr
+/* Inspired by http://bigcartel.com/
+/* ---------------------------------------------------------- */
+
+html { background-color: #F9FBF4; }
+
+body { color: #222; font-family: Georgia, serif; }
+
+h1 { color: #A0BD30; font-size: 300%; font-family: Georgia, serif; font-weight: bold; text-shadow: 1px 1px #fff; }
+
+#infoline li { color: #222; border-right-color: #222; font-family: Georgia, serif; }
+
+#mainTable { border-bottom: none; font-size: 11px; color: #222; font-family: Arial, sans-serif; }
+#mainTable a {
+    color: #fff;
+	padding: 4px 10px;
+	background-color: #BBD652;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    display: inline-block;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+#footer-wrap { color: #222; }
+#footer-wrap a { color: #222; }
+
+#mainTable a:hover { background-color: #A0BD30; }
+
+th {
+	background-color: #222;
+	padding: 11px 8px;
+	color: #fff;
+	border-bottom: none;
+	font-family: Georgia, serif;
+	font-size: 13px;
+    font-weight: bold;
+    border-top: 1px solid #F9FBF4;
+    border-bottom: 1px solid #F9FBF4;
+}
+
+.sortable thead th:hover, th.active { border-top-color: #76CAC6; border-bottom-color: #76CAC6; background-color: #76CAC6; color: #222; text-shadow: 1px 1px #81DED9; }
+
+td { padding: 10px; border-bottom: 1px dotted #ccc; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+
+.tableSortArrow { top: 3px; }
+
+td.activeColumn {  }
+
+form.filter input.searchField { border: 1px solid #E6E6DE; color: #222; }
+form.filter input.searchField:focus {  }
+
+form.filter input.clearFilterButton { color: #D6D6CC; }
+form.filter input.clearFilterButton:hover { #222; }

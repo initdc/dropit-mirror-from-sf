@@ -1,6 +1,11 @@
-HTML Theme (CSS.dat)
+Base Code For HTML Themes (themes, base.css)
 http://dropit.sourceforge.net/
 
 
-HTML Sortable (JS.dat)
+Modified HTML Filter Table (filter.js)
+http://leparlement.org/filterTable
+See also http://www.vonloesch.de/node/23
+
+
+Modified HTML Sortable Table (sortable.js)
 http://www.webtoolkit.info/sortable-html-table.html

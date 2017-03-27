@@ -1,0 +1,144 @@
+/* ---------------------------------------------------------- */
+/* Theme: Pinky
+/* Author: tpr
+/* ---------------------------------------------------------- */
+
+html { background-color: #3B3B3B; padding: 0; margin: 0; }
+
+body { color: #282828;  width: 100%; padding: 0 0 0 0; margin: 0 0 0 0; font-family: Verdana, sans-serif; }
+
+#table { background-color: #F7F7F7; margin: 0; padding: 0; border-bottom: 1px solid #303030; }
+
+a { color: #FFF; text-decoration: underline; }
+
+#header-wrap {
+    position: relative;
+    height: 120px;
+    border-top: 1px solid #3B3B3B;
+	background: #3B3B3B;
+	background: -moz-linear-gradient(top,  #5e5e5e 0%, #3b3b3b 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#5e5e5e), color-stop(100%,#3b3b3b));
+	background: -webkit-linear-gradient(top,  #5e5e5e 0%,#3b3b3b 100%);
+	background: -o-linear-gradient(top,  #5e5e5e 0%,#3b3b3b 100%);
+	background: -ms-linear-gradient(top,  #5e5e5e 0%,#3b3b3b 100%);
+	background: linear-gradient(top,  #5e5e5e 0%,#3b3b3b 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#5e5e5e', endColorstr='#3b3b3b',GradientType=0 );
+}
+
+h1 { color: #F7F7F7; margin-bottom: 15px; margin-top: 15px; text-shadow: -1px -1px #3B3B3B; font-family: Georgia, serif; padding-top: 20px }
+
+#infoline { float: left; }
+#infoline li { border-right-color: #BCBCBC; color: #F7F7F7; }
+#infoline li strong { font-weight: bold; }
+
+#table { border-top: 30px solid #333; }
+
+#mainTable { border: none; top: -30px; margin-top: 0px; border-collapse: collapse; }
+#mainTable a {
+	background-color: #eee;
+	background: -moz-linear-gradient(top, #ffffff 0%, #f3f3f3 50%, #ededed 51%, #ffffff 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffffff), color-stop(50%,#f3f3f3), color-stop(51%,#ededed), color-stop(100%,#ffffff));
+	background: -webkit-linear-gradient(top, #ffffff 0%,#f3f3f3 50%,#ededed 51%,#ffffff 100%);
+	background: -o-linear-gradient(top, #ffffff 0%,#f3f3f3 50%,#ededed 51%,#ffffff 100%);
+	background: -ms-linear-gradient(top, #ffffff 0%,#f3f3f3 50%,#ededed 51%,#ffffff 100%);
+	background: linear-gradient(top, #ffffff 0%,#f3f3f3 50%,#ededed 51%,#ffffff 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ffffff',GradientType=0 );
+	border: 1px solid #bbb;
+	border-top: 1px solid #f8f8f8;
+	box-shadow: 0 -1px 0 #bbb;
+	padding: 3px 15px 4px 15px;
+	color: #282828;
+	-moz-border-radius: 2px;
+	-webkit-border-radius: 2px;
+	border-radius: 2px;
+	text-shadow: 1px 1px #fff;
+	text-decoration: none;
+	border-collapse: collapse;
+}
+
+th {
+	border: none;
+	height: 30px;
+	line-height: 29px;
+	padding-top: 0;
+	padding-bottom: 0;
+	background: #cb60b3;
+	background: -moz-linear-gradient(top, #cb60b3 0%, #c146a1 50%, #a80077 51%, #db36a4 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#cb60b3), color-stop(50%,#c146a1), color-stop(51%,#a80077), color-stop(100%,#db36a4));
+	background: -webkit-linear-gradient(top, #cb60b3 0%,#c146a1 50%,#a80077 51%,#db36a4 100%);
+	background: -o-linear-gradient(top, #cb60b3 0%,#c146a1 50%,#a80077 51%,#db36a4 100%);
+	background: -ms-linear-gradient(top, #cb60b3 0%,#c146a1 50%,#a80077 51%,#db36a4 100%);
+	background: linear-gradient(top, #cb60b3 0%,#c146a1 50%,#a80077 51%,#db36a4 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#cb60b3', endColorstr='#db36a4',GradientType=0 );
+	color: #fff;
+	border-right: 1px solid #3B3B3B;
+	border: none;
+}
+
+.sortable th:hover {
+	background: #d070bb;
+	background: -moz-linear-gradient(top, #d070bb 0%, #c759aa 50%, #ca008d 51%, #df4bae 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#d070bb), color-stop(50%,#c759aa), color-stop(51%,#ca008d), color-stop(100%,#df4bae));
+	background: -webkit-linear-gradient(top, #d070bb 0%,#c759aa 50%,#ca008d 51%,#df4bae 100%);
+	background: -o-linear-gradient(top, #d070bb 0%,#c759aa 50%,#ca008d 51%,#df4bae 100%);
+	background: -ms-linear-gradient(top, #d070bb 0%,#c759aa 50%,#ca008d 51%,#df4bae 100%);
+	background: linear-gradient(top, #d070bb 0%,#c759aa 50%,#ca008d 51%,#df4bae 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#d070bb', endColorstr='#df4bae',GradientType=0 );
+}
+
+th.active, .sortable th.active:hover {
+	background: #F7F7F7;
+	color: #282828;
+	border-bottom-color: #F7F7F7;
+	background: -moz-linear-gradient(top, #ffffff 0%, #f7f7f7 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffffff), color-stop(100%,#f7f7f7));
+	background: -webkit-linear-gradient(top, #ffffff 0%,#f7f7f7 100%);
+	background: -o-linear-gradient(top, #ffffff 0%,#f7f7f7 100%);
+	background: -ms-linear-gradient(top, #ffffff 0%,#f7f7f7 100%);
+	background: linear-gradient(top, #ffffff 0%,#f7f7f7 100%);
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#f7f7f7',GradientType=0 );
+}
+
+#footer { color: #F7F7F7; padding-top: 10px; }
+#footer a { text-shadow: none; }
+a#top { color: #adadad; text-shadow: -1px -1px #2d2d2d !important; }
+
+span.tableSortArrow { top: 1px; }
+
+td { border-bottom: 1px dotted #ccc; padding-top: 8px; padding-bottom: 7px; background-color: #f7f7f7; }
+tr:last-child td { border-bottom: none; }
+
+tr:first-child td { padding-top: 12px; }
+
+.noResults a { color: #A90178; }
+
+form.filter, form.filter#fixed {
+    float: left;
+	position: relative;
+    top: -7px;
+}
+
+form.filter#fixed { right: 0; }
+
+form.filter input {
+	background-color: #F7F7F7;
+    border: none !important;
+	-moz-background-clip: padding;
+	-webkit-background-clip: padding-box;
+	background-clip: padding-box;
+	-moz-border-radius: 3px;
+	-webkit-border-radius: 3px;
+	border-radius: 3px;
+}
+
+form.filter input.clearFilterButton {
+	border: none !important;
+	background-color: transparent;
+	top: 0;
+}
+
+#container { width: 100% !important; padding: 0; }
+#header, #footer-wrap { padding-left: 50px; display: block; }
+#table { padding: 0 50px; }
+#mainTable { display: block; }
+#footer-wrap { float: left; position: relative; }
