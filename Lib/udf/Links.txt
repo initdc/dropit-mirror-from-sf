@@ -14,6 +14,10 @@ Hash For File Library (HashForFile.au3)
 http://www.autoitscript.com/forum/topic/95558-crc32-md4-md5-sha1-for-files/
 
 
+Image Get Info Library (ImageGetInfo.au3)
+http://www.autoitscript.com/forum/topic/13096-udf-imagegetinfo/
+
+
 SFTP Library (SFTPEx.au3)
 http://www.autoitscript.com/forum/topic/138095-udf-to-support-sftp-protocol-using-psftp/
 
