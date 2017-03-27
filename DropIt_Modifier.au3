@@ -1,7 +1,7 @@
-; !!! VERSION 0.4 !!!
+; !!! VERSION 0.2 !!!
 ; Version note at the end of this file
 #include-once
-#include <DropIt_Global.au3>
+#include "DropIt_Global.au3"
 #include "Lib\udf\DropIt_LibBDV.au3"
 #include "Lib\udf\DropIt_LibStringM.au3"
 
@@ -23,7 +23,7 @@
 
 
 ; #VARIABLES# ==============================================================================================
-Global $i_Modifier_ModifierRulesLength = 33  ;Note UBound($modifierRules) - 1 not used
+Global $i_Modifier_ModifierRulesLength = 41  ;Note UBound($modifierRules) - 1 not used
 Global Const $i_Modifier_ModifierRule = 0         ;Indexes of inner array
 Global Const $i_Modifier_ModifierWhat = 1
 Global Const $i_Modifier_ModifierAction = 2
@@ -35,6 +35,9 @@ Global $s_Modifier_ModifierEscapeChar = $STATIC_MODIFIER_ESCAPE_CHAR
 Global $s_Modifier_VarEscapeChar = $STATIC_ABBREVIATION_ESCAPE_CHAR
 
 
+
+
+;StringRegExpReplace ("/1", "(.*)\1 \2(.*)", "$1$2", [count] )
 ;Attention: action from ModifierRule is with "\" and action from ModifierWhat is "/"
 ;Modifier array [n][6] = [n]["Modifier Rule", "Applicantion Rule (What)", "Application (Action)","MultiAction"..]
 Global $aas_Modifier_ModifierRules[$i_Modifier_ModifierRulesLength][6] = [ _
@@ -48,9 +51,17 @@ Global $aas_Modifier_ModifierRules[$i_Modifier_ModifierRulesLength][6] = [ _
 	["[<](\d+)[,](\d+)","(.+)",'StringMid("/1", StringLen ("/1") - \1 - \2 +2 , \2 )'], _
 	["[-](\d+)[,](\d+)","(.+)",'StringMid("/1", \1, \2 - \1 + 1)'], _
 	["[r][(](.+)[,](.+)[)]","(.+)",'StringReplace("/1", "\1","\2")'], _
+	["[r][:](.+[,].+)([|].+[,].+)*","(.+)",'StringReplace("/1", "\1","\2")',"|","(.+)[,](.+)",2], _
 	["[d][(](.+)[)]","(.+)",'StringReplace("/1", "\1","")'], _
+	["[d][-][(](.+),(.+)[)]","(.+)",'_StringM_DeleteBetween("/1","\1","\2",0)'], _
+	["[d][-][-][(](.+)[,](.+)[)]","(.+)",'_StringM_DeleteBetween("/1","\1","\2",1)'], _
+	["[d][o][-][(](.+)[,](.+)[,](-?\d)+[)]","(.+)",'_StringM_DeleteBetween("/1","\1","\2",0,\3)'], _
+	["[d][o][-][-][(](.+)[,](.+)[,](-?\d)+[)]","(.+)",'_StringM_DeleteBetween("/1","\1","\2",1,\3)'], _
+	["[d][o][o][-][(](.+)[,](.+)[,](-?\d)+[,](-?\d)+[)]","(.+)",'_StringM_DeleteBetween("/1","\1","\2",0,\3,\4)'], _
+	["[d][o][o][-][-][(](.+)[,](.+)[,](-?\d)+[,](-?\d)+[)]","(.+)",'_StringM_DeleteBetween("/1","\1","\2",1,\3,\4)'], _
 	["[c][>](.+)","(.+)",'StringTrimLeft("/1", \1)'], _
 	["[c][<](.+)","(.+)",'StringTrimRight("/1", \1)'], _
+	["[d][:](.+)([|].+)*","(.+)",'StringReplace("/1", "\1","")',"|","(.+)",2], _
 	["[s][>][(](.+)[)]","(.+)", 'StringMid("/1",StringInStr ("/1", "\1"))' ], _
 	["[s][>][-][(](.+)[)]","(.+)" ,'StringMid("/1",StringInStr ("/1", "\1") + StringLen("\1"))' ], _
 	["[s][<][(](.+)[)]","(.+)",'StringMid("/1",1,StringInStr ("/1", "\1") + StringLen("\1") -1)'], _
@@ -125,7 +136,7 @@ EndFunc
 ; Author ........: Daneel
 ; Modified.......:
 ; Remarks .......: Change StrngCompare with StringRegExp +\A...\z for start and end of a string
-; Related .......: __Modifier_StringReplaceModifier
+; Related .......: _Modifier_StringReplaceModifier
 ; Link ..........;
 ; Example .......; NO
 ; ============================================================================================
@@ -156,18 +167,23 @@ Func __Modifier_ActiveModifier($sVarValue, $sModifierRequest)
 	Return $sVarValue
 EndFunc
 
-Func __Modifier_ActiveMonoModifier($sVarValue,$sModifierRequest, $iI, $sModifierRule)
+Func __Modifier_ActiveMonoModifier($sVarValue, $sModifierRequest, $iI, $sModifierRule)
 	Local $modToAction = StringRegExpReplace($sModifierRequest, $sModifierRule, $aas_Modifier_ModifierRules[$iI][$i_Modifier_ModifierAction])
 	Local $activeAction = StringReplace ($modToAction,"/","\")
 	#cs
-	_dbg_out("act " &$activeAction)
+	_Log_Info("act " & StringReplace($activeAction,'"',"'"))
+	_Log_Info("act2 " & StringReplace(StringRegExpReplace($sVarValue, _
+										$aas_Modifier_ModifierRules[$iI][$i_Modifier_ModifierWhat], _
+										$activeAction),'"',"'"))
 
-	_dbg_out("act2 " & StringRegExpReplace($sVarValue, $aas_Modifier_ModifierRules[$iI][$i_Modifier_ModifierWhat], $activeAction))
-
-	_dbg_line("+")
 	#ce
 	Return Execute(StringRegExpReplace($sVarValue, $aas_Modifier_ModifierRules[$iI][$i_Modifier_ModifierWhat], $activeAction))
 EndFunc
+
+
+
+;["---", "(.+)", 'StringLower("\1")']  _ 		   	        ;Lowercase all
+;["[>](\d+)[,](\d+)","(.+)","StringMid($ss, \1, \2 )"]
 
 ; #FUNCTION# ===============================================================================================
 ;
@@ -293,6 +309,8 @@ Prompter modifier
 	- r:s1,s2(|s1,s2)* ; Rename many string in couple divided by |
 	- d:s1(|s2)* ; Delete many string divided by |
 	- d(s1)		;Delete all occurences og the string s1
+	- d-(s1,s2) ;Delete a string between s1 and s2 exluded
+	- d--(s1,s2);Delete a string between s1 and s2 included
 	- c>d       ;Cut d letter from Ini
 	- c<d		;Cut d letter from End
 	- s>(s1)		;Retrive a String from the substring s1 included until the end

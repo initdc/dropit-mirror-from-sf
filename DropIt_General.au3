@@ -3,13 +3,14 @@
 
 #include-once
 #include <Array.au3>
-#include <DropIt_Association.au3>
-#include <DropIt_Duplicate.au3>
-#include <DropIt_Global.au3>
-#include <DropIt_ProfileList.au3>
 #include <GUIComboBoxEx.au3>
 #include <GUIConstantsEx.au3>
 #include <GUIImageList.au3>
+
+#include "DropIt_Association.au3"
+#include "DropIt_Duplicate.au3"
+#include "DropIt_Global.au3"
+#include "DropIt_ProfileList.au3"
 #include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibImages.au3"
@@ -77,14 +78,14 @@ Func __Is($iData, $iINI = -1, $iDefault = "False", $iProfile = -2)
 	#ce
 	If $iProfile <> -2 Then ; Try To Load It As A Profile Setting.
 		$iINI = __IsProfile($iProfile, 1) ; Get Profile Path Of Selected Profile.
-		If IniRead($iINI, "General", $iData, "Default") == "Default" Then
+		If IniRead($iINI, $G_Global_GeneralSection, $iData, "Default") == "Default" Then
 			$iINI = -1 ; Use Global Setting.
 		EndIf
 	EndIf
 	If $iINI = -1 Then
 		$iINI = __IsSettingsFile() ; Get Default Settings INI File.
 	EndIf
-	Return IniRead($iINI, "General", $iData, $iDefault) = "True"
+	Return IniRead($iINI, $G_Global_GeneralSection, $iData, $iDefault) = "True"
 EndFunc   ;==>__Is
 
 Func __IsSettingsFile($iINI = -1)
@@ -111,12 +112,12 @@ Func __IsSettingsFile($iINI = -1)
 				"StartAtStartup=False" & @LF & "Minimized=False" & @LF & "ShowSorting=True" & @LF & "ShowMonitored=False" & @LF & "UseSendTo=False" & @LF & _
 				"SendToMode=Permanent" & @LF & "ProfileEncryption=False" & @LF & "WaitOpened=False" & @LF & "ScanSubfolders=True" & @LF & "FolderAsFile=False" & @LF & _
 				"IgnoreNew=False" & @LF & "AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & "DupMode=Skip" & @LF & _
-				"UseRegEx=False" & @LF & "CreateLog=False" & @LF & "ShowListView=False" & @LF & "AmbiguitiesCheck=False" & @LF & "AlertSize=True" & @LF & _
-				"AlertDelete=False" & @LF & "ListHeader=True" & @LF & "ListSortable=True" & @LF & "ListFilter=True" & @LF & "ListLightbox=True" & @LF & "Monitoring=False" & @LF & _
-				"MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & "ZIPLevel=5" & @LF & "ZIPMethod=Deflate" & @LF & "ZIPEncryption=None" & @LF & "ZIPPassword=" & @LF & _
-				"7ZLevel=5" & @LF & "7ZMethod=LZMA" & @LF & "7ZEncryption=None" & @LF & "7ZPassword=" & @LF & "MasterPassword="
+				"UseRegEx=False" & @LF & "CreateLog=False" & @LF & "ShowListView=False" & @LF & "AmbiguitiesCheck=False" & @LF & "GroupOrder=Path" & @LF & _
+				"AlertSize=True" & @LF & "AlertDelete=False" & @LF & "ListHeader=True" & @LF & "ListSortable=True" & @LF & "ListFilter=True" & @LF & "ListLightbox=True" & @LF & _
+				"Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & "ZIPLevel=5" & @LF & "ZIPMethod=Deflate" & @LF & "ZIPEncryption=None" & @LF & _
+				"ZIPPassword=" & @LF & "7ZLevel=5" & @LF & "7ZMethod=LZMA" & @LF & "7ZEncryption=None" & @LF & "7ZPassword=" & @LF & "MasterPassword="
 
-		__IniWriteEx($iINI, "General", "", $iINIData)
+		__IniWriteEx($iINI, $G_Global_GeneralSection, "", $iINIData)
 		__IniWriteEx($iINI, "MonitoredFolders", "", "")
 		__IniWriteEx($iINI, "EnvironmentVariables", "", "")
 	EndIf
@@ -154,7 +155,7 @@ Func __GetCurrentLanguage()
 		Return $G_General_Language ; To Speedup The Script.
 	EndIf
 	$sINI = __IsSettingsFile() ; Get Default Settings INI File.
-	$sINIRead = IniRead($sINI, "General", "Language", __GetOSLanguage())
+	$sINIRead = IniRead($sINI, $G_Global_GeneralSection, "Language", __GetOSLanguage())
 	If FileExists(__GetDefault(1024) & $sINIRead & ".lng") = 0 Then
 		$sINIRead = __SetCurrentLanguage() ; Set Language With Default Language.
 	EndIf
@@ -172,7 +173,7 @@ Func __SetCurrentLanguage($sLanguage = -1)
 	If $sLanguage == "" Or $sLanguage = -1 Then
 		$sLanguage = __GetDefault(2048) ; Get Default Language.
 	EndIf
-	__IniWriteEx($sINI, "General", "Language", $sLanguage)
+	__IniWriteEx($sINI, $G_Global_GeneralSection, "Language", $sLanguage)
 	$G_General_Language = $sLanguage
 	Return $sLanguage
 EndFunc   ;==>__SetCurrentLanguage
@@ -209,9 +210,9 @@ Func __GetCurrentProfile()
 		Return: Profile Name [Profile Name]
 	#ce
 	Local $sINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Local $sINIRead = IniRead($sINI, "General", "Profile", "Default")
-	Local $sUniqueID = $G_Global_UniqueID
+	Local $sINIRead = IniRead($sINI, $G_Global_GeneralSection, "Profile", "Default")
 	If $G_Global_IsMultipleInstance Then
+		Local $sUniqueID = __GetInstanceID() ; Get ID Only As Section Name.
 		$sINIRead = IniRead($sINI, $sUniqueID, "Profile", $sINIRead)
 	EndIf
 	Return $sINIRead
@@ -223,12 +224,12 @@ Func __SetCurrentProfile($sProfile)
 		Return: Settings INI File [C:\Program Files\DropIt\Settings.ini]
 	#ce
 	Local $sINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Local $sINISection = "General"
+	Local $sINISection = $G_Global_GeneralSection
 	If $sProfile == -1 Or $sProfile == 0 Or $sProfile == "" Then
 		$sProfile = "Default"
 	EndIf
 	If $G_Global_IsMultipleInstance Then
-		$sINISection = $G_Global_UniqueID
+		$sINISection = __GetInstanceID() ; Get ID Only As Section Name.
 	EndIf
 	__IniWriteEx($sINI, $sINISection, "Profile", $sProfile)
 	Return $sINI
@@ -303,31 +304,29 @@ Func __GetProfile($gINI = -1, $gProfile = -1, $gProfileDirectory = -1, $gArray =
 	$gReturn[1] = $gProfile ; Profile Name.
 	$gReturn[2] = $gProfileDefault[1][0] ; Profile Directory
 
-
 	If FileExists($gReturn[0]) = 0 Then ; If The Profile Doesn't Exist, Create It.
-		__IniWriteEx($gReturn[0], "Target", "", "Image=" & $gProfileDefault[3][0] & @LF & "SizeX=64" & @LF & "SizeY=64" & @LF & "Opacity=100")
-		__IniWriteEx($gReturn[0], "General", "", "")
-		__IniWriteEx($gReturn[0], "Associations", "", "")
+		__IniWriteEx($gReturn[0], $G_Global_TargetSection, "", "Image=" & $gProfileDefault[3][0] & @LF & "SizeX=64" & @LF & "SizeY=64" & @LF & "Opacity=100")
+		__IniWriteEx($gReturn[0], $G_Global_GeneralSection, "", "")
 	EndIf
 
-	$gReturn[4] = IniRead($gReturn[0], "Target", "Image", "UUIDID.9CC09662-A476-4A7A-C40179A9D7DAD484.UUIDID") ; Image File.
+	$gReturn[4] = IniRead($gReturn[0], $G_Global_TargetSection, "Image", "UUIDID.9CC09662-A476-4A7A-C40179A9D7DAD484.UUIDID") ; Image File.
 	If FileExists($gProfileDefault[2][0] & $gReturn[4]) = 0 Then
 		$gReturn[4] = $gProfileDefault[3][0]
 		If FileExists($gProfileDefault[2][0] & $gReturn[4]) = 0 Then
 			_ResourceSaveToFile(__GetDefault(128), "IMAGE")
 		EndIf
 		$gSize = __ImageSize($gProfileDefault[2][0] & $gReturn[4])
-		__IniWriteEx($gReturn[0], "Target", "Image", $gReturn[4])
-		__IniWriteEx($gReturn[0], "Target", "SizeX", $gSize[0])
-		__IniWriteEx($gReturn[0], "Target", "SizeY", $gSize[1])
-		__IniWriteEx($gReturn[0], "Target", "Opacity", 100)
-		IniDelete($gReturn[0], "Target", "Transparency")
+		__IniWriteEx($gReturn[0], $G_Global_TargetSection, "Image", $gReturn[4])
+		__IniWriteEx($gReturn[0], $G_Global_TargetSection, "SizeX", $gSize[0])
+		__IniWriteEx($gReturn[0], $G_Global_TargetSection, "SizeY", $gSize[1])
+		__IniWriteEx($gReturn[0], $G_Global_TargetSection, "Opacity", 100)
+		IniDelete($gReturn[0], $G_Global_TargetSection, "Transparency")
 	EndIf
 
 	$gReturn[3] = $gProfileDefault[2][0] & $gReturn[4] ; Image File FullPath.
-	$gReturn[5] = IniRead($gReturn[0], "Target", "SizeX", "64") ; Image SizeX
-	$gReturn[6] = IniRead($gReturn[0], "Target", "SizeY", "64") ; Image SizeY
-	$gReturn[7] = IniRead($gReturn[0], "Target", "Opacity", "100") ; Image Opacity
+	$gReturn[5] = IniRead($gReturn[0], $G_Global_TargetSection, "SizeX", "64") ; Image SizeX
+	$gReturn[6] = IniRead($gReturn[0], $G_Global_TargetSection, "SizeY", "64") ; Image SizeY
+	$gReturn[7] = IniRead($gReturn[0], $G_Global_TargetSection, "Opacity", "100") ; Image Opacity
 	$gReturn[8] = $gProfileDefault[2][0]
 
 	If $gArray = 1 Then
@@ -344,7 +343,10 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 		Description: Create A Profile From An Array.
 		Return: Profile Name
 	#ce
-	Local $sString, $sIniWrite
+	Local $sProfilePath, $sAssociationField
+	Local $sFields[9] = [8, "State", "Rules", "Action", "Destination", "Filters", "ListProperties", "HTMLTheme", "SiteSettings"]
+	ReDim $aArray[$aArray[0][0] + 1][10]
+
 	If $sProfileDirectory = -1 Then
 		$sProfileDirectory = __GetDefault(2) ; Get Default Profile Directory.
 	EndIf
@@ -356,71 +358,61 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 		$sProfileName = __GetFileNameOnly(__Duplicate_Rename($sProfileName & ".ini", $sProfileDirectory, 0, 2))
 	EndIf
 
+	$sProfilePath = $sProfileDirectory & $sProfileName & ".ini"
+	__IniWriteEx($sProfilePath, $G_Global_TargetSection, "", "Image=" & $sImage & @LF & "SizeX=" & $sSize & @LF & "SizeY=" & $sSize & @LF & "Opacity=100")
+	__IniWriteEx($sProfilePath, $G_Global_GeneralSection, "", "")
+
 	For $A = 2 To $aArray[0][0]
-		If ($aArray[$A][2] & $aArray[$A][3]) = "" Then
+		$aArray[$A][1] = StringRegExpReplace($aArray[$A][1], '[;#|\[\]]', "")
+		If $aArray[$A][1] = "" Then
 			ContinueLoop
 		EndIf
-		If StringLeft($aArray[$A][2], 1) = "[" Then
-			If StringInStr($aArray[$A][2], "**") Then
-				$aArray[$A][2] = "**" & $aArray[$A][2]
-			Else
-				$aArray[$A][2] = "*" & $aArray[$A][2]
-			EndIf
+		If $aArray[$A][2] = "" Then
+			$aArray[$A][2] = $G_Global_StateEnabled
 		EndIf
-		$aArray[$A][1] = StringReplace($aArray[$A][1], "|", "")
-		$aArray[$A][2] = StringReplace($aArray[$A][2], "=", "")
-		$aArray[$A][4] = StringReplace($aArray[$A][4], "|", "")
-		If StringInStr($aArray[$A][2], "*") = 0 And __Is("UseRegEx") = 0 Then ; Fix Rules Without * Characters.
-			$aArray[$A][2] = "*" & $aArray[$A][2]
+		If StringInStr($aArray[$A][3], "*") = 0 And __Is("UseRegEx") = 0 Then ; Fix Rules Without * Characters.
+			$aArray[$A][3] = "*" & $aArray[$A][3]
 		EndIf
-		If $aArray[$A][5] = "" Then
-			$aArray[$A][5] = "|Enabled||"
-		EndIf
-
-		Switch $aArray[$A][3]
+		Switch $aArray[$A][4]
 			Case __GetLang('ACTION_EXTRACT', 'Extract'), 'Extract'
-				If StringInStr($aArray[$A][2], "**") Then
+				If StringInStr($aArray[$A][3], "**") Then
 					ContinueLoop
 				EndIf
 			Case __GetLang('ACTION_OPEN_WITH', 'Open With'), 'Open With'
-				If StringInStr($aArray[$A][4], "%DefaultProgram%") = 0 And (__IsValidFileType($aArray[$A][4], "bat;cmd;com;exe;pif") = 0 Or StringInStr($aArray[$A][4], "DropIt.exe")) Then ; DropIt.exe Is Excluded To Avoid Loops.
+				If StringInStr($aArray[$A][5], "%DefaultProgram%") = 0 And (__IsValidFileType($aArray[$A][5], "bat;cmd;com;exe;pif") = 0 Or StringInStr($aArray[$A][5], "DropIt.exe")) Then ; DropIt.exe Is Excluded To Avoid Loops.
 					ContinueLoop
 				EndIf
 			Case __GetLang('ACTION_LIST', 'Create List'), 'Create List'
-				If __IsValidFileType($aArray[$A][4], "html;htm;pdf;xls;txt;csv;xml") = 0 Then
+				If __IsValidFileType($aArray[$A][5], "html;htm;pdf;xls;txt;csv;xml") = 0 Then
 					ContinueLoop
 				EndIf
 			Case __GetLang('ACTION_COMPRESS', 'Compress'), 'Compress'
-				If __IsValidFileType($aArray[$A][4], "zip;7z;exe") = 0 And StringInStr($aArray[$A][4], ".") Then
+				If __IsValidFileType($aArray[$A][5], "zip;7z;exe") = 0 And StringInStr($aArray[$A][5], ".") Then
 					ContinueLoop
 				EndIf
 			Case __GetLang('ACTION_PLAYLIST', 'Create Playlist'), 'Create Playlist'
-				If StringInStr($aArray[$A][2], "**") Then
+				If StringInStr($aArray[$A][3], "**") Then
 					ContinueLoop
 				EndIf
-				If __IsValidFileType($aArray[$A][4], "m3u;m3u8;pls;wpl") = 0 Then
+				If __IsValidFileType($aArray[$A][5], "m3u;m3u8;pls;wpl") = 0 Then
 					ContinueLoop
 				EndIf
 			Case __GetLang('ACTION_DELETE', 'Delete'), 'Delete'
-				Switch $aArray[$A][4]
-					Case __GetLang('DELETE_MODE_2', 'Safely Erase'), 'Safely Erase'
-						$aArray[$A][4] = 2
-					Case __GetLang('DELETE_MODE_3', 'Send to Recycle Bin'), 'Send to Recycle Bin'
-						$aArray[$A][4] = 3
-					Case Else ; Directly Remove.
-						$aArray[$A][4] = 1
-				EndSwitch
+				$aArray[$A][5] = __GetDeleteString($aArray[$A][5])
 			Case __GetLang('ACTION_IGNORE', 'Ignore'), 'Ignore'
-				$aArray[$A][4] = "-"
+				$aArray[$A][5] = "-"
 		EndSwitch
+		$aArray[$A][4] = __GetActionString($aArray[$A][4])
 
-		$sString &= __GetAssociationString($aArray[$A][3], $aArray[$A][2]) & "=" & $aArray[$A][4] & "|" & $aArray[$A][1] & "|" & $aArray[$A][5] & @LF
+		$sAssociationField = ""
+		For $B = 1 To $sFields[0]
+			$sAssociationField &= $sFields[$B] & "=" & $aArray[$A][$B + 1]
+			If $B < $sFields[0] Then
+				$sAssociationField &= @LF
+			EndIf
+		Next
+		__IniWriteEx($sProfilePath, $aArray[$A][1], "", $sAssociationField)
 	Next
-
-	$sIniWrite = $sProfileDirectory & $sProfileName & ".ini"
-	__IniWriteEx($sIniWrite, "Target", "", "Image=" & $sImage & @LF & "SizeX=" & $sSize & @LF & "SizeY=" & $sSize & @LF & "Opacity=100")
-	__IniWriteEx($sIniWrite, "General", "", "")
-	__IniWriteEx($sIniWrite, "Associations", "", $sString)
 
 	Return $sProfileName
 EndFunc   ;==>__ArrayToProfile
@@ -430,31 +422,19 @@ Func __ProfileToArray($sProfileName)
 		Description: Populate An Array From A Profile.
 		Return: Array
 	#ce
-	Local $aAssociations, $sAction, $aArray[1][6]
-
-	$aAssociations = __GetAssociations($sProfileName) ; Get Associations Array For The Current Profile.
-	ReDim $aArray[$aAssociations[0][0] + 1][6]
-	$aArray[0][0] = $aAssociations[0][0]
+	Local $aAssociations = __GetAssociations($sProfileName) ; Get Associations Array For The Current Profile.
+	Local $aArray[$aAssociations[0][0] + 1][$aAssociations[0][1] + 1] = [[$aAssociations[0][0], $aAssociations[0][1], $sProfileName]]
 
 	For $A = 1 To $aAssociations[0][0]
-		$sAction = StringRight($aAssociations[$A][0], 2)
-		If $sAction == "$6" Then
-			Switch $aAssociations[$A][1] ; Destination.
-				Case 2
-					$aAssociations[$A][1] = __GetLang('DELETE_MODE_2', 'Safely Erase')
-				Case 3
-					$aAssociations[$A][1] = __GetLang('DELETE_MODE_3', 'Send to Recycle Bin')
-				Case Else
-					$aAssociations[$A][1] = __GetLang('DELETE_MODE_1', 'Directly Remove')
-			EndSwitch
-		EndIf
-		$sAction = __GetAssociationString($sAction) ; Convert Action Code To Action Name.
-
-		$aArray[$A][1] = $aAssociations[$A][2]
-		$aArray[$A][2] = StringTrimRight($aAssociations[$A][0], 2)
-		$aArray[$A][3] = $sAction
-		$aArray[$A][4] = $aAssociations[$A][1]
-		$aArray[$A][5] = $aAssociations[$A][3] & "|" & $aAssociations[$A][4] & "|" & $aAssociations[$A][5] & "|" & $aAssociations[$A][6]
+		For $B = 0 To $aAssociations[0][1] - 1
+			If $B = 3 Then ; Convert Action.
+				$aArray[$A][$B + 1] = __GetActionString($aAssociations[$A][$B])
+			ElseIf $B = 4 And $aAssociations[$A][3] == "$6" Then ; Destination For Delete Action.
+				$aArray[$A][$B + 1] = __GetDeleteString($aAssociations[$A][$B])
+			Else
+				$aArray[$A][$B + 1] = $aAssociations[$A][$B]
+			EndIf
+		Next
 	Next
 
 	Return $aArray
@@ -465,12 +445,12 @@ Func __ArrayToCSV($aArray, $sDestination)
 		Description: Write An Array Of Associations To CSV File.
 		Returns: 1
 	#ce
-	Local $hFileOpen, $sString = "NAME, RULES, ACTION, DESTINATION, EXTRA" & @CRLF
+	Local $hFileOpen, $sString = "NAME, STATE, RULES, ACTION, DESTINATION, FILTERS, LIST PROPERTIES, HTML THEME, SITE SETTINGS" & @CRLF
 
 	For $A = 1 To $aArray[0][0]
-		For $B = 1 To 5
+		For $B = 1 To $aArray[0][1]
 			$sString &= '"' & $aArray[$A][$B] & '"'
-			If $B < 5 Then
+			If $B < $aArray[0][1] Then
 				$sString &= ', '
 			EndIf
 		Next
@@ -511,6 +491,109 @@ Func __IsProfileUnique($sProfile, $sShowMessage = 0, $hHandle = -1)
 	Return $sProfile
 EndFunc   ;==>__IsProfileUnique
 #EndRegion >>>>> Profile Functions <<<<<
+
+#Region >>>>> Process Functions <<<<<
+Func __EnsureDirExists($sDestination)
+	#cs
+		Description: Ensure That Directory Exists And Create If Does Not Exist.
+		Returns: Nothing.
+	#ce
+	If __GetFileExtension($sDestination) <> "" Then
+		$sDestination = __GetParentFolder($sDestination)
+	EndIf
+	If FileExists($sDestination) = 0 And $sDestination <> "" Then
+		If DirCreate($sDestination) = 0 Then
+			MsgBox(0x40, __GetLang('POSITIONPROCESS_MSGBOX_3', 'Destination Folder Problem'), __GetLang('POSITIONPROCESS_MSGBOX_5', 'The following destination folder does not exist and cannot be created:') & @LF & _WinAPI_PathCompactPathEx($sDestination, 70), 0, __OnTop($G_Global_SortingGUI))
+			Return SetError(1, 0, 0)
+		EndIf
+	EndIf
+	Return 1
+EndFunc   ;==>__EnsureDirExists
+
+Func __SetPositionResult($sMainArray, $sFrom, $sTo, $sListView, $sElementsGUI, $sResult)
+	#cs
+		Description: Set The Position Result In The ListView.
+		Returns: Nothing.
+	#ce
+	Local $sText, $sDestination, $sAction = $sMainArray[$sFrom][3]
+	$sDestination = __GetDestinationString($sAction, $sMainArray[$sFrom][4])
+
+	If $sResult == 0 Then
+		$sText = __GetLang('OK', 'OK')
+		__Log_Write(__GetActionResult($sAction), $sDestination)
+	EndIf
+
+	For $A = $sFrom To $sTo
+		If $sMainArray[$A][5] <> -9 Then ; If Not Previously Processed.
+			If $sResult <> 0 Then
+				If $sResult == -1 Then
+					$sText = __GetLang('POSITIONPROCESS_LOGMSG_0', 'Skipped')
+				Else
+					$sText = __GetLang('POSITIONPROCESS_LOGMSG_2', 'Failed')
+				EndIf
+				__Log_Write($sText, $sMainArray[$A][0])
+			EndIf
+			If $sMainArray[$A][5] <> -8 Then ; If Not Previously Virtually Processed.
+				__SetProgressResult($sElementsGUI, $sMainArray[$A][1], $sMainArray[0][0], $A)
+			EndIf
+			_GUICtrlListView_AddSubItem($sListView, $A - 1, $sDestination, 2)
+			_GUICtrlListView_AddSubItem($sListView, $A - 1, $sText, 3)
+			_GUICtrlListView_EnsureVisible($sListView, $A)
+		EndIf
+	Next
+
+	Return 1
+EndFunc   ;==>__SetPositionResult
+
+Func __SetProgressResult($sElementsGUI, $sSize, $sTotal = -1, $sIndex = -1)
+	#cs
+		Description: Set The Progress Result Of An Item.
+		Returns: Nothing.
+	#ce
+	__SetProgressStatus($sElementsGUI, 2) ; Complete Single Progress Bar.
+	__SetProgressStatus($sElementsGUI, 4, $sSize) ; Update General Progress Bar.
+	If $sTotal = -1 Then
+		Local $sStringSplit = StringSplit(StringReplace(GUICtrlRead($sElementsGUI[6]), " ", ""), "/")
+		If $sStringSplit[0] > 1 Then
+			$sIndex = Number($sStringSplit[1]) + 1
+			$sTotal = $sStringSplit[2]
+		Else ; For The First Item The Label Is Only Total Number.
+			$sIndex = 1
+			$sTotal = $sStringSplit[1]
+		EndIf
+	EndIf
+	GUICtrlSetData($sElementsGUI[6], $sIndex & " / " & $sTotal) ; Update Counter.
+EndFunc   ;==>__SetProgressResult
+
+Func __SetProgressStatus($sElementsGUI, $sType, $sParam = 0)
+	#cs
+		Description: Set The Progress Status Of The Process.
+		Returns: Nothing.
+	#ce
+	Switch $sType
+		Case 1 ; Reset Single Progress Bar And Show Second Line With $sParam.
+			GUICtrlSetData($sElementsGUI[1], _WinAPI_PathCompactPathEx($sParam, 75))
+			GUICtrlSetData($sElementsGUI[3], 0)
+			GUICtrlSetData($sElementsGUI[5], '0 %')
+		Case 2 ; Complete Single Progress Bar.
+			GUICtrlSetData($sElementsGUI[3], 100)
+			GUICtrlSetData($sElementsGUI[5], '100 %')
+		Case 3 ; Reset General Progress Bar After Loading.
+			GUICtrlSetData($sElementsGUI[2], 0)
+			GUICtrlSetData($sElementsGUI[4], '0 %')
+			$G_Global_SortingTotalSize = $sParam
+			$G_Global_SortingCurrentSize = 0
+		Case 4 ; Update General Progress Bar With $sParam = Size.
+			Local $sPercent = __GetPercent($sParam)
+			GUICtrlSetData($sElementsGUI[2], $sPercent)
+			GUICtrlSetData($sElementsGUI[4], $sPercent & ' %')
+		Case Else
+			Return SetError(1, 0, 0)
+	EndSwitch
+
+	Return 1
+EndFunc   ;==>__SetProgressStatus
+#EndRegion >>>>> Process Functions <<<<<
 
 #Region >>>>> Log Functions <<<<<
 Func __Log_Reduce($lLogFile)
@@ -574,7 +657,7 @@ Func __GetCurrentSize($gWindow = "")
 		[1] - Height Size [200]
 	#ce
 	Local $gINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Return StringSplit(IniRead($gINI, "General", $gWindow, "400;200"), ";", 2)
+	Return StringSplit(IniRead($gINI, $G_Global_GeneralSection, $gWindow, "400;200"), ";", 2)
 EndFunc   ;==>__GetCurrentSize
 
 Func __SetCurrentSize($hHandle = "", $hWindow = "")
@@ -590,10 +673,139 @@ Func __SetCurrentSize($hHandle = "", $hWindow = "")
 		Return SetError(1, 0, 0)
 	EndIf
 	Local $sINI = __IsSettingsFile() ; Get Default Settings INI File.
-	__IniWriteEx($sINI, "General", $hWindow, $aWinGetClientSize[0] & ";" & $aWinGetClientSize[1])
+	__IniWriteEx($sINI, $G_Global_GeneralSection, $hWindow, $aWinGetClientSize[0] & ";" & $aWinGetClientSize[1])
 	Return 1
 EndFunc   ;==>__SetCurrentSize
 #EndRegion >>>>> Size Functions <<<<<
+
+#Region >>>>> String Functions <<<<<
+Func __GetCompressionLevel($gLevel)
+	#cs
+		Description: Get Compression Level Code [3] Or Compression Level String [Normal].
+	#ce
+	Local $gReturnValue
+
+	If StringIsDigit($gLevel) Then
+		Switch $gLevel
+			Case "1"
+				$gReturnValue = __GetLang('COMPRESS_LEVEL_0', 'Fastest')
+			Case "3"
+				$gReturnValue = __GetLang('COMPRESS_LEVEL_1', 'Fast')
+			Case "7"
+				$gReturnValue = __GetLang('COMPRESS_LEVEL_3', 'Maximum')
+			Case "9"
+				$gReturnValue = __GetLang('COMPRESS_LEVEL_4', 'Ultra')
+			Case Else ; 5.
+				$gReturnValue = __GetLang('COMPRESS_LEVEL_2', 'Normal')
+		EndSwitch
+	Else
+		Switch $gLevel
+			Case __GetLang('COMPRESS_LEVEL_0', 'Fastest')
+				$gReturnValue = "1"
+			Case __GetLang('COMPRESS_LEVEL_1', 'Fast')
+				$gReturnValue = "3"
+			Case __GetLang('COMPRESS_LEVEL_3', 'Maximum')
+				$gReturnValue = "7"
+			Case __GetLang('COMPRESS_LEVEL_4', 'Ultra')
+				$gReturnValue = "9"
+			Case Else ; __GetLang('COMPRESS_LEVEL_2', 'Normal').
+				$gReturnValue = "5"
+		EndSwitch
+	EndIf
+
+	Return $gReturnValue
+EndFunc   ;==>__GetCompressionLevel
+
+Func __GetDuplicateMode($gMode, $gForCombo = 0)
+	#cs
+		Description: Get Duplicate Mode Code [Overwrite2] Or Duplicate Mode String [Overwrite if newer].
+	#ce
+	Local $gReturnValue
+
+	If $gForCombo Then
+		Switch $gMode
+			Case "Overwrite1"
+				$gReturnValue = __GetLang('DUPLICATE_MODE_0', 'Overwrite')
+			Case "Overwrite2"
+				$gReturnValue = __GetLang('DUPLICATE_MODE_1', 'Overwrite if newer')
+			Case "Overwrite3"
+				$gReturnValue = __GetLang('DUPLICATE_MODE_7', 'Overwrite if different size')
+			Case "Rename1"
+				$gReturnValue = __GetLang('DUPLICATE_MODE_3', 'Rename as "Name 01"')
+			Case "Rename2"
+				$gReturnValue = __GetLang('DUPLICATE_MODE_4', 'Rename as "Name_01"')
+			Case "Rename3"
+				$gReturnValue = __GetLang('DUPLICATE_MODE_5', 'Rename as "Name (01)"')
+			Case Else ; Skip.
+				$gReturnValue = __GetLang('DUPLICATE_MODE_6', 'Skip')
+		EndSwitch
+	Else
+		Switch $gMode
+			Case __GetLang('DUPLICATE_MODE_0', 'Overwrite')
+				$gReturnValue = "Overwrite1"
+			Case __GetLang('DUPLICATE_MODE_1', 'Overwrite if newer')
+				$gReturnValue = "Overwrite2"
+			Case __GetLang('DUPLICATE_MODE_7', 'Overwrite if different size')
+				$gReturnValue = "Overwrite3"
+			Case __GetLang('DUPLICATE_MODE_3', 'Rename as "Name 01"')
+				$gReturnValue = "Rename1"
+			Case __GetLang('DUPLICATE_MODE_4', 'Rename as "Name_01"')
+				$gReturnValue = "Rename2"
+			Case __GetLang('DUPLICATE_MODE_5', 'Rename as "Name (01)"')
+				$gReturnValue = "Rename3"
+			Case Else ; __GetLang('DUPLICATE_MODE_6', 'Skip').
+				$gReturnValue = "Skip"
+		EndSwitch
+	EndIf
+
+	Return $gReturnValue
+EndFunc   ;==>__GetDuplicateMode
+
+Func __GetOrderMode($gMode, $gForCombo = 0)
+	#cs
+		Description: Get Group Mode Code [Name] Or Group Mode String [File Name].
+	#ce
+	Local $gReturnValue
+
+	If $gForCombo Then
+		Switch $gMode
+			Case "Name"
+				$gReturnValue = __GetLang('FILE_NAME', 'File Name')
+			Case "Extension"
+				$gReturnValue = __GetLang('FILE_EXT', 'Extension')
+			Case "Size"
+				$gReturnValue = __GetLang('FILE_SIZE', 'Size')
+			Case "Created"
+				$gReturnValue = __GetLang('DATE_CREATED', 'Date Created')
+			Case "Modified"
+				$gReturnValue = __GetLang('DATE_MODIFIED', 'Date Modified')
+			Case "Opened"
+				$gReturnValue = __GetLang('DATE_OPENED', 'Date Opened')
+			Case Else ; Path.
+				$gReturnValue = __GetLang('FILE_PATH', 'File Path')
+		EndSwitch
+	Else
+		Switch $gMode
+			Case __GetLang('FILE_NAME', 'File Name')
+				$gReturnValue = "Name"
+			Case __GetLang('FILE_EXT', 'Extension')
+				$gReturnValue = "Extension"
+			Case __GetLang('FILE_SIZE', 'Size')
+				$gReturnValue = "Size"
+			Case __GetLang('DATE_CREATED', 'Date Created')
+				$gReturnValue = "Created"
+			Case __GetLang('DATE_MODIFIED', 'Date Modified')
+				$gReturnValue = "Modified"
+			Case __GetLang('DATE_OPENED', 'Date Opened')
+				$gReturnValue = "Opened"
+			Case Else ; __GetLang('FILE_PATH', 'File Path').
+				$gReturnValue = "Path"
+		EndSwitch
+	EndIf
+
+	Return $gReturnValue
+EndFunc   ;==>__GetOrderMode
+#EndRegion >>>>> String Functions <<<<<
 
 #Region >>>>> Others Functions <<<<<
 Func __ByteSuffix($iBytes)
@@ -612,16 +824,41 @@ Func __ByteSuffix($iBytes)
 	Return Round($iBytes, $iPlaces) & " " & $aArray[$A]
 EndFunc   ;==>__ByteSuffix
 
+Func __Column_Width($sColumn, $aString = -1)
+	#cs
+		Description: Retrive Or Save The Column Width.
+		Returns: Array[?]
+		[0] - Column 1 [90]
+		[1] - Column 2 [165]
+	#ce
+	Local $aReturn, $sReturn
+
+	$sReturn = __IsSettingsFile() ; Get Default Settings INI File.
+	Switch $aString
+		Case -1
+			$aReturn = StringSplit(IniRead($sReturn, $G_Global_GeneralSection, $sColumn, ""), ";")
+
+		Case Else
+			If IsArray($aString) = 0 Then
+				Return SetError(1, 0, 0)
+			EndIf
+			$aReturn = _ArrayToString($aString, ";")
+			__IniWriteEx($sReturn, $G_Global_GeneralSection, $sColumn, $aReturn)
+	EndSwitch
+	Return $aReturn
+EndFunc   ;==>__Column_Width
+
 Func __EnvironmentVariables()
 	#cs
 		Description: Set The Standard & User Assigned Environment Variables.
 		Returns: 1
 	#ce
-	Local $eEnvironmentArray[5][2] = [ _
-			[4, 2], _
+	Local $eEnvironmentArray[6][2] = [ _
+			[5, 2], _
 			["DropItLicense", "Open Source GPL"], _ ; Returns: DropIt License [Open Source GPL]
 			["DropItTeam", "Lupo PenSuite Team"], _ ; Returns: Team Name [Lupo PenSuite Team]
 			["DropItURL", "http://dropit.sourceforge.net/index.php"], _ ; Returns: URL Hyperlink [http://dropit.sourceforge.net/index.php]
+			["DropItTargetURL", "http://dropit.sourceforge.net/targets.php"], _ ; Returns: URL Hyperlink [http://dropit.sourceforge.net/targets.php]
 			["DropItVersionNo", $G_Global_CurrentVersion]] ; Returns: Version Number [1.0]
 
 	For $A = 1 To $eEnvironmentArray[0][0]
@@ -639,87 +876,13 @@ Func __EnvironmentVariables()
 	Return 1
 EndFunc   ;==>__EnvironmentVariables
 
-Func __GetCompressionLevel($gLevel)
+Func __GetInstanceID($sID = $G_Global_UniqueID)
 	#cs
-		Description: Get Compression Level Code [3] Or Compression Level String [Normal].
+		Description: Get The ID Only To Use In Settings INI File For Multiple Instances.
+		Returns: 1
 	#ce
-	Local $gCompressionString
-
-	If StringIsDigit($gLevel) Then
-		Switch $gLevel
-			Case "1"
-				$gCompressionString = __GetLang('COMPRESS_LEVEL_0', 'Fastest')
-			Case "3"
-				$gCompressionString = __GetLang('COMPRESS_LEVEL_1', 'Fast')
-			Case "7"
-				$gCompressionString = __GetLang('COMPRESS_LEVEL_3', 'Maximum')
-			Case "9"
-				$gCompressionString = __GetLang('COMPRESS_LEVEL_4', 'Ultra')
-			Case Else ; 5.
-				$gCompressionString = __GetLang('COMPRESS_LEVEL_2', 'Normal')
-		EndSwitch
-	Else
-		Switch $gLevel
-			Case __GetLang('COMPRESS_LEVEL_0', 'Fastest')
-				$gCompressionString = "1"
-			Case __GetLang('COMPRESS_LEVEL_1', 'Fast')
-				$gCompressionString = "3"
-			Case __GetLang('COMPRESS_LEVEL_3', 'Maximum')
-				$gCompressionString = "7"
-			Case __GetLang('COMPRESS_LEVEL_4', 'Ultra')
-				$gCompressionString = "9"
-			Case Else ; __GetLang('COMPRESS_LEVEL_2', 'Normal').
-				$gCompressionString = "5"
-		EndSwitch
-	EndIf
-
-	Return $gCompressionString
-EndFunc   ;==>__GetCompressionLevel
-
-Func __GetDuplicateMode($gMode, $gForCombo = 0)
-	#cs
-		Description: Get Duplicate Mode Code [Overwrite2] Or Duplicate Mode String [Overwrite if newer].
-	#ce
-	Local $gDuplicateString
-
-	If $gForCombo Then
-		Switch $gMode
-			Case "Overwrite1"
-				$gDuplicateString = __GetLang('DUPLICATE_MODE_0', 'Overwrite')
-			Case "Overwrite2"
-				$gDuplicateString = __GetLang('DUPLICATE_MODE_1', 'Overwrite if newer')
-			Case "Overwrite3"
-				$gDuplicateString = __GetLang('DUPLICATE_MODE_7', 'Overwrite if different size')
-			Case "Rename1"
-				$gDuplicateString = __GetLang('DUPLICATE_MODE_3', 'Rename as "Name 01"')
-			Case "Rename2"
-				$gDuplicateString = __GetLang('DUPLICATE_MODE_4', 'Rename as "Name_01"')
-			Case "Rename3"
-				$gDuplicateString = __GetLang('DUPLICATE_MODE_5', 'Rename as "Name (01)"')
-			Case Else ; Skip.
-				$gDuplicateString = __GetLang('DUPLICATE_MODE_6', 'Skip')
-		EndSwitch
-	Else
-		Switch $gMode
-			Case __GetLang('DUPLICATE_MODE_0', 'Overwrite')
-				$gDuplicateString = "Overwrite1"
-			Case __GetLang('DUPLICATE_MODE_1', 'Overwrite if newer')
-				$gDuplicateString = "Overwrite2"
-			Case __GetLang('DUPLICATE_MODE_7', 'Overwrite if different size')
-				$gDuplicateString = "Overwrite3"
-			Case __GetLang('DUPLICATE_MODE_3', 'Rename as "Name 01"')
-				$gDuplicateString = "Rename1"
-			Case __GetLang('DUPLICATE_MODE_4', 'Rename as "Name_01"')
-				$gDuplicateString = "Rename2"
-			Case __GetLang('DUPLICATE_MODE_5', 'Rename as "Name (01)"')
-				$gDuplicateString = "Rename3"
-			Case Else ; __GetLang('DUPLICATE_MODE_6', 'Skip').
-				$gDuplicateString = "Skip"
-		EndSwitch
-	EndIf
-
-	Return $gDuplicateString
-EndFunc   ;==>__GetDuplicateMode
+	Return StringTrimLeft($sID, StringLen(@ScriptFullPath)) ; Remove Path From UniqueID [C:\Folder\DropIt.exe12_DropIt_MultipleInstance].
+EndFunc   ;==>__GetInstanceID
 
 Func __GetPercent($gSize, $gUpdateCurrent = 1)
 	#cs
@@ -759,29 +922,19 @@ Func __InstalledCheck()
 	Return 1
 EndFunc   ;==>__InstalledCheck
 
-Func __Column_Width($sColumn, $aString = -1)
+Func __OnTop($hHandle = -1, $iState = -1)
 	#cs
-		Description: Retrive Or Save The Column Width.
-		Returns: Array[?]
-		[0] - Column 1 [90]
-		[1] - Column 2 [165]
+		Description: Set A GUI Handle "OnTop" If True/False In The Settings INI File.
+		Returns: GUI OnTop Or Not OnTop
 	#ce
-	Local $aReturn, $sReturn
+	If $iState = -1 Then
+		$iState = __Is("OnTop")
+	EndIf
+	$hHandle = __IsHandle($hHandle) ; Check If GUI Handle Is A Valid Handle.
 
-	$sReturn = __IsSettingsFile() ; Get Default Settings INI File.
-	Switch $aString
-		Case -1
-			$aReturn = StringSplit(IniRead($sReturn, "General", $sColumn, ""), ";")
-
-		Case Else
-			If IsArray($aString) = 0 Then
-				Return SetError(1, 0, 0)
-			EndIf
-			$aReturn = _ArrayToString($aString, ";")
-			__IniWriteEx($sReturn, "General", $sColumn, $aReturn)
-	EndSwitch
-	Return $aReturn
-EndFunc   ;==>__Column_Width
+	WinSetOnTop($hHandle, "", $iState)
+	Return $hHandle
+EndFunc   ;==>__OnTop
 
 Func __ThemeList_Combo()
 	#cs
@@ -802,4 +955,18 @@ Func __ThemeList_Combo()
 
 	Return StringTrimRight($sData, 1)
 EndFunc   ;==>__ThemeList_Combo
+
+Func __Uninstall()
+	#cs
+		Description: Uninstall Files Etc... If The Uninstall Commandline Parameter Is Called. [DropIt.exe /Uninstall]
+		Returns: 1
+	#ce
+	If __IsInstalled() And FileExists(@AppDataDir & "\DropIt") Then
+		Local $uMsgBox = MsgBox(0x4, __GetLang('UNINSTALL_MSGBOX_0', 'Remove settings'), __GetLang('UNINSTALL_MSGBOX_1', 'Do you want to remove also your settings and profiles?'))
+		If $uMsgBox = 6 Then
+			DirRemove(@AppDataDir & "\DropIt", 1)
+		EndIf
+	EndIf
+	Return 1
+EndFunc   ;==>__Uninstall
 #EndRegion >>>>> Others Functions <<<<<

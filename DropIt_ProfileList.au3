@@ -2,8 +2,9 @@
 ; ProfileList funtions of DropIt
 
 #include-once
-#include <DropIt_General.au3>
 #include <GUIConstantsEx.au3>
+
+#include "DropIt_General.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 
 Func __ProfileList_Combo()

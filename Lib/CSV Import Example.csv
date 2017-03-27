@@ -1,2 +1,2 @@
-NAME, RULES, ACTION, DESTINATION, EXTRA
-"Example", "*.txt", "Copy", "My Folder", "||Disabled||"
+"NAME", "STATE", "RULES", "ACTION", "DESTINATION", "FILTERS", "LIST PROPERTIES", "HTML THEME", "SITE SETTINGS
+"Example", "Enabled", "*.txt", "Copy", "My Folder", "", "", "", ""

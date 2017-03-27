@@ -22,6 +22,10 @@ Image Get Info Library (ImageGetInfo.au3)
 http://www.autoitscript.com/forum/topic/13096-udf-imagegetinfo/
 
 
+RecFileListToArray Library (RecFileListToArray.au3)
+http://www.autoitscript.com/forum/topic/126198-recfilelisttoarray-new-version-2-dec-12/
+
+
 SFTP Library (SFTPEx.au3)
 http://www.autoitscript.com/forum/topic/138095-udf-to-support-sftp-protocol-using-psftp/
 
@@ -36,3 +40,7 @@ http://www.autoitscript.com/forum/topic/124508-startup-create-startup-entries-in
 
 WinAPI Extended Library (WinAPIEx.au3)
 http://www.autoitscript.com/forum/topic/98712-winapiex-udf/
+
+
+WM_COPYDATA Library (WM_COPYDATA.au3)
+http://www.autoitscript.com/forum/topic/119502-solved-wm-copydata-x64-issue/

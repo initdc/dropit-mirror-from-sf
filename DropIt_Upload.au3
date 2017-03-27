@@ -2,9 +2,10 @@
 ; Upload funtions of DropIt
 
 #include-once
-#include <DropIt_General.au3>
-#include <DropIt_Global.au3>
 #include <FTPEx.au3>
+
+#include "DropIt_General.au3"
+#include "DropIt_Global.au3"
 #include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\WinAPIEx.au3"
 

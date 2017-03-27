@@ -2,8 +2,11 @@
 ; Archive funtions of DropIt
 
 #include-once
-#include <DropIt_General.au3>
-#include <DropIt_Global.au3>
+#include <EditConstants.au3>
+#include <WindowsConstants.au3>
+
+#include "DropIt_General.au3"
+#include "DropIt_Global.au3"
 #include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
 #include "Lib\udf\WinAPIEx.au3"
@@ -12,7 +15,7 @@ Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 
 	Local $dGUI, $dButtonOverwrite, $dButtonRename, $dButtonSkip, $dCheckForAll, $dValue
 
 	If $dInfo[0] = "-" Then
-		$dSourceDir = "-"
+		$dSourceDir = __GetLang('POSITIONPROCESS_DUPLICATE_3', 'New file')
 	EndIf
 
 	$dGUI = GUICreate(__GetLang('POSITIONPROCESS_DUPLICATE_0', 'Item already exists'), 460, 230, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
@@ -24,7 +27,7 @@ Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 
 	GUICtrlSetColor(-1, 0x787878)
 	GUICtrlCreateLabel(_WinAPI_PathCompactPathEx($dSourceDir, 23), 10 + 80, 95, 130, 20)
 	GUICtrlSetTip(-1, $dSourceDir)
-	GUICtrlCreateLabel(__GetLang('SIZE', 'Size') & ":", 10, 95 + 20, 80, 20)
+	GUICtrlCreateLabel(__GetLang('FILE_SIZE', 'Size') & ":", 10, 95 + 20, 80, 20)
 	GUICtrlSetColor(-1, 0x787878)
 	GUICtrlCreateLabel($dInfo[0], 10 + 80, 95 + 20, 130, 20)
 	GUICtrlCreateLabel(__GetLang('ENV_VAR_TAB_7', 'Modified') & ":", 10, 95 + 40, 80, 20)
@@ -35,7 +38,7 @@ Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 
 	GUICtrlSetColor(-1, 0x787878)
 	GUICtrlCreateLabel(_WinAPI_PathCompactPathEx($dDestinationDir, 23), 10 + 220 + 80, 95, 130, 20)
 	GUICtrlSetTip(-1, $dDestinationDir)
-	GUICtrlCreateLabel(__GetLang('SIZE', 'Size') & ":", 10 + 220, 95 + 20, 80, 20)
+	GUICtrlCreateLabel(__GetLang('FILE_SIZE', 'Size') & ":", 10 + 220, 95 + 20, 80, 20)
 	GUICtrlSetColor(-1, 0x787878)
 	GUICtrlCreateLabel($dInfo[2], 10 + 220 + 80, 95 + 20, 130, 20)
 	GUICtrlCreateLabel(__GetLang('ENV_VAR_TAB_7', 'Modified') & ":", 10 + 220, 95 + 40, 80, 20)
@@ -77,11 +80,8 @@ Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 
 	Return $dValue
 EndFunc   ;==>__Duplicate_Alert
 
-Func __Duplicate_GetInfo($dSourcePath, $dDestinationPath, $dInfo, $dSameInfo = 0)
-	If $dSameInfo Then
-		$dInfo[0] = "-"
-		$dInfo[1] = "-"
-	Else
+Func __Duplicate_GetInfo($dSourcePath, $dDestinationPath, $dInfo, $dNewFile = 0)
+	If $dNewFile <> 1 Then
 		If _WinAPI_PathIsDirectory($dSourcePath) Then
 			$dInfo[0] = DirGetSize($dSourcePath)
 		Else
@@ -109,10 +109,10 @@ Func __Duplicate_GetMode($dProfile, $dOnlineProtocol = 0)
 
 	If __Is("AutoDup", -1, "False", $dProfile) Then
 		$dINI = __IsProfile($dProfile, 1) ; Get Profile Path Of Selected Profile.
-		If IniRead($dINI, "General", "AutoDup", "Default") == "Default" Then
+		If IniRead($dINI, $G_Global_GeneralSection, "AutoDup", "Default") == "Default" Then
 			$dINI = __IsSettingsFile() ; Get Default Settings INI File.
 		EndIf
-		$dDupMode = IniRead($dINI, "General", "DupMode", "Skip")
+		$dDupMode = IniRead($dINI, $G_Global_GeneralSection, "DupMode", "Skip")
 	ElseIf $G_Global_DuplicateMode <> "" Then
 		$dDupMode = $G_Global_DuplicateMode
 	EndIf
@@ -125,22 +125,24 @@ Func __Duplicate_GetMode($dProfile, $dOnlineProtocol = 0)
 EndFunc   ;==>__Duplicate_GetMode
 
 Func __Duplicate_Process($dProfile, $dSourcePath, $dDestinationPath, $dMerge = 0)
-	Local $dIsDirectory, $dSameInfo, $dInfo[4], $dDupMode
+	Local $dIsDirectory, $dNewFile, $dInfo[4], $dDupMode
 
 	If $dSourcePath = -1 Then ; New Output Creation.
 		$dSourcePath = $dDestinationPath
-		$dSameInfo = 1
+		$dNewFile = 1
 	EndIf
 
 	$dDupMode = __Duplicate_GetMode($dProfile)
 	If $dDupMode == "None" Then
-		$dInfo = __Duplicate_GetInfo($dSourcePath, $dDestinationPath, $dInfo, $dSameInfo)
+		$dInfo[0] = "-"
+		$dInfo[1] = "-"
+		$dInfo = __Duplicate_GetInfo($dSourcePath, $dDestinationPath, $dInfo, $dNewFile)
 		__ExpandEventMode(0) ; Disable Event Buttons.
 		$dDupMode = __Duplicate_Alert(__GetFileName($dDestinationPath), __GetParentFolder($dSourcePath), __GetParentFolder($dDestinationPath), $dInfo, $dMerge)
 		__ExpandEventMode(1) ; Enable Event Buttons.
 	EndIf
 
-	If StringInStr($dDupMode, 'Skip') Or (StringInStr($dDupMode, 'Overwrite2') And __FileCompareDate($dSourcePath, $dDestinationPath) <> 1) Or (StringInStr($dDupMode, 'Overwrite3') And __FileCompareSize($dSourcePath, $dDestinationPath) = 0) Then
+	If StringInStr($dDupMode, 'Skip') Or (StringInStr($dDupMode, 'Overwrite2') And __FileCompareDate($dSourcePath, $dDestinationPath) <> 1 And $dNewFile <> 1) Or (StringInStr($dDupMode, 'Overwrite3') And __FileCompareSize($dSourcePath, $dDestinationPath) = 0 And $dNewFile <> 1) Then
 		Return SetError(2, 0, $dDestinationPath) ; 2 = Skip.
 	ElseIf StringInStr($dDupMode, 'Overwrite') Then
 		Return SetError(1, 0, $dDestinationPath) ; 1 = Overwrite.
@@ -162,9 +164,9 @@ Func __Duplicate_ProcessOnline($dProfile, $dSourcePath, $dDestinationHost, $dDes
 
 	$dDupMode = __Duplicate_GetMode($dProfile, $dProtocol)
 	If $dDupMode == "None" Then
-		$dInfo = __Duplicate_GetInfo($dSourcePath, -1, $dInfo)
 		$dInfo[2] = __ByteSuffix($dRemoteSize)
 		$dInfo[3] = $dRemoteDate
+		$dInfo = __Duplicate_GetInfo($dSourcePath, -1, $dInfo)
 		__ExpandEventMode(0) ; Disable Event Buttons.
 		$dDupMode = __Duplicate_Alert($dFileName, __GetParentFolder($dSourcePath), $dDestinationHost & $dDestinationDir, $dInfo)
 		__ExpandEventMode(1) ; Enable Event Buttons.

@@ -2,9 +2,9 @@
 ; Update funtions of DropIt
 
 #include-once
-#include <DropIt_Archive.au3>
-#include <DropIt_General.au3>
-#include <DropIt_Global.au3>
+#include "DropIt_Archive.au3"
+#include "DropIt_General.au3"
+#include "DropIt_Global.au3"
 #include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
 #include "Lib\udf\WinAPIEx.au3"
@@ -124,7 +124,7 @@ Func __Update_Check($uLabel = -1, $uProgress = -1, $uCancel = -1, $uHandle = -1)
 		EndIf
 
 		If __Update_Run($uDownloadFile, $uDownloadName, @ScriptDir & "\ZIP\") Then
-			__IniWriteEx(__IsSettingsFile(), "General", "Update", "True")
+			__IniWriteEx(__IsSettingsFile(), $G_Global_GeneralSection, "Update", "True")
 			Run(@ScriptName)
 			Exit
 		EndIf
@@ -142,7 +142,7 @@ Func __Update_Complete()
 	Local $uINI = __IsSettingsFile()
 
 	If __Is("Update", -1, "False") Then
-		IniDelete($uINI, "General", "Update")
+		IniDelete($uINI, $G_Global_GeneralSection, "Update")
 		FileDelete(@ScriptDir & "\DropIt_OLD.exe")
 		MsgBox(0x40000, __GetLang('UPDATE_MSGBOX_0', 'Successfully Updated'), __GetLang('UPDATE_MSGBOX_1', 'New version %DropItVersionNo% is now ready to be used.'), 10)
 	EndIf

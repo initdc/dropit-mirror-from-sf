@@ -2,9 +2,10 @@
 ; File funtions collected for DropIt
 
 #include-once
-#include "APIConstants.au3"
 #include <Date.au3>
 #include <String.au3>
+#include "APIConstants.au3"
+#include "RecFileListToArray.au3"
 #include "WinAPIEx.au3"
 
 Func __FileCompareDate($sSource, $sDestination, $fDestinationIsDate = 0, $iMethod = 0) ; Modified From: http://www.autoitscript.com/forum/topic/125127-compare-file-datetime-stamps/page__p__868705#entry868705
@@ -116,6 +117,20 @@ Func __FindInFile($sFilePath, $sSearch, $iLiteral = 0, $iCaseSensitive = 0) ; In
 	Return SetError(1, 0, 0)
 EndFunc   ;==>__FindInFile
 
+Func __FindInFolder($sFilePath, $sSearch, $iLiteral = 0, $iCaseSensitive = 0)
+	#cs
+		Description: Search for a string in files of a folder.
+		Returns: True or False
+	#ce
+	Local $aArray = _RecFileListToArray($sFilePath, "*", 1, 1, 0, 2)
+	For $A = 1 To $aArray[0]
+		If __FindInFile($aArray[$A], $sSearch, $iLiteral, $iCaseSensitive) Then
+			Return 1
+		EndIf
+	Next
+	Return SetError(1, 0, 0)
+EndFunc   ;==>__FindInFolder
+
 Func __GetDrive($sFilePath) ; Taken From: http://www.autoitscript.com/forum/topic/82954-securely-overwrite-files/
 	#cs
 		Description: Get The Drive Letter Of An Absolute Or Relative Path.
@@ -150,6 +165,29 @@ Func __GetFileNameOnly($sFilePath)
 	#ce
 	Return _WinAPI_PathStripPath(_WinAPI_PathRemoveExtension($sFilePath))
 EndFunc   ;==>__GetFileNameOnly
+
+Func __GetFileSize($sFilePath)
+	#cs
+		Description: Get The File/Folder Size.
+		Returns: Size [1024]
+	#ce
+	If _WinAPI_PathIsDirectory($sFilePath) Then
+		Return DirGetSize($sFilePath)
+	EndIf
+	Return FileGetSize($sFilePath)
+EndFunc   ;==>__GetFileNameOnly
+
+Func __GetFileTimeFormatted($sFilePath, $iTimeCode)
+	#cs
+		Description: Get The Date And Time In Standard Format.
+		Returns: Date And Time [YYYY/MM/DD HH:MM]
+	#ce
+	Local $aTime = FileGetTime($sFilePath, $iTimeCode)
+	If @error Then
+		Return SetError(1, 0, "")
+	EndIf
+	Return $aTime[0] & "/" & $aTime[1] & "/" & $aTime[2] & " " & $aTime[3] & ":" & $aTime[4]
+EndFunc   ;==>__GetFileTimeFormatted
 
 Func __GetParentFolder($sFilePath)
 	#cs
@@ -263,27 +301,3 @@ Func __IsValidFileType($sFilePath, $sList = 'bat;cmd;exe') ; Taken From: http://
 	EndIf
 	Return _WinAPI_PathMatchSpec($sFilePath, StringReplace(';' & $sList, ';', ';*.'))
 EndFunc   ;==>__IsValidFileType
-
-Func __Locale_MonthName($Month, $Abbrev = False, $LCID = "")
-	; ==========================================================================================
-	; Author:        Großvater (www.autoit.de) http://www.autoitscript.com/forum/topic/136945-the-name-of-any-day-by-date-multilingual/#entry958589
-	; Parameter:
-	; $Month    -   Nummer des Monats (1 - 12)
-	; $Abbrev   -   abgekürzten Namen liefern:
-	;               |0 : nein
-	;               |1 : ja
-	; $LCID     -   Sprachbezeichner gem. Abschnitt "@OSLang values" im Anhang der Hilfedatei
-	;               als 16-bittiger Hexwert: 0xnnnn (z.b. 0x0407 für Deutschland).
-	;               Bei fehlender Angabe wird die Defaulteinstellung  des Benutzers verwendet.
-	; ==========================================================================================
-	Local Const $LOCALE_USER_DEFAULT = 0x0400
-	Local Const $LOCALE_SMONTHNAME = 0x37
-	Local Const $LOCALE_SABBREVMONTHNAME = 0x43
-	Local $LCType = $LOCALE_SMONTHNAME
-	If $Abbrev Then $LCType = $LOCALE_SABBREVMONTHNAME
-	If $LCID = "" Then $LCID = $LOCALE_USER_DEFAULT
-	If Not StringIsInt($Month) Or $Month < 1 Or $Month > 12 Then Return False
-	Local $aResult = DllCall("Kernel32.dll", "Int", "GetLocaleInfoW", "UInt", $LCID, "UInt", $LCType + $Month, "WStr", "", "Int", 80)
-	If @error Or $aResult[0] = 0 Then Return False
-	Return _StringProper($aResult[3])
-EndFunc

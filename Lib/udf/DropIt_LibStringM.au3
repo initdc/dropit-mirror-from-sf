@@ -13,7 +13,7 @@
 ;                                               Write,
 ;                                               FunctionRW(possible read/write in called function)
 ;                                               FunctionR (write NOT allowed in called function)
-; Exe(s) ........: 
+; Exe(s) ........:
 ; ==========================================================================================================
 
 ; #CURRENT# ================================================================================================
@@ -32,18 +32,18 @@
 ; Description ...: Return a string between other two from a start point
 ; Syntax.........: _StringM_extractBetweenString($sSource,$iOccurence,$sPreviusString,$sNextString)
 ; Parameters ....: $sSource - the source string
-;                  $iOccurence - index where start to search, $iOccurence > 0 
+;                  $iOccurence - index where start to search, $iOccurence > 0
 ;                  $sPreviusString - First string to find
 ;                  $sNextString - Second string to find
-; Return values .: A string between $sPreviusString and $sNextString or 
-;                  if there is an error return "" and set @error to 
+; Return values .: A string between $sPreviusString and $sNextString or
+;                  if there is an error return "" and set @error to
 ;				   1 - if first string is not found
 ;                  2 - if second string is not found
-; GlobalVar .....: 
+; GlobalVar .....:
 ; Author ........: Daneel
 ; Modified.......:
-; Remarks .......: 
-; Related .......: 
+; Remarks .......:
+; Related .......:
 ; Link ..........;
 ; Example .......; Yes
 ; ============================================================================================
@@ -62,10 +62,10 @@ EndFunc
 ; Syntax.........: _StringM_FirstLetterUpAllWord($sSource)
 ; Parameters ....: $sSource - the source string
 ; Return values .: Return a string where all word after space have first letter uppercase
-; GlobalVar .....: 
+; GlobalVar .....:
 ; Author ........: Daneel
 ; Modified.......:
-; Remarks .......: 
+; Remarks .......:
 ; Related .......: __StringM_RegExpOnArray
 ; Link ..........;
 ; Example .......; Yes
@@ -77,15 +77,15 @@ EndFunc
 ; #FUNCTION# ===============================================================================================
 ;
 ; Name...........: _StringM_LowerAllExceptFirstLetter
-; Description ...: Return a string where all letters are lower case leaving untouched  all first letter of a word 
-; Description ...: Return a string where all letters are lower case leaving untouched  all first letter of a word 
+; Description ...: Return a string where all letters are lower case leaving untouched  all first letter of a word
+; Description ...: Return a string where all letters are lower case leaving untouched  all first letter of a word
 ; Syntax.........: _StringM_LowerAllExceptFirstLetter($sSource)
 ; Parameters ....: $sSource - the source string
 ; Return values .: Same as Description
-; GlobalVar .....: 
+; GlobalVar .....:
 ; Author ........: Daneel
 ; Modified.......:
-; Remarks .......: 
+; Remarks .......:
 ; Related .......: __StringM_RegExpOnArray
 ; Link ..........;
 ; Example .......; Yes
@@ -104,11 +104,11 @@ EndFunc
 ;                  $sRuleItem - rule applied on a single item of the array
 ;                  $sActionReplace - rule to replace according $sRuleItem
 ; Return values .: Return the string replaced
-; GlobalVar .....: 
+; GlobalVar .....:
 ; Author ........: Daneel
 ; Modified.......:
-; Remarks .......: 
-; Related .......: 
+; Remarks .......:
+; Related .......:
 ; Link ..........;
 ; Example .......; No
 ; ============================================================================================
@@ -131,11 +131,11 @@ EndFunc
 ;                  $sSubString2 - right substring
 ;                  $including - true if the substring have to be included or viceversa
 ; Return values .: Return the substring or an empty string if StringInStr fail or if the index are inverted
-; GlobalVar .....: 
+; GlobalVar .....:
 ; Author ........: Daneel
 ; Modified.......:
-; Remarks .......: 
-; Related .......: 
+; Remarks .......:
+; Related .......:
 ; Link ..........;
 ; Example .......; No
 ; ============================================================================================
@@ -155,18 +155,18 @@ EndFunc
 ; Parameters ....: $sString - the source string
 ;				   $bSpaceExcluded - if true "space" is not considered in the alternation
 ; Return values .: Return a string that alternates lower and upper letter
-; GlobalVar .....: 
+; GlobalVar .....:
 ; Author ........: Daneel
 ; Modified.......:
-; Remarks .......: 
-; Related .......: 
+; Remarks .......:
+; Related .......:
 ; Link ..........;
 ; Example .......; No
 ; ============================================================================================
 Func _StringM_UpperLowerString($sString,$bSpaceExcluded = True)
 	Local $sResult = ""
 	Local $bSwitch = True
-	Local $aString = StringSplit($sString, "" , 2)
+	Local $aString = StringSplit($sString, "", 2)
 	For $elem In $aString 
 		If $bSpaceExcluded And $elem == " " Then
 			$sResult &= $elem
@@ -180,4 +180,36 @@ Func _StringM_UpperLowerString($sString,$bSpaceExcluded = True)
 		EndIf
 	Next
 	Return $sResult
+EndFunc
+
+; #FUNCTION# ===============================================================================================
+;
+; Name...........: _StringM_DeleteBetween
+; Description ...: Return a String without a delimeted substring
+; Syntax.........: _StringM_DeleteBetween($sString,$sSubString1,$sSubString2,$included = 0,$occurance1 = 1,$occurance2 = 1)
+; Parameters ....: $sString - the source string
+;				   $sSubString1 - left substring delimeter
+;                  $sSubString2 - right substring delimeter
+;                  $including - true if the substring have to be included or viceversa
+;				   $occurence1 = occurence of the first delimeter
+;				   $occurence2 = occurence of the second delimeter
+; Return values .: Return a String without the delimeted substring or the orginal string if delimeter not exist
+; GlobalVar .....:
+; Author ........: Daneel
+; Modified.......:
+; Remarks .......: The function is case sensitive
+; Related .......:
+; Link ..........;
+; Example .......; No
+; ============================================================================================
+Func _StringM_DeleteBetween($sString, $sSubString1, $sSubString2, $included = 0, $occurance1 = 1, $occurance2 = 1)
+	Local $iStart = StringInStr($sString, $sSubString1, 1, $occurance1)
+	If $iStart == 0 Then Return $sString
+	If Not $included Then $iStart += StringLen($sSubString1)
+	Local $sStart = StringMid($sString, 1, $iStart - 1)
+	Local $sEnd = StringMid($sString, $iStart + StringLen($sSubString1))
+	Local $iEnd = StringInStr($sEnd, $sSubString2, 1, $occurance2)
+	If $iEnd == 0 Then Return $sString
+	If $included Then $iEnd += StringLen($sSubString2)
+	Return $sStart & StringMid($sEnd, $iEnd)
 EndFunc

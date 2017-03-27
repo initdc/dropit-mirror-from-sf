@@ -3,10 +3,12 @@
 
 #include-once
 #include <ButtonConstants.au3>
-#include <DropIt_General.au3>
-#include <DropIt_ProfileList.au3>
 #include <GUIConstantsEx.au3>
 #include <GUIListView.au3>
+
+#include "DropIt_General.au3"
+#include "DropIt_Global.au3"
+#include "DropIt_ProfileList.au3"
 #include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
 #include "Lib\udf\WinAPIEx.au3"
@@ -101,7 +103,7 @@ Func __Monitored_Update($mListView, $mINI)
 		$mStringSplit = StringSplit($mMonitored[$A][1], "|")
 		ReDim $mStringSplit[3]
 		_GUICtrlListView_AddSubItem($mListView, $A - 1, $mStringSplit[1], 1)
-		If $mStringSplit[2] <> "Disabled" Then
+		If $mStringSplit[2] <> $G_Global_StateDisabled Then
 			_GUICtrlListView_SetItemChecked($mListView, $A - 1)
 		EndIf
 	Next
@@ -123,9 +125,9 @@ Func __Monitored_SetState($sINI, $sFolder, $sProfile, $sState)
 		Return: 1
 	#ce
 	If $sState Then
-		$sState = "Enabled"
+		$sState = $G_Global_StateEnabled
 	Else
-		$sState = "Disabled"
+		$sState = $G_Global_StateDisabled
 	EndIf
 	__IniWriteEx($sINI, "MonitoredFolders", $sFolder, $sProfile & "|" & $sState)
 

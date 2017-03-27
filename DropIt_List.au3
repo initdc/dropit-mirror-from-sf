@@ -2,7 +2,8 @@
 ; List funtions of DropIt
 
 #include-once
-#include <DropIt_General.au3>
+#include "DropIt_General.au3"
+#include "DropIt_Global.au3"
 #include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
@@ -127,11 +128,7 @@ Func __List_Properties($lFilePath, $lListPath, $lStringProperties, $lTranslated 
 				Case 2
 					$lProperties[$A] = __GetParentFolder($lFilePath)
 				Case 3
-					If _WinAPI_PathIsDirectory($lFilePath) Then
-						$lProperties[$A] = __ByteSuffix(DirGetSize($lFilePath))
-					Else
-						$lProperties[$A] = __ByteSuffix(FileGetSize($lFilePath))
-					EndIf
+					$lProperties[$A] = __ByteSuffix(__GetFileSize($lFilePath))
 				Case 4
 					$lProperties[$A] = __GetFileNameOnly($lFilePath)
 				Case 5
@@ -153,9 +150,14 @@ Func __List_Properties($lFilePath, $lListPath, $lStringProperties, $lTranslated 
 					If @error Then
 						$lProperties[$A] = ""
 					EndIf
+				Case 12
+					$lProperties[$A] = __GetFileTimeFormatted($lFilePath, 1)
+				Case 13
+					$lProperties[$A] = __GetFileTimeFormatted($lFilePath, 0)
+				Case 14
+					$lProperties[$A] = __GetFileTimeFormatted($lFilePath, 2)
 				Case Else
-					$lString = $lProperties[$A]
-					$lProperties[$A] = __GetFileProperties($lFilePath, $lMoreProperties[$lString - 10])
+					$lProperties[$A] = __GetFileProperties($lFilePath, $lMoreProperties[$lProperties[$A] - 10])
 			EndSwitch
 		EndIf
 	Next
@@ -164,7 +166,7 @@ Func __List_Properties($lFilePath, $lListPath, $lStringProperties, $lTranslated 
 	Return $lProperties
 EndFunc   ;==>__List_Properties
 
-Func __List_WriteHTML($lSubArray, $lListPath, $lStringProperties, $lProfile, $lRules, $lListName, $lTheme) ; Inspired By: http://www.autoitscript.com/forum/topic/124516-guictrllistview-savehtml-exports-the-details-of-a-listview-to-a-html-file/
+Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, $lProfile, $lRules, $lListName, $lTheme) ; Inspired By: http://www.autoitscript.com/forum/topic/124516-guictrllistview-savehtml-exports-the-details-of-a-listview-to-a-html-file/
 	#cs
 		Description: Write An Array To HTML File.
 		Returns: 1
@@ -282,6 +284,7 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lStringProperties, $lProfile, $lR
 			EndSwitch
 		Next
 		$lContent &= '<tr>' & @CRLF & $lString & '</tr>' & @CRLF
+		__SetProgressResult($lElementsGUI, __GetFileSize($lSubArray[$A]))
 	Next
 
 	Local $lFooter = '<tbody>' & @CRLF & $lContent & @CRLF & '</tbody>' & @CRLF & '</table>' & @CRLF & '</div><!-- #table -->' & @CRLF & @CRLF & _
@@ -308,7 +311,7 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lStringProperties, $lProfile, $lR
 	Return 1
 EndFunc   ;==>__List_WriteHTML
 
-Func __List_WritePDF($lSubArray, $lListPath, $lStringProperties, $lListName)
+Func __List_WritePDF($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, $lListName)
 	#cs
 		Description: Write An Array To PDF File.
 		Returns: 1
@@ -333,6 +336,7 @@ Func __List_WritePDF($lSubArray, $lListPath, $lStringProperties, $lListName)
 			$lText &= $lArray[$B] & @CRLF
 		Next
 		$lText &= @CRLF
+		__SetProgressResult($lElementsGUI, __GetFileSize($lSubArray[$A]))
 	Next
 
 	_SetTitle($lListName)
@@ -355,7 +359,7 @@ Func __List_WritePDF($lSubArray, $lListPath, $lStringProperties, $lListName)
 	Return 1
 EndFunc   ;==>__List_WritePDF
 
-Func __List_WriteTEXT($lSubArray, $lListPath, $lStringProperties, $lDelimiter = ',', $lQuote = '"') ; Inspired By: http://www.autoitscript.com/forum/topic/129250-guictrllistview-savecsv-exports-the-details-of-a-listview-to-a-csv-file/
+Func __List_WriteTEXT($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, $lDelimiter = ',', $lQuote = '"') ; Inspired By: http://www.autoitscript.com/forum/topic/129250-guictrllistview-savecsv-exports-the-details-of-a-listview-to-a-csv-file/
 	#cs
 		Description: Write An Array To TXT Or CSV File.
 		Returns: 1
@@ -393,6 +397,7 @@ Func __List_WriteTEXT($lSubArray, $lListPath, $lStringProperties, $lDelimiter = 
 			EndIf
 		Next
 		$lString &= @CRLF
+		__SetProgressResult($lElementsGUI, __GetFileSize($lSubArray[$A]))
 	Next
 
 	$lFileOpen = FileOpen($lListPath, 2 + 8 + 128)
@@ -406,7 +411,7 @@ Func __List_WriteTEXT($lSubArray, $lListPath, $lStringProperties, $lDelimiter = 
 	Return 1
 EndFunc   ;==>__List_WriteTEXT
 
-Func __List_WriteXML($lSubArray, $lListPath, $lStringProperties) ; Inspired By: http://www.autoitscript.com/forum/topic/129432-guictrllistview-savexml-exports-the-details-of-a-listview-to-a-xml-file/
+Func __List_WriteXML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties) ; Inspired By: http://www.autoitscript.com/forum/topic/129432-guictrllistview-savexml-exports-the-details-of-a-listview-to-a-xml-file/
 	#cs
 		Description: Write An Array To XML File.
 		Returns: 1
@@ -431,6 +436,7 @@ Func __List_WriteXML($lSubArray, $lListPath, $lStringProperties) ; Inspired By: 
 			$lString &= @TAB & @TAB & '<' & $lStringSplit[$B] & '>' & $lArray[$B] & '</' & $lStringSplit[$B] & '>' & @CRLF
 		Next
 		$lString &= @TAB & '</item>' & @CRLF
+		__SetProgressResult($lElementsGUI, __GetFileSize($lSubArray[$A]))
 	Next
 	$lString &= '</listview>'
 
@@ -444,7 +450,7 @@ Func __List_WriteXML($lSubArray, $lListPath, $lStringProperties) ; Inspired By: 
 	Return 1
 EndFunc   ;==>__List_WriteXML
 
-Func __List_WriteXLS($lSubArray, $lListPath, $lStringProperties) ; Inspired By: http://www.autoitscript.com/forum/topic/131866-arraytoxls-save-1d2d-array-to-excel-file-xls/
+Func __List_WriteXLS($lSubArray, $lListPath, $lElementsGUI, $lStringProperties) ; Inspired By: http://www.autoitscript.com/forum/topic/131866-arraytoxls-save-1d2d-array-to-excel-file-xls/
 	#cs
 		Description: Write An Array To XLS File.
 		Returns: 1
@@ -480,6 +486,7 @@ Func __List_WriteXLS($lSubArray, $lListPath, $lStringProperties) ; Inspired By: 
 			EndIf
 			__XLSWriteCell($hFile, $A, $B - 1, $lArray[$B])
 		Next
+		__SetProgressResult($lElementsGUI, __GetFileSize($lSubArray[$A]))
 	Next
 
 	$str_eof = DllStructCreate('short;short')

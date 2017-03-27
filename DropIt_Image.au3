@@ -2,7 +2,8 @@
 ; Image funtions of DropIt
 
 #include-once
-#include <DropIt_General.au3>
+#include "DropIt_General.au3"
+#include "DropIt_Global.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibImages.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
@@ -46,15 +47,15 @@ Func __ImageWrite($sProfile = -1, $iFlag = 1, $sImagePath = -1, $iSize_X = 64, $
 	EndIf
 
 	If BitAND($iFlag, 1) Then ; 1 = Add Image File.
-		__IniWriteEx($sProfile, "Target", "Image", $sImagePath)
+		__IniWriteEx($sProfile, $G_Global_TargetSection, "Image", $sImagePath)
 	EndIf
 	If BitAND($iFlag, 2) Then ; 2 = Add Image Size.
-		__IniWriteEx($sProfile, "Target", "SizeX", $iSize_X)
-		__IniWriteEx($sProfile, "Target", "SizeY", $iSize_Y)
+		__IniWriteEx($sProfile, $G_Global_TargetSection, "SizeX", $iSize_X)
+		__IniWriteEx($sProfile, $G_Global_TargetSection, "SizeY", $iSize_Y)
 	EndIf
 	If BitAND($iFlag, 4) Then ; 4 = Add Opacity.
-		__IniWriteEx($sProfile, "Target", "Opacity", StringReplace($iOpacity, "%", ""))
-		IniDelete($sProfile, "Target", "Transparency")
+		__IniWriteEx($sProfile, $G_Global_TargetSection, "Opacity", StringReplace($iOpacity, "%", ""))
+		IniDelete($sProfile, $G_Global_TargetSection, "Transparency")
 	EndIf
 
 	If @error Then

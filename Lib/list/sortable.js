@@ -36,7 +36,7 @@ function SortableTable(tableEl) {
 	    var itm = this.getInnerText(this.tbody[0].rows[1].cells[column]);
 		var sortfn = this.sortCaseInsensitive;
 
-		if (itm.match(/^(\d\d?)[\/\.-](\d\d?)[\/\.-]((\d\d)?\d\d)(\s\d\d[:]\d\d)?$/)) sortfn = this.sortDate;
+		if (itm.match(/^(\d\d?)[\/\.-](\d\d?)[\/\.-]((\d\d)?\d\d)(\s\d\d[\.:]\d\d)?$/)) sortfn = this.sortDate;
 		if (itm.match(/^([\d\.,]+)\s*(b|kb|mb|gb|tb)/i)) sortfn = this.sortSize;
 		if (itm.replace(/^\s+|\s+$/g,"").match(/^[\d\.]+$/)) sortfn = this.sortNumeric;
 

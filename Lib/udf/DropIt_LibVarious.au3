@@ -6,38 +6,116 @@
 #include <GUIConstantsEx.au3>
 #include "WinAPIEx.au3"
 
-Func _ArraySort_MultiColumn(ByRef $aSort, ByRef $aIndices, $oDir = 0, $iDir = 0) ; Taken From: http://www.autoitscript.com/forum/topic/123874-multiple-sort-solved/#entry860248
-    Local $1st, $2nd
-    If Not IsArray($aIndices) Or Not IsArray($aSort) Then Return SetError(1, 0, 0) ;checks if $aIndices is an array
-    If UBound($aIndices) > UBound($aSort, 2) Then Return SetError(2, 0, 0) ;check if $aIndices array is greater the $aSort array
-    Local $x
-    For $x = 0 To UBound($aIndices) - 1 ;check if array content makes sense
-        If Not IsInt($aIndices[$x]) Then Return SetError(3, 0, 0) ;array content is not numeric
-    Next
-    If UBound($aIndices) = 1 Then Return _ArraySort($aSort, $oDir, 0, 0, $aIndices[0]) ;check if only one index is given
-    Local $j, $k, $l = 0
-    _ArraySort($aSort, $oDir, 0, 0, $aIndices[0])
-    Do
-        $1st = $aIndices[$l]
-        $2nd = $aIndices[$l + 1]
-        $j = 0
-        $k = 1
-        While $k < UBound($aSort)
-            If $aSort[$j][$1st] <> $aSort[$k][$1st] Then
-                If $k - $j > 1  Then
-                    _ArraySort($aSort, $iDir , $j, $k - 1, $2nd)
-                    $j = $k
-                Else
-                    $j = $k
-                EndIf
-            EndIf
-            $k += 1
-        WEnd
-        If $k - $j > 1 Then _ArraySort($aSort, $oDir, $j, $k, $2nd)
-        $l += 1
-    Until $l = UBound($aIndices) - 1
-    Return 1
-EndFunc
+Func _ArraySortEx(ByRef $avArray, $iStartRow = 1, $iEndRow = 0, $iCol1 = 0, $iCol2 = -1, $iCol3 = -1, $iCol4 = -1) ; Taken From: http://www.autoitscript.com/forum/topic/98071-array-multi-column-sort/
+	Local $iLastRow = 0, $iStart = -1, $iEnd = -1
+
+	If $iCol1 >= 0 Then ; Sort on the first column.
+		_ArraySort($avArray, 0, $iStartRow, $iEndRow, $iCol1)
+
+		If $iCol2 >= 0 Then ; For each group of values in the first column sort the second column.
+			$iStart = -1
+			$iLastRow = UBound($avArray) - 1
+			For $i = $iStartRow To $iLastRow
+				Switch $i
+					Case $iStartRow
+						If $i <> $iLastRow Then
+							If ($avArray[$i][$iCol1] <> $avArray[$i + 1][$iCol1]) Then
+								$iStart = $i
+								$iEnd = $i
+							Else
+								$iStart = $i
+								$iEnd = $i + 1
+							EndIf
+						EndIf
+					Case $iLastRow
+						$iEnd = $iLastRow
+						If $iStart <> $iEnd Then
+							_ArraySort($avArray, 0, $iStart, $iEnd, $iCol2)
+						EndIf
+					Case Else
+						If ($avArray[$i][$iCol1] <> $avArray[$i + 1][$iCol1]) Then
+							$iEnd = $i
+							If $iStart <> $iEnd Then
+								_ArraySort($avArray, 0, $iStart, $iEnd, $iCol2)
+							EndIf
+							$iStart = $i + 1
+							$iEnd = $iStart
+						Else
+							$iEnd = $i
+						EndIf
+				EndSwitch
+			Next
+
+			If $iCol3 >= 0 Then ; For each group of values in the second column sort the third column.
+				$iStart = -1
+				For $i = 1 To $iLastRow
+					Switch $i
+						Case 1
+							If $i <> $iLastRow Then
+								If ($avArray[$i][$iCol1] <> $avArray[2][$iCol1]) Or ($avArray[$i][$iCol2] <> $avArray[2][$iCol2]) Then
+									$iStart = 2
+									$iEnd = $iStart
+								Else
+									$iStart = 1
+									$iEnd = $iStart
+								EndIf
+							EndIf
+						Case $iLastRow
+							$iEnd = $iLastRow
+							If $iStart <> $iEnd Then
+								_ArraySort($avArray, 0, $iStart, $iEnd, $iCol3)
+							EndIf
+						Case Else
+							If ($avArray[$i][$iCol1] <> $avArray[$i + 1][$iCol1]) Or ($avArray[$i][$iCol2] <> $avArray[$i + 1][$iCol2]) Then
+								$iEnd = $i
+								If $iStart <> $iEnd Then
+									_ArraySort($avArray, 0, $iStart, $iEnd, $iCol3)
+								EndIf
+								$iStart = $i + 1
+								$iEnd = $iStart
+							Else
+								$iEnd = $i
+							EndIf
+					EndSwitch
+				Next
+
+				If $iCol4 >= 0 Then ; For each group of values in the third column sort the forth column.
+					$iStart = -1
+					For $i = 1 To $iLastRow
+						Switch $i
+							Case 1
+								If $i <> $iLastRow Then
+									If ($avArray[$i][$iCol1] <> $avArray[2][$iCol1]) Or ($avArray[$i][$iCol2] <> $avArray[2][$iCol2]) Or ($avArray[$i][$iCol3] <> $avArray[2][$iCol3]) Then
+										$iStart = 2
+										$iEnd = $iStart
+									Else
+										$iStart = 1
+										$iEnd = $iStart
+									EndIf
+								EndIf
+							Case $iLastRow
+								$iEnd = $iLastRow
+								If $iStart <> $iEnd Then
+									_ArraySort($avArray, 0, $iStart, $iEnd, $iCol4)
+								EndIf
+							Case Else
+								If ($avArray[$i][$iCol1] <> $avArray[$i + 1][$iCol1]) Or ($avArray[$i][$iCol2] <> $avArray[$i + 1][$iCol2]) Or ($avArray[$i][$iCol3] <> $avArray[$i + 1][$iCol3]) Then
+									$iEnd = $i
+									If $iStart <> $iEnd Then
+										_ArraySort($avArray, 0, $iStart, $iEnd, $iCol4)
+									EndIf
+									$iStart = $i + 1
+									$iEnd = $iStart
+								Else
+									$iEnd = $i
+								EndIf
+						EndSwitch
+					Next
+				EndIf
+			EndIf
+		EndIf
+	EndIf
+EndFunc   ;==>_ArraySortEx
 
 Func __CmdLineRaw($sString) ; Taken From: http://www.autoitscript.com/forum/topic/121034-stringsplit-cmdlineraw/page__p__840768#entry840768
 	Local $aError[2] = [1, $sString]
@@ -129,7 +207,7 @@ Func __GUIInBounds($hHandle) ; Original Idea By wraithdu, Modified By guinness.
 	Return 1
 EndFunc   ;==>__GUIInBounds
 
-Func __IniReadSection($iFile, $iSection) ; Modified From: http://www.autoitscript.com/forum/topic/32004-iniex-functions-exceed-32kb-limit/
+Func __IniReadSection($sFilePath, $sSection) ; Modified From: http://www.autoitscript.com/forum/topic/32004-iniex-functions-exceed-32kb-limit/
 	#cs
 		Description: Read A Section From A Standard Format INI File.
 		Returns: $Array[?] - Array Contains Unlimited Number Of Items.
@@ -138,79 +216,114 @@ Func __IniReadSection($iFile, $iSection) ; Modified From: http://www.autoitscrip
 		[A][0] - Key [Example]
 		[A][1] - Value [Test]
 	#ce
-	Local $iSize = FileGetSize($iFile) / 1024
+	Local $iSize = FileGetSize($sFilePath) / 1024
 	If $iSize < 32 Then
-		Local $iRead = IniReadSection($iFile, $iSection)
+		Local $aRead = IniReadSection($sFilePath, $sSection)
 		If @error Then
-			Return SetError(@error, 0, 0)
+			Return SetError(@error, 0, "")
 		EndIf
-		If IsArray($iRead) = 0 Then
-			Return SetError(-2, 0, 0)
+		If IsArray($aRead) = 0 Then
+			Return SetError(-2, 0, "")
 		EndIf
-		Return $iRead
+		Return $aRead
 	EndIf
 
-	Local $iSplitKeyValue
-	Local $iFileRead = FileRead($iFile)
-	Local $iData = StringRegExp($iFileRead, "(?is)(?:^|\v)(?!;|#)\h*\[\h*\Q" & $iSection & "\E\h*\]\h*\v+(.*?)(?:\z|\v\h*\[)", 1)
+	Local $aSplitKeyValue
+	Local $hFileRead = FileRead($sFilePath)
+	Local $aData = StringRegExp($hFileRead, "(?is)(?:^|\v)(?!;|#)\h*\[\h*\Q" & $sSection & "\E\h*\]\h*\v+(.*?)(?:\z|\v\h*\[)", 1)
 	If @error Then
-		Return SetError(1, 0, 0)
+		Return SetError(1, 0, "")
 	EndIf
 
-	Local $iLines = StringSplit(StringRegExpReplace($iData[0], @CRLF & "|" & @CR & "|" & @LF, @LF), @LF)
-	Local $iLeft, $iAdded = 0, $iSectionReturn[$iLines[0] + 1][2]
-	For $A = 1 To $iLines[0]
-		$iLeft = StringLeft(StringStripWS($iLines[$A], 8), 1)
-		If $iLeft == ";" Or $iLeft == "#" Then
+	Local $aLines = StringSplit(StringRegExpReplace($aData[0], @CRLF & "|" & @CR & "|" & @LF, @LF), @LF)
+	Local $sLeft, $iAdded = 0, $aSectionReturn[$aLines[0] + 1][2]
+	For $A = 1 To $aLines[0]
+		$sLeft = StringLeft(StringStripWS($aLines[$A], 8), 1)
+		If $sLeft == ";" Or $sLeft == "#" Then
 			ContinueLoop
 		EndIf
 
-		$iSplitKeyValue = StringSplit($iLines[$A], "=")
-		If $iSplitKeyValue[0] > 1 Then
+		$aSplitKeyValue = StringSplit($aLines[$A], "=")
+		If $aSplitKeyValue[0] > 1 Then
 			$iAdded += 1
-			$iSectionReturn[$iAdded][0] = $iSplitKeyValue[1]
-			For $B = 2 To $iSplitKeyValue[0]
+			$aSectionReturn[$iAdded][0] = $aSplitKeyValue[1]
+			For $B = 2 To $aSplitKeyValue[0]
 				If $B > 2 Then
-					$iSectionReturn[$iAdded][1] &= "="
+					$aSectionReturn[$iAdded][1] &= "="
 				EndIf
-				$iSectionReturn[$iAdded][1] &= $iSplitKeyValue[$B]
+				$aSectionReturn[$iAdded][1] &= $aSplitKeyValue[$B]
 			Next
 		EndIf
 	Next
-	ReDim $iSectionReturn[$iAdded + 1][2]
-	$iSectionReturn[0][0] = $iAdded
-	Return $iSectionReturn
+	If $iAdded = 0 Then
+		Return SetError(1, 0, "")
+	EndIf
+	ReDim $aSectionReturn[$iAdded + 1][2]
+	$aSectionReturn[0][0] = $iAdded
+	Return $aSectionReturn
 EndFunc   ;==>__IniReadSection
 
-Func __IniWriteEx($iFile, $iSection, $iKey = "", $iValue = "")
+Func __IniReadSectionNamesEx($sFilePath) ; Modified From: http://www.autoitscript.com/forum/topic/32004-iniex-functions-exceed-32kb-limit/
+	#cs
+		Description: Read Section Names From A Standard Format INI File.
+		Returns: $Array[?] - Array Contains Unlimited Number Of Items.
+		[0] - Number Of Sections [3]
+		[A] - Section Name [Example]
+	#ce
+	Local $aSections
+	If FileExists($sFilePath) = 0 Then
+		Return SetError(1, 0, 0)
+	EndIf
+	If FileGetSize($sFilePath) / 1024 <= 31 Then
+		$aSections = IniReadSectionNames($sFilePath)
+		If @error Or IsArray($aSections) = 0 Then
+			Return SetError(1, 0, 0)
+		EndIf
+		Return $aSections
+	EndIf
+	Local $hRead = FileRead($sFilePath)
+	Local $aReadSections = StringRegExp($hRead, "(?m)(?:^|\v)\h*\[\h*(.*?)\h*\]", 3)
+	If @error Then
+		Return SetError(1, 0, 0)
+	EndIf
+	Local $iNumberSections = UBound($aReadSections)
+	Local $aReturnSections[$iNumberSections + 1] = [$iNumberSections]
+	For $A = 0 To $iNumberSections - 1
+		$aReturnSections[$A + 1] = $aReadSections[$A]
+	Next
+	Return $aReturnSections
+EndFunc   ;==>__IniReadSectionNamesEx
+
+Func __IniWriteEx($sFilePath, $sSection, $sKey = "", $sValue = "")
 	#cs
 		Description: Write A Key Or A Section From A Standard Format INI File With Unicode Support.
 		Returns: 1
 	#ce
-	Local $iWrite
+	Local $hWrite
 
-	If FileGetEncoding($iFile) <> 32 Then
-		Local $iFileRead = FileRead($iFile)
-		If @error And FileExists($iFile) Then
+	If FileGetEncoding($sFilePath) <> 32 Then
+		Local $hFileRead = FileRead($sFilePath)
+		If @error And FileExists($sFilePath) Then
 			Return SetError(1, 0, 0)
 		EndIf
-		Local $iFileOpen = FileOpen($iFile, 2 + 8 + 32)
-		If $iFileOpen = -1 Then
+		Local $hFileOpen = FileOpen($sFilePath, 2 + 8 + 32)
+		If $hFileOpen = -1 Then
 			Return SetError(1, 0, 0)
 		EndIf
-		$iWrite = FileWrite($iFileOpen, $iFileRead)
-		FileClose($iFileOpen)
-		If $iWrite = 0 Then
+		$hWrite = FileWrite($hFileOpen, $hFileRead)
+		FileClose($hFileOpen)
+		If $hWrite = 0 Then
 			Return SetError(1, 0, 0)
 		EndIf
 	EndIf
 
-	If $iKey = "" Then ; Write Section.
-		$iWrite = IniWriteSection($iFile, $iSection, $iValue)
+	If $sKey = "" Then ; Write Section.
+		$hWrite = IniWriteSection($sFilePath, $sSection, $sValue)
+		FileWriteLine($sFilePath, "") ; Add Empty Line.
 	Else ; Write Key.
-		$iWrite = IniWrite($iFile, $iSection, $iKey, $iValue)
+		$hWrite = IniWrite($sFilePath, $sSection, $sKey, $sValue)
 	EndIf
-	If $iWrite = 0 Then
+	If $hWrite = 0 Then
 		Return SetError(1, 0, 0)
 	EndIf
 	Return 1
@@ -225,7 +338,7 @@ Func __InsertText(ByRef $hEdit, $sString) ; Modified From: http://www.autoitscri
 	If (IsArray($iSelected)) And ($iSelected[0] <= $iSelected[1]) Then
 		GUICtrlSetData($hEdit, StringLeft(GUICtrlRead($hEdit), $iSelected[0]) & $sString & StringTrimLeft(GUICtrlRead($hEdit), $iSelected[1]))
 	Else
-		GUICtrlSetData($hEdit, GUICtrlRead($hEdit) & $sString)
+		GUICtrlSetData($hEdit, $sString & GUICtrlRead($hEdit))
 	EndIf
 EndFunc   ;==>__InsertText
 
@@ -260,16 +373,29 @@ Func __IsWindowsVersion()
 	Return RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\", "CurrentVersion") >= 6.0
 EndFunc   ;==>__IsWindowsVersion
 
-Func __OnTop($hHandle = -1, $iState = 1)
-	#cs
-		Description: Set A GUI Handle "OnTop".
-		Returns: GUI OnTop
-	#ce
-	$hHandle = __IsHandle($hHandle) ; Check If GUI Handle Is A Valid Handle.
-
-	WinSetOnTop($hHandle, "", $iState)
-	Return $hHandle
-EndFunc   ;==>__OnTop
+Func __Locale_MonthName($Month, $Abbrev = False, $LCID = "")
+	; ==========================================================================================
+	; Author:        Großvater (www.autoit.de) http://www.autoitscript.com/forum/topic/136945-the-name-of-any-day-by-date-multilingual/#entry958589
+	; Parameter:
+	; $Month    -   Nummer des Monats (1 - 12)
+	; $Abbrev   -   abgekürzten Namen liefern:
+	;               |0 : nein
+	;               |1 : ja
+	; $LCID     -   Sprachbezeichner gem. Abschnitt "@OSLang values" im Anhang der Hilfedatei
+	;               als 16-bittiger Hexwert: 0xnnnn (z.b. 0x0407 für Deutschland).
+	;               Bei fehlender Angabe wird die Defaulteinstellung  des Benutzers verwendet.
+	; ==========================================================================================
+	Local Const $LOCALE_USER_DEFAULT = 0x0400
+	Local Const $LOCALE_SMONTHNAME = 0x37
+	Local Const $LOCALE_SABBREVMONTHNAME = 0x43
+	Local $LCType = $LOCALE_SMONTHNAME
+	If $Abbrev Then $LCType = $LOCALE_SABBREVMONTHNAME
+	If $LCID = "" Then $LCID = $LOCALE_USER_DEFAULT
+	If Not StringIsInt($Month) Or $Month < 1 Or $Month > 12 Then Return False
+	Local $aResult = DllCall("Kernel32.dll", "Int", "GetLocaleInfoW", "UInt", $LCID, "UInt", $LCType + $Month, "WStr", "", "Int", 80)
+	If @error Or $aResult[0] = 0 Then Return False
+	Return _StringProper($aResult[3])
+EndFunc
 
 Func __SetHandle($sID, $sGUI)
 	#cs
@@ -346,10 +472,20 @@ Func __SetProgress($sHandle, $sPercentage, $sColor = 0, $sVertical = False) ; Ta
 	Return $sResult
 EndFunc   ;==>__SetProgress
 
+Func __ShellExecuteOnTop($sFilePath, $sText)
+	#cs
+		Description: Open A File With Default Program And Set It On Top.
+		Returns: Nothing
+	#ce
+	ShellExecute($sFilePath)
+	Sleep(300)
+	WinSetOnTop($sText, "", 1)
+EndFunc   ;==>__ShellExecuteOnTop
+
 Func __ShowPassword($iControlID)
 	#cs
 		Description: Show/Hide Password Of An Input Password Field.
-		Returns: Input State.
+		Returns: Input State
 	#ce
 	Local Const $EM_GETPASSWORDCHAR = 0xD2, $EM_SETPASSWORDCHAR = 0xCC
 	Local $sPasswordCharacter
