@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt - Process your files with a drop
-#AutoIt3Wrapper_Res_Fileversion=5.3.3.0
-#AutoIt3Wrapper_Res_ProductVersion=5.3.3.0
+#AutoIt3Wrapper_Res_Fileversion=5.3.4.0
+#AutoIt3Wrapper_Res_ProductVersion=5.3.4.0
 #AutoIt3Wrapper_Res_LegalCopyright=Andrea Luparia
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.dropitproject.com
@@ -507,6 +507,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	$mInput_Ignore = GUICtrlCreateInput(__GetLang('MANAGE_EDIT_MSGBOX_15', 'Skip them during process'), 10, 65 * 3 + 32, 380, 22)
 
 	GUICtrlSetState($mInput_Ignore, $GUI_DISABLE + $GUI_HIDE) ; Always Disabled In The Code.
+	GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 	GUICtrlSetState($mButton_Change, $GUI_HIDE)
 	GUICtrlSetState($mButton_Mail, $GUI_HIDE)
 	GUICtrlSetState($mInput_Rename, $GUI_HIDE)
@@ -523,66 +524,60 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Switch $mCurrentAction
 		Case __GetLang('ACTION_IGNORE', 'Ignore')
 			GUICtrlSetState($mInput_Ignore, $GUI_SHOW)
-			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
 			GUICtrlSetData($mInput_Destination, "-")
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[10])
 		Case __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties')
 			GUICtrlSetState($mButton_Change, $GUI_SHOW)
-			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[8])
 		Case __GetLang('ACTION_SEND_MAIL', 'Send by Mail')
 			GUICtrlSetState($mButton_Mail, $GUI_SHOW)
-			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[9])
 		Case __GetLang('ACTION_OPEN_WITH', 'Open With')
+			GUICtrlSetState($mInput_Destination, $GUI_SHOW)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[1])
 		Case __GetLang('ACTION_PLAYLIST', 'Create Playlist')
+			GUICtrlSetState($mInput_Destination, $GUI_SHOW)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[2])
 		Case __GetLang('ACTION_COMPRESS', 'Compress')
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[3])
 		Case __GetLang('ACTION_ENCRYPT', 'Encrypt'), __GetLang('ACTION_DECRYPT', 'Decrypt')
-			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mInput_Crypt, $GUI_SHOW)
 			GUICtrlSetState($mButton_Crypt, $GUI_SHOW)
 		Case __GetLang('ACTION_GALLERY', 'Create Gallery')
-			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mInput_Gallery, $GUI_SHOW)
 			GUICtrlSetState($mButton_Gallery, $GUI_SHOW)
 		Case __GetLang('ACTION_LIST', 'Create List')
-			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mInput_List, $GUI_SHOW)
 			GUICtrlSetState($mButton_List, $GUI_SHOW)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[2])
 		Case __GetLang('ACTION_RENAME', 'Rename')
-			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mInput_Rename, $GUI_SHOW)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[4])
 		Case __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard')
-			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mInput_Clipboard, $GUI_SHOW)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[6])
 		Case __GetLang('ACTION_UPLOAD', 'Upload')
-			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mInput_Site, $GUI_SHOW)
 			GUICtrlSetState($mButton_Site, $GUI_SHOW)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[7])
 		Case __GetLang('ACTION_DELETE', 'Delete')
-			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
 			GUICtrlSetState($mCombo_Delete, $GUI_SHOW)
 			$mCurrentDelete = $mDestination
 			GUICtrlSetData($mInput_Destination, "-")
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[5])
+		Case Else
+			GUICtrlSetState($mInput_Destination, $GUI_SHOW)
 	EndSwitch
 	GUICtrlSetData($mCombo_Action, $mCombo_ActionData, $mCurrentAction)
 	GUICtrlSetData($mCombo_Delete, $mCombo_DeleteData, $mCurrentDelete)
