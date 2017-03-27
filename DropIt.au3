@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt - Sort your files with a drop
-#AutoIt3Wrapper_Res_Fileversion=4.0.0.0
-#AutoIt3Wrapper_Res_ProductVersion=4.0.0.0
+#AutoIt3Wrapper_Res_Fileversion=4.0.1.0
+#AutoIt3Wrapper_Res_ProductVersion=4.0.1.0
 #AutoIt3Wrapper_Res_LegalCopyright=Lupo PenSuite Team
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://dropit.sourceforge.net
@@ -90,7 +90,7 @@ Opt("TrayMenuMode", 3)
 Opt("TrayOnEventMode", 1)
 
 ; <<<<< Variables >>>>>
-Global $Global_CurrentVersion = "4.0"
+Global $Global_CurrentVersion = "4.0.1"
 Global $Global_ImageList, $Global_GUI_1, $Global_GUI_2, $Global_Icon_1, $Global_GUI_State = 1 ; ImageList & GUI Handles & Icons Handle & GUI State.
 Global $Global_ContextMenu[15][2] = [[14, 2]], $Global_TrayMenu[14][2] = [[13, 2]], $Global_MenuDisable = 0 ; ContextMenu & TrayMenu.
 Global $Global_ListViewIndex = -1, $Global_ListViewFolders, $Global_ListViewProfiles, $Global_ListViewRules ; ListView Variables.
@@ -2784,7 +2784,7 @@ Func _Duplicate_Process($dFilePath, $dDestination = -1, $dFileName = -1)
 			$dDupMode = _Duplicate_Alert($dFileName)
 		EndIf
 	EndIf
-	If StringInStr($dDupMode, 'Skip') Or (StringInStr($dDupMode, 'Overwrite2') And __FileCompareDate($dFilePath, $dDestination & "\" & $dFileName) <> 1) Or (StringInStr($dDupMode, 'Overwrite3') And __FileCompareSize($dFilePath, $dDestination & "\" & $dFileName) <> 0) Then
+	If StringInStr($dDupMode, 'Skip') Or (StringInStr($dDupMode, 'Overwrite2') And __FileCompareDate($dFilePath, $dDestination & "\" & $dFileName) <> 1) Or (StringInStr($dDupMode, 'Overwrite3') And __FileCompareSize($dFilePath, $dDestination & "\" & $dFileName) = 0) Then
 		Return SetError(1, 0, $dFileName) ; Error Needed To Skip.
 	EndIf
 	If StringInStr($dDupMode, 'Overwrite') Then
@@ -3818,6 +3818,11 @@ Func _Update_Check($uLabel = -1, $uProgress = -1, $uCancel = -1, $uHandle = -1)
 		Return SetError(1, 0, 0)
 	EndIf
 
+	If StringInStr($uPage, $uBefore) = 0 Then
+		GUICtrlSetData($uLabel, __Lang_Get('UPDATE_MSGBOX_3', 'An error occurs during check for updates.'))
+		Return SetError(1, 0, 0)
+	EndIf
+
 	; Extract Last Version Available From Web Page:
 	$uBefore = StringInStr($uPage, $uBefore) + StringLen($uBefore)
 	$uAfter = StringInStr(StringTrimLeft($uPage, $uBefore), $uAfter)
@@ -4643,6 +4648,25 @@ Func _Options($oHandle = -1)
 				__ShowPassword($oMasterPassword)
 
 			Case $oOK
+				__IniWriteEx($oINI, $oINI_Various_Array[2][0], $oINI_Various_Array[2][1], __GetDuplicateMode(GUICtrlRead($oComboItems[1])))
+				__IniWriteEx($oINI, $oINI_Various_Array[6][0], $oINI_Various_Array[6][1], __GetCompressionLevel(GUICtrlRead($oComboItems[2])))
+				__IniWriteEx($oINI, $oINI_Various_Array[10][0], $oINI_Various_Array[10][1], __GetCompressionLevel(GUICtrlRead($oComboItems[5])))
+				__IniWriteEx($oINI, $oINI_Various_Array[5][0], $oINI_Various_Array[5][1], GUICtrlRead($oComboItems[8]))
+				__IniWriteEx($oINI, $oINI_Various_Array[7][0], $oINI_Various_Array[7][1], GUICtrlRead($oComboItems[3]))
+				__IniWriteEx($oINI, $oINI_Various_Array[11][0], $oINI_Various_Array[11][1], GUICtrlRead($oComboItems[6]))
+
+				$oState = GUICtrlRead($oComboItems[4])
+				If $oState = __Lang_Get('COMPRESS_ENCRYPT', 'None') Then
+					$oState = "None"
+				EndIf
+				__IniWriteEx($oINI, $oINI_Various_Array[8][0], $oINI_Various_Array[8][1], $oState)
+
+				$oState = GUICtrlRead($oComboItems[7])
+				If $oState = __Lang_Get('COMPRESS_ENCRYPT', 'None') Then
+					$oState = "None"
+				EndIf
+				__IniWriteEx($oINI, $oINI_Various_Array[12][0], $oINI_Various_Array[12][1], $oState)
+
 				_GUICtrlComboBoxEx_GetItemText($oLanguageCombo, _GUICtrlComboBoxEx_GetCurSel($oLanguageCombo), $oLanguage)
 				__SetCurrentLanguage($oLanguage) ; Set The Selected Language To The Settings INI File.
 
@@ -4687,25 +4711,6 @@ Func _Options($oHandle = -1)
 					$oState = "Portable"
 				EndIf
 				__IniWriteEx($oINI, $oINI_Various_Array[1][0], $oINI_Various_Array[1][1], $oState)
-
-				__IniWriteEx($oINI, $oINI_Various_Array[2][0], $oINI_Various_Array[2][1], __GetDuplicateMode(GUICtrlRead($oComboItems[1])))
-				__IniWriteEx($oINI, $oINI_Various_Array[6][0], $oINI_Various_Array[6][1], __GetCompressionLevel(GUICtrlRead($oComboItems[2])))
-				__IniWriteEx($oINI, $oINI_Various_Array[10][0], $oINI_Various_Array[10][1], __GetCompressionLevel(GUICtrlRead($oComboItems[5])))
-				__IniWriteEx($oINI, $oINI_Various_Array[5][0], $oINI_Various_Array[5][1], GUICtrlRead($oComboItems[8]))
-				__IniWriteEx($oINI, $oINI_Various_Array[7][0], $oINI_Various_Array[7][1], GUICtrlRead($oComboItems[3]))
-				__IniWriteEx($oINI, $oINI_Various_Array[11][0], $oINI_Various_Array[11][1], GUICtrlRead($oComboItems[6]))
-
-				$oState = GUICtrlRead($oComboItems[4])
-				If $oState = __Lang_Get('COMPRESS_ENCRYPT', 'None') Then
-					$oState = "None"
-				EndIf
-				__IniWriteEx($oINI, $oINI_Various_Array[8][0], $oINI_Various_Array[8][1], $oState)
-
-				$oState = GUICtrlRead($oComboItems[7])
-				If $oState = __Lang_Get('COMPRESS_ENCRYPT', 'None') Then
-					$oState = "None"
-				EndIf
-				__IniWriteEx($oINI, $oINI_Various_Array[12][0], $oINI_Various_Array[12][1], $oState)
 
 				$Global_Timer = GUICtrlRead($oScanTime)
 				__IniWriteEx($oINI, $oINI_Various_Array[4][0], $oINI_Various_Array[4][1], $Global_Timer)
@@ -7155,12 +7160,12 @@ Func __InstalledCheck()
 	Return 1
 EndFunc   ;==>__InstalledCheck
 
-Func __Is($iData, $iINI = -1, $iDefault = "False", $iProfile = 0)
+Func __Is($iData, $iINI = -1, $iDefault = "False", $iProfile = -2)
 	#cs
 		Description: For INI Parameters That Use True/False Results, Therefore It Can Be Called As If __Is("DropItOn") Then ... , Simply Means If DropItOn Is True.
 		Returns: True/False
 	#ce
-	If $iProfile <> 0 Then ; Try To Load It As A Profile Setting.
+	If $iProfile <> -2 Then ; Try To Load It As A Profile Setting.
 		$iINI = __IsProfile($iProfile, 1) ; Get Profile Path Of Selected Profile.
 		If IniRead($iINI, "General", $iData, "Default") == "Default" Then
 			$iINI = -1 ; Use Global Setting.
@@ -7711,7 +7716,25 @@ Func __Upgrade()
 			__IniWriteEx($uINI, $uINI_Array[$A][0], $uINI_Array[$A][2], $uINIRead)
 		EndIf
 	Next
-	__IniWriteEx($uINI, "EnvironmentVariables", "", "")
+
+	$uINIRead = ""
+	Local $uReadMonitoredFolders = __IniReadSection($uINI & ".old", "MonitoredFolders")
+	If IsArray($uReadMonitoredFolders) Then
+		For $A = 1 To $uReadMonitoredFolders[0][0]
+			$uINIRead &= $uReadMonitoredFolders[$A][0] & "=" & $uReadMonitoredFolders[$A][1] & @LF
+		Next
+	EndIf
+	__IniWriteEx($uINI, "MonitoredFolders", "", $uINIRead)
+
+	$uINIRead = ""
+	Local $uReadEnvironmentVariables = __IniReadSection($uINI & ".old", "EnvironmentVariables")
+	If IsArray($uReadEnvironmentVariables) Then
+		For $A = 1 To $uReadEnvironmentVariables[0][0]
+			$uINIRead &= $uReadEnvironmentVariables[$A][0] & "=" & $uReadEnvironmentVariables[$A][1] & @LF
+		Next
+	EndIf
+	__IniWriteEx($uINI, "EnvironmentVariables", "", $uINIRead)
+
 	FileDelete($uINI & ".old") ; Remove The Old INI.
 
 	If $uOldVersion < "3.7" Then
@@ -8302,7 +8325,7 @@ Func __ExpandEventMode($iEventMode)
 	Return $iEventMode
 EndFunc   ;==>__ExpandEventMode
 
-Func __FileCompareDate($sSource, $sDestination, $iMethod = 0) ; Taken From: http://www.autoitscript.com/forum/topic/125127-compare-file-datetime-stamps/page__p__868705#entry868705
+Func __FileCompareDate($sSource, $sDestination, $iMethod = 0) ; Modified From: http://www.autoitscript.com/forum/topic/125127-compare-file-datetime-stamps/page__p__868705#entry868705
 	#cs
 		Description: Check If Source File Is Newer Than Destination File.
 		Returns: 1 If Newer Or 0 If Equal Or -1 If Older
@@ -8313,11 +8336,11 @@ Func __FileCompareDate($sSource, $sDestination, $iMethod = 0) ; Taken From: http
 	$iDateDiff = _DateDiff("s", $iDate2, $iDate1)
 	Select
 		Case $iDateDiff > 0
-			Return -1
+			Return 1
 		Case $iDateDiff = 0
 			Return 0
 		Case Else
-			Return 1
+			Return -1
 	EndSelect
 EndFunc   ;==>__FileCompareDate
 
