@@ -5,10 +5,10 @@
 #include <Constants.au3>
 #include <Date.au3>
 #include <String.au3>
-#include <WinAPI.au3>
-#include <WinAPIFiles.au3>
 
+#include "APIConstants.au3"
 #include "RecFileListToArray.au3"
+#include "WinAPIEx.au3"
 
 Func __FileCompareDate($sSource, $sDestination, $fDestinationIsDate = 0, $iMethod = 0) ; Modified From: http://www.autoitscript.com/forum/topic/125127-compare-file-datetime-stamps/page__p__868705#entry868705
 	#cs

@@ -5,7 +5,9 @@
 #include <GDIPlus.au3>
 #include <WinAPI.au3>
 
+#include "APIConstants.au3"
 #include "DropIt_LibVarious.au3"
+#include "WinAPIEx.au3"
 
 Func __Tray_BitmapIcon($gb_Bitmap)
 	Local $ts_Return = DllCall($ghGDIPDll, "int", "GdipCreateHICONFromBitmap", "hwnd", $gb_Bitmap, "int*", 0)

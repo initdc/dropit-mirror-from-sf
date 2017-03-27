@@ -3,12 +3,13 @@
 
 #include-once
 #include <EditConstants.au3>
-#include <WinAPI.au3>
 #include <WindowsConstants.au3>
 
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
+#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
+#include "Lib\udf\WinAPIEx.au3"
 
 Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 0)
 	Local $dGUI, $dButtonOverwrite, $dButtonRename, $dButtonSkip, $dCheckForAll, $dValue
@@ -116,7 +117,7 @@ Func __Duplicate_GetMode($dProfile, $dOnlineProtocol = 0)
 		$dDupMode = $G_Global_DuplicateMode
 	EndIf
 	If StringInStr($dDupMode, 'Overwrite2') And $dOnlineProtocol == "SFTP" Then
-		MsgBox(0x40, __GetLang('DUPLICATE_MSGBOX_0', 'Manual selection needed'), __GetLang('DUPLICATE_MSGBOX_1', 'SFTP protocol currently does not support "Overwrite if newer".') & @LF & __GetLang('DUPLICATE_MSGBOX_2', 'You need to manually select how to manage this duplicate.'), 0, __OnTop())
+		MsgBox(0x40, __GetLang('DUPLICATE_MSGBOX_0', 'Manual selection needed'), __GetLang('DUPLICATE_MSGBOX_1', 'SFTP protocol currently does not support "Overwrite if newer".') & @LF & __GetLang('DUPLICATE_MSGBOX_2', 'You need to manually select how to manage this duplicate.'), 10, __OnTop())
 		$dDupMode = "None"
 	EndIf
 

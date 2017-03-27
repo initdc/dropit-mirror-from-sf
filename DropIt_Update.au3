@@ -2,12 +2,12 @@
 ; Update funtions of DropIt
 
 #include-once
-#include <WinAPI.au3>
-
 #include "DropIt_Archive.au3"
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
+#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
+#include "Lib\udf\WinAPIEx.au3"
 
 Func __Update_Check($uLabel = -1, $uProgress = -1, $uCancel = -1, $uHandle = -1)
 	Local $uBackground_GUI

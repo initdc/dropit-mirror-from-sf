@@ -3,8 +3,9 @@
 
 #include-once
 #include <GUIConstantsEx.au3>
-#include <WinAPI.au3>
-#include <WinAPIsysinfoConstants.au3>
+
+#include "APIConstants.au3"
+#include "WinAPIEx.au3"
 
 Func _ArraySortEx(ByRef $avArray, $iStartRow = 1, $iEndRow = 0, $iCol1 = 0, $iCol2 = -1, $iCol3 = -1, $iCol4 = -1) ; Taken From: http://www.autoitscript.com/forum/topic/98071-array-multi-column-sort/
 	Local $iLastRow = 0, $iStart = -1, $iEnd = -1

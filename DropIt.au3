@@ -2,13 +2,13 @@
 	Application Name: DropIt
 	License: Open Source GPL
 	Language: English
-	AutoIt Version: 3.3.9.21 beta
+	AutoIt Version: 3.3.8.1
 	Authors: Lupo73 and guinness
 	Website: http://www.dropitproject.com/
 	Contact: http://www.lupopensuite.com/contact.htm
 
 	AutoIt3Wrapper Info:
-	Icons Added To The Resources Can Be Used With TraySetIcon(@ScriptFullPath, -5) etc. And Are Stored With Numbers -3, -4, -5...
+	Icons Added To The Resources Can Be Used With TraySetIcon(@ScriptFullPath, -5) etc. And Are Stored With Numbers -5, -6, -7...
 	The Reference Web Page Is http://www.autoitscript.com/autoit3/scite/docs/AutoIt3Wrapper.htm
 #ce ----------------------------------------------------------------------------
 
@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt - Process your files with a drop
-#AutoIt3Wrapper_Res_Fileversion=5.3.1.0
-#AutoIt3Wrapper_Res_ProductVersion=5.3.1.0
+#AutoIt3Wrapper_Res_Fileversion=5.3.2.0
+#AutoIt3Wrapper_Res_ProductVersion=5.3.2.0
 #AutoIt3Wrapper_Res_LegalCopyright=Andrea Luparia
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.dropitproject.com
@@ -77,7 +77,6 @@
 #AutoIt3Wrapper_Compile_Both=Y
 #EndRegion ; **** Directives Created By AutoIt3Wrapper_GUI ****
 
-#include <APIConstants.au3>
 #include <Array.au3>
 #include <ComboConstants.au3>
 #include <Crypt.au3>
@@ -96,10 +95,6 @@
 #include <Misc.au3>
 #include <StaticConstants.au3>
 #include <String.au3>
-#include <WinAPI.au3>
-#include <WinAPIProc.au3>
-#include <WinAPIShellEx.au3>
-#include <WinAPISys.au3>
 #include <WindowsConstants.au3>
 
 #include "DropIt_Abbreviation.au3"
@@ -116,6 +111,7 @@
 #include "DropIt_Update.au3"
 #include "DropIt_Upload.au3"
 #include "Lib\udf\7ZipRead.au3"
+#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\Copy.au3"
 #include "Lib\udf\DropIt_LibCSV.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
@@ -129,6 +125,7 @@
 #include "Lib\udf\SFTPEx.au3"
 #include "Lib\udf\SMTPMailer.au3"
 #include "Lib\udf\Startup.au3"
+#include "Lib\udf\WinAPIEx.au3"
 #include "Lib\udf\WM_COPYDATA.au3"
 
 Opt("TrayMenuMode", 3)
@@ -172,7 +169,7 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 	$mINI = __IsSettingsFile($mINI) ; Get Default Settings INI File.
 
 	$mGUI = GUICreate(__GetLang('MANAGE_GUI', 'Manage Associations'), $mSize[0], $mSize[1], -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_MAXIMIZEBOX, $WS_SIZEBOX), -1, __OnTop($mHandle))
-	GUISetIcon(@ScriptFullPath, -5, $mGUI) ; Use Associations.ico
+	GUISetIcon(@ScriptFullPath, -7, $mGUI) ; Use Associations.ico
 	$Global_ResizeMinWidth = 400 ; Set Default Min Width.
 	$Global_ResizeMaxWidth = @DesktopWidth ; Set Default Max Width.
 	$Global_ResizeMinHeight = 200 ; Set Default Min Height.
@@ -209,7 +206,7 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 	$Global_ListViewRules_New = $mNewDummy
 
 	$mNew = GUICtrlCreateButton("N", 15, $mSize[1] - 31, 70, 25, $BS_ICON)
-	GUICtrlSetImage($mNew, @ScriptFullPath, -23, 0)
+	GUICtrlSetImage($mNew, @ScriptFullPath, -25, 0)
 	GUICtrlSetTip($mNew, __GetLang('NEW', 'New'))
 	GUICtrlSetResizing($mNew, $GUI_DOCKSIZE + $GUI_DOCKLEFT + $GUI_DOCKBOTTOM)
 
@@ -221,7 +218,7 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 	GUICtrlSetResizing($mProfileCombo, $GUI_DOCKSIZE + $GUI_DOCKLEFT + $GUI_DOCKRIGHT + $GUI_DOCKBOTTOM)
 
 	$mClose = GUICtrlCreateButton("C", $mSize[0] - 15 - 70, $mSize[1] - 31, 70, 25, $BS_ICON)
-	GUICtrlSetImage($mClose, @ScriptFullPath, -22, 0)
+	GUICtrlSetImage($mClose, @ScriptFullPath, -24, 0)
 	GUICtrlSetTip($mClose, __GetLang('SAVE_CLOSE', 'Save & Close'))
 	GUICtrlSetResizing($mClose, $GUI_DOCKSIZE + $GUI_DOCKRIGHT + $GUI_DOCKBOTTOM)
 	GUICtrlSetState($mClose, $GUI_DEFBUTTON)
@@ -459,10 +456,10 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	GUICtrlSetTip($mInput_Rules, __GetLang('MANAGE_EDIT_TIP_1', 'Write rules to define what process.'))
 	$mButton_Rules = GUICtrlCreateButton("i", 10 + 303, 65 + 30, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Rules, __GetLang('MANAGE_EDIT_MSGBOX_28', 'Rule Examples'))
-	GUICtrlSetImage($mButton_Rules, @ScriptFullPath, -4, 0)
+	GUICtrlSetImage($mButton_Rules, @ScriptFullPath, -6, 0)
 	$mButton_Filters = GUICtrlCreateButton("F", 10 + 344, 65 + 30, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Filters, __GetLang('ADDITIONAL_FILTERS', 'Additional Filters'))
-	GUICtrlSetImage($mButton_Filters, @ScriptFullPath, -7, 0)
+	GUICtrlSetImage($mButton_Filters, @ScriptFullPath, -9, 0)
 
 	; Section 3:
 	GUICtrlCreateLabel("3. " & __GetLang('ACTION', 'Action') & ":", 15, 65 * 2 + 12, 300, 20)
@@ -475,12 +472,12 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	GUICtrlSetState($mInput_Destination, $GUI_DROPACCEPTED)
 	$mButton_Destination = GUICtrlCreateButton("S", 10 + 303, 65 * 3 + 30, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Destination, __GetLang('SEARCH', 'Search'))
-	GUICtrlSetImage($mButton_Destination, @ScriptFullPath, -6, 0)
+	GUICtrlSetImage($mButton_Destination, @ScriptFullPath, -8, 0)
 	$mInput_Site = GUICtrlCreateInput($mSite, 10 + 40, 65 * 3 + 32, 298, 22)
 	GUICtrlSetTip($mInput_Site, __GetLang('MANAGE_EDIT_TIP_6', 'Define the remote destination directory.'))
 	$mButton_Site = GUICtrlCreateButton("C", 10, 65 * 3 + 30, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Site, __GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'))
-	GUICtrlSetImage($mButton_Site, @ScriptFullPath, -9, 0)
+	GUICtrlSetImage($mButton_Site, @ScriptFullPath, -11, 0)
 	$mInput_Rename = GUICtrlCreateInput($mRename, 10, 65 * 3 + 32, 339, 22)
 	GUICtrlSetTip($mInput_Rename, __GetLang('MANAGE_EDIT_TIP_4', 'Write output name and extension.'))
 	$mInput_Clipboard = GUICtrlCreateInput($mClipboard, 10, 65 * 3 + 32, 339, 22)
@@ -489,22 +486,22 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	GUICtrlSetTip($mInput_Gallery, __GetLang('MANAGE_EDIT_TIP_2', 'As destination are supported absolute, relative and UNC paths.'))
 	$mButton_Gallery = GUICtrlCreateButton("C", 10, 65 * 3 + 30, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Gallery, __GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'))
-	GUICtrlSetImage($mButton_Gallery, @ScriptFullPath, -9, 0)
+	GUICtrlSetImage($mButton_Gallery, @ScriptFullPath, -11, 0)
 	$mInput_List = GUICtrlCreateInput($mList, 10 + 40, 65 * 3 + 32, 258, 22)
 	GUICtrlSetTip($mInput_List, __GetLang('MANAGE_EDIT_TIP_2', 'As destination are supported absolute, relative and UNC paths.'))
 	$mButton_List = GUICtrlCreateButton("C", 10, 65 * 3 + 30, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_List, __GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'))
-	GUICtrlSetImage($mButton_List, @ScriptFullPath, -9, 0)
+	GUICtrlSetImage($mButton_List, @ScriptFullPath, -11, 0)
 	$mInput_Crypt = GUICtrlCreateInput($mCrypt, 10 + 40, 65 * 3 + 32, 258, 22)
 	GUICtrlSetTip($mInput_Crypt, __GetLang('MANAGE_EDIT_TIP_2', 'As destination are supported absolute, relative and UNC paths.'))
 	$mButton_Crypt = GUICtrlCreateButton("C", 10, 65 * 3 + 30, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Crypt, __GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'))
-	GUICtrlSetImage($mButton_Crypt, @ScriptFullPath, -9, 0)
+	GUICtrlSetImage($mButton_Crypt, @ScriptFullPath, -11, 0)
 	$mCombo_Delete = GUICtrlCreateCombo("", 10, 65 * 3 + 32, 380, 22, $WS_VSCROLL + $CBS_DROPDOWNLIST)
 	GUICtrlSetTip($mCombo_Delete, __GetLang('MANAGE_EDIT_TIP_5', 'Select the deletion mode for this association.'))
 	$mButton_Abbreviations = GUICtrlCreateButton("A", 10 + 344, 65 * 3 + 30, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Abbreviations, __GetLang('MANAGE_EDIT_MSGBOX_8', 'Abbreviations'))
-	GUICtrlSetImage($mButton_Abbreviations, @ScriptFullPath, -8, 0)
+	GUICtrlSetImage($mButton_Abbreviations, @ScriptFullPath, -10, 0)
 	$mButton_Change = GUICtrlCreateButton(__GetLang('MANAGE_EDIT_CONFIGURE', 'Configure this action'), 10, 65 * 3 + 30, 380, 25)
 	$mButton_Mail = GUICtrlCreateButton(__GetLang('MANAGE_EDIT_CONFIGURE', 'Configure this action'), 10, 65 * 3 + 30, 380, 25)
 	$mInput_Ignore = GUICtrlCreateInput(__GetLang('MANAGE_EDIT_MSGBOX_15', 'Skip them during process'), 10, 65 * 3 + 32, 380, 22)
@@ -1383,14 +1380,14 @@ Func _Manage_Gallery(ByRef $mProperties, ByRef $mThemeName, ByRef $mSettings, $m
 	$mInput_Title = GUICtrlCreateInput("%FileName%", 15, 10 + 41, 345, 22) ; %FileName% As Default Value.
 	$mButton_TitleAbbreviations = GUICtrlCreateButton("A", 15 + 355, 10 + 39, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_TitleAbbreviations, __GetLang('MANAGE_EDIT_MSGBOX_8', 'Abbreviations'))
-	GUICtrlSetImage($mButton_TitleAbbreviations, @ScriptFullPath, -8, 0)
+	GUICtrlSetImage($mButton_TitleAbbreviations, @ScriptFullPath, -10, 0)
 	GUICtrlCreateLabel(__GetLang('FIELD', 'Field') & ":", 15, 10 + 60 + 22, 120, 20)
 	$mInput_Field = GUICtrlCreateInput("", 15, 10 + 60 + 41, 130, 22)
 	GUICtrlCreateLabel(__GetLang('VALUE', 'Value') & ":", 15 + 140, 10 + 60 + 22, 190, 20)
 	$mInput_Value = GUICtrlCreateInput("", 15 + 140, 10 + 60 + 41, 205, 22)
 	$mButton_Abbreviations = GUICtrlCreateButton("A", 15 + 355, 10 + 60 + 39, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Abbreviations, __GetLang('MANAGE_EDIT_MSGBOX_8', 'Abbreviations'))
-	GUICtrlSetImage($mButton_Abbreviations, @ScriptFullPath, -8, 0)
+	GUICtrlSetImage($mButton_Abbreviations, @ScriptFullPath, -10, 0)
 
 	$mListView = GUICtrlCreateListView(__GetLang('FIELD', 'Field') & "|" & __GetLang('VALUE', 'Value'), 15, 10 + 60 + 75, 345, 160, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS))
 	$mListView_Handle = GUICtrlGetHandle($mListView)
@@ -1408,16 +1405,16 @@ Func _Manage_Gallery(ByRef $mProperties, ByRef $mThemeName, ByRef $mSettings, $m
 
 	$mAdd = GUICtrlCreateButton("+", 15 + 355, 109 + 40, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mAdd, __GetLang('OPTIONS_BUTTON_4', 'Add'))
-	GUICtrlSetImage($mAdd, @ScriptFullPath, -10, 0)
+	GUICtrlSetImage($mAdd, @ScriptFullPath, -12, 0)
 	$mRemove = GUICtrlCreateButton("-", 15 + 355, 109 + 40 * 2, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mRemove, __GetLang('OPTIONS_BUTTON_3', 'Remove'))
-	GUICtrlSetImage($mRemove, @ScriptFullPath, -11, 0)
+	GUICtrlSetImage($mRemove, @ScriptFullPath, -13, 0)
 	$mUp = GUICtrlCreateButton("U", 15 + 355, 109 + 40 * 3, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mUp, __GetLang('OPTIONS_BUTTON_6', 'Up'))
-	GUICtrlSetImage($mUp, @ScriptFullPath, -12, 0)
+	GUICtrlSetImage($mUp, @ScriptFullPath, -14, 0)
 	$mDown = GUICtrlCreateButton("D", 15 + 355, 109 + 40 * 4, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mDown, __GetLang('OPTIONS_BUTTON_7', 'Down'))
-	GUICtrlSetImage($mDown, @ScriptFullPath, -13, 0)
+	GUICtrlSetImage($mDown, @ScriptFullPath, -15, 0)
 
 	GUICtrlCreateTabItem("") ; Close Tab Menu.
 
@@ -1676,7 +1673,7 @@ Func _Manage_List(ByRef $mProperties, ByRef $mThemeName, $mProfileName, $mHandle
 	$mInput_Value = GUICtrlCreateInput("", 15 + 140, 10 + 41, 205, 22)
 	$mButton_Abbreviations = GUICtrlCreateButton("A", 15 + 355, 10 + 39, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Abbreviations, __GetLang('MANAGE_EDIT_MSGBOX_8', 'Abbreviations'))
-	GUICtrlSetImage($mButton_Abbreviations, @ScriptFullPath, -8, 0)
+	GUICtrlSetImage($mButton_Abbreviations, @ScriptFullPath, -10, 0)
 
 	$mListView = GUICtrlCreateListView(__GetLang('FIELD', 'Field') & "|" & __GetLang('VALUE', 'Value'), 15, 10 + 75, 345, 160, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS))
 	$mListView_Handle = GUICtrlGetHandle($mListView)
@@ -1694,16 +1691,16 @@ Func _Manage_List(ByRef $mProperties, ByRef $mThemeName, $mProfileName, $mHandle
 
 	$mAdd = GUICtrlCreateButton("+", 15 + 355, 49 + 40, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mAdd, __GetLang('OPTIONS_BUTTON_4', 'Add'))
-	GUICtrlSetImage($mAdd, @ScriptFullPath, -10, 0)
+	GUICtrlSetImage($mAdd, @ScriptFullPath, -12, 0)
 	$mRemove = GUICtrlCreateButton("-", 15 + 355, 49 + 40 * 2, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mRemove, __GetLang('OPTIONS_BUTTON_3', 'Remove'))
-	GUICtrlSetImage($mRemove, @ScriptFullPath, -11, 0)
+	GUICtrlSetImage($mRemove, @ScriptFullPath, -13, 0)
 	$mUp = GUICtrlCreateButton("U", 15 + 355, 49 + 40 * 3, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mUp, __GetLang('OPTIONS_BUTTON_6', 'Up'))
-	GUICtrlSetImage($mUp, @ScriptFullPath, -12, 0)
+	GUICtrlSetImage($mUp, @ScriptFullPath, -14, 0)
 	$mDown = GUICtrlCreateButton("D", 15 + 355, 49 + 40 * 4, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mDown, __GetLang('OPTIONS_BUTTON_7', 'Down'))
-	GUICtrlSetImage($mDown, @ScriptFullPath, -13, 0)
+	GUICtrlSetImage($mDown, @ScriptFullPath, -15, 0)
 
 	; LIST STYLE Tab:
 	GUICtrlCreateTabItem(__GetLang('OPTIONS_TAB_10', 'List Style'))
@@ -1927,7 +1924,7 @@ Func _Manage_Mail(ByRef $mSettings, $mHandle = -1)
 	GUICtrlSetState(-1, $GUI_SHOW)
 	$mButton_Servers = GUICtrlCreateButton("E", 15, 10 + 20, 30, 42, $BS_ICON)
 	GUICtrlSetTip($mButton_Servers, __GetLang('MANAGE_MAIL_EXAMPLES', 'Server Examples'))
-	GUICtrlSetImage($mButton_Servers, @ScriptFullPath, -19, 0)
+	GUICtrlSetImage($mButton_Servers, @ScriptFullPath, -21, 0)
 	GUICtrlCreateLabel(__GetLang('MANAGE_MAIL_LABEL_0', 'SMTP Server') & ":", 15 + 40, 10 + 22, 200, 20)
 	$mInput_Array[1] = GUICtrlCreateInput($mStringSplit[1], 15 + 40, 10 + 40, 200, 22)
 	GUICtrlCreateLabel(__GetLang('SITE_LABEL_1', 'Port') & ":", 15 + 250, 10 + 22, 80, 20)
@@ -2328,8 +2325,8 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["ParentDir", __GetLang('ENV_VAR_13', 'directory of each loaded item') & ' ["C:\Docs"]'], _
 			["ParentDirName", __GetLang('ENV_VAR_29', 'directory name of each loaded item') & ' ["Docs"]'], _
 			["SubDir", __GetLang('ENV_VAR_21', 'recreate subdirectory structure') & ' ["\SubFolder"]']]
-	Local $mGroupInfo[12][3] = [ _
-			[11, 0, 0], _
+	Local $mGroupInfo[13][3] = [ _
+			[12, 0, 0], _
 			["Attributes", __GetLang('ENV_VAR_74', 'file attributes') & ' ["RA"]'], _
 			["Authors", __GetLang('ENV_VAR_8', 'file authors') & ' ["Lupo Team"]'], _
 			["Category", __GetLang('ENV_VAR_84', 'file category') & ' ["Personal"]'], _
@@ -2337,6 +2334,7 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["Company", __GetLang('ENV_VAR_85', 'file company') & ' ["Sourceforge"]'], _
 			["Copyright", __GetLang('ENV_VAR_76', 'file copyright') & ' ["Lupo PenSuite"]'], _
 			["FileBytes", __GetLang('ENV_VAR_100', 'file bytes') & ' ["' & __GetFileSize(@ScriptFullPath) & '"]'], _
+			["FileVersion", __GetLang('ENV_VAR_109', 'file version') & ' ["' & FileGetVersion(@ScriptFullPath) & '"]'], _
 			["FileSize", __GetLang('ENV_VAR_101', 'file size') & ' ["' & __ByteSuffix(__GetFileSize(@ScriptFullPath)) & '"]'], _
 			["FileType", __GetLang('ENV_VAR_12', 'file type') & ' ["Text document"]'], _
 			["Owner", __GetLang('ENV_VAR_77', 'file owner') & ' ["Lupo73"]'], _
@@ -2673,7 +2671,7 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 	EndIf
 
 	$cGUI = GUICreate(__GetLang('CUSTOMIZE_GUI', 'Customize Profiles'), $cSize[0], $cSize[1], -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_MAXIMIZEBOX, $WS_SIZEBOX), -1, __OnTop($cHandle))
-	GUISetIcon(@ScriptFullPath, -3, $cGUI) ; Use Custom.ico
+	GUISetIcon(@ScriptFullPath, -5, $cGUI) ; Use Custom.ico
 	$Global_ResizeMinWidth = 320 ; Set Default Min Width.
 	$Global_ResizeMaxWidth = @DesktopWidth ; Set Default Max Width.
 	$Global_ResizeMinHeight = 200 ; Set Default Min Height.
@@ -2725,17 +2723,17 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 	$Global_ListViewProfiles_Example[0] = $cExampleDummy
 
 	$cNew = GUICtrlCreateButton("N", 15, $cSize[1] - 31, 70, 25, $BS_ICON)
-	GUICtrlSetImage($cNew, @ScriptFullPath, -23, 0)
+	GUICtrlSetImage($cNew, @ScriptFullPath, -25, 0)
 	GUICtrlSetTip($cNew, __GetLang('NEW', 'New'))
 	GUICtrlSetResizing($cNew, $GUI_DOCKSIZE + $GUI_DOCKLEFT + $GUI_DOCKBOTTOM)
 
 	$cGetImages = GUICtrlCreateButton("I", ($cSize[0] - 70) / 2, $cSize[1] - 31, 70, 25, $BS_ICON)
-	GUICtrlSetImage($cGetImages, @ScriptFullPath, -24, 0)
+	GUICtrlSetImage($cGetImages, @ScriptFullPath, -26, 0)
 	GUICtrlSetTip($cGetImages, __GetLang('IMAGE_GET_LABEL_0', 'Get more target images online'))
 	GUICtrlSetResizing($cGetImages, $GUI_DOCKSIZE + $GUI_DOCKHCENTER + $GUI_DOCKBOTTOM)
 
 	$cClose = GUICtrlCreateButton("C", $cSize[0] - 15 - 70, $cSize[1] - 31, 70, 25, $BS_ICON)
-	GUICtrlSetImage($cClose, @ScriptFullPath, -22, 0)
+	GUICtrlSetImage($cClose, @ScriptFullPath, -24, 0)
 	GUICtrlSetTip($cClose, __GetLang('SAVE_CLOSE', 'Save & Close'))
 	GUICtrlSetResizing($cClose, $GUI_DOCKSIZE + $GUI_DOCKRIGHT + $GUI_DOCKBOTTOM)
 	GUICtrlSetState($cClose, $GUI_DEFBUTTON)
@@ -4512,14 +4510,14 @@ Func _Sorting_Extend()
 		GUICtrlSetResizing($Global_ListViewProcessControl, $GUI_DOCKHEIGHT + $GUI_DOCKLEFT + $GUI_DOCKRIGHT + $GUI_DOCKTOP) ; Needed To Correctly Resize ListView.
 		WinMove($sNameGUI, "", $sPos[0], $sPos[1], $sPos[2], 188)
 		GUICtrlSetTip($Global_ExtendButton, __GetLang('POSITIONPROCESS_9', 'More'))
-		GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -20, 0)
+		GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -22, 0)
 	Else ; Show The Extended GUI.
 		$G_Global_ExtendGUI = 1
 		$Global_ResizeMinHeight += 100 ; Fix Default Min Height.
 		$Global_ResizeMaxHeight = @DesktopHeight ; Fix Default Max Height.
 		WinMove($sNameGUI, "", $sPos[0], $sPos[1], $sPos[2], 188 + $Global_ResizeCurrentDiff)
 		GUICtrlSetTip($Global_ExtendButton, __GetLang('POSITIONPROCESS_10', 'Less'))
-		GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -21, 0)
+		GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -23, 0)
 		GUICtrlSetResizing($Global_ListViewProcessControl, $GUI_DOCKBORDERS) ; Needed To Correctly Resize ListView.
 	EndIf
 EndFunc   ;==>_Sorting_Extend
@@ -4544,14 +4542,14 @@ Func _Sorting_Pause($sMainArray, $sMode = 0)
 
 	If $sMode = 1 Then
 		GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_7', 'Start'))
-		GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -18, 0)
+		GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -20, 0)
 	ElseIf $sMode = 2 Then
 		GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_8', 'Done'))
-		GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -22, 0)
+		GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -24, 0)
 		GUICtrlSetState($Global_AbortButton, $GUI_DISABLE)
 	Else
 		GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_4', 'Resume'))
-		GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -18, 0)
+		GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -20, 0)
 	EndIf
 
 	__ExpandEventMode(0) ; Disable Event Buttons.
@@ -4565,7 +4563,7 @@ Func _Sorting_Pause($sMainArray, $sMode = 0)
 			Case $Global_PauseButton
 				$G_Global_PauseSorting = 0
 				GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_3', 'Pause'))
-				GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -17, 0)
+				GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -19, 0)
 			Case $Global_ExtendButton
 				_Sorting_Extend() ; Show/Hide The Extended GUI.
 			Case $sInfoDummy
@@ -4693,20 +4691,20 @@ Func _Sorting_CreateGUI($sProfile, $sMonitored)
 	$Global_ExtendButton = GUICtrlCreateButton("E", 250 - 110 - 58, 110, 58, 26, $BS_ICON)
 	GUICtrlSetTip($Global_ExtendButton, __GetLang('POSITIONPROCESS_9', 'More'))
 	GUICtrlSetOnEvent($Global_ExtendButton, '_Sorting_EventButtons')
-	GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -20, 0)
+	GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -22, 0)
 	GUICtrlSetResizing($Global_ExtendButton, $GUI_DOCKSIZE + $GUI_DOCKLEFT + $GUI_DOCKTOP)
 	GUICtrlSetState($Global_ExtendButton, $GUI_DISABLE) ; Enabled When MainArray Is Sorted.
 
 	$Global_PauseButton = GUICtrlCreateButton("P", 250 - 29, 110, 58, 26, $BS_ICON)
 	GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_3', 'Pause'))
 	GUICtrlSetOnEvent($Global_PauseButton, '_Sorting_EventButtons')
-	GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -17, 0)
+	GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -19, 0)
 	GUICtrlSetResizing($Global_PauseButton, $GUI_DOCKSIZE + $GUI_DOCKHCENTER + $GUI_DOCKTOP)
 
 	$Global_AbortButton = GUICtrlCreateButton("X", 250 + 110, 110, 58, 26, $BS_ICON)
 	GUICtrlSetTip($Global_AbortButton, __GetLang('POSITIONPROCESS_2', 'Stop'))
 	GUICtrlSetOnEvent($Global_AbortButton, '_Sorting_EventButtons')
-	GUICtrlSetImage($Global_AbortButton, @ScriptFullPath, -16, 0)
+	GUICtrlSetImage($Global_AbortButton, @ScriptFullPath, -18, 0)
 	GUICtrlSetResizing($Global_AbortButton, $GUI_DOCKSIZE + $GUI_DOCKRIGHT + $GUI_DOCKTOP)
 
 	$sListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination') & "|" & __GetLang('STATUS', 'Status'), 0, 150, 500, 250, BitOR($LVS_NOSORTHEADER, $LVS_REPORT))
@@ -4938,7 +4936,7 @@ Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 	$sStringSplit = StringSplit($sDestination, "|") ; 1 = Destination Folder, 2 = Algorithm, 3 = Password, 4 = Remove Source.
 	ReDim $sStringSplit[5]
 	If @OSVersion = "WIN_2000" And StringInStr($sStringSplit[2], "AES") Then
-		MsgBox(0x30, __GetLang('DROP_EVENT_MSGBOX_15', 'Decryption Failed'), __GetLang('DROP_EVENT_MSGBOX_16', 'The selected algorithm is not supported on Windows 2000.'), 0, __OnTop($G_Global_SortingGUI))
+		MsgBox(0x30, __GetLang('DROP_EVENT_MSGBOX_15', 'Decryption Failed'), __GetLang('DROP_EVENT_MSGBOX_16', 'The selected algorithm is not supported on Windows 2000.'), 10, __OnTop($G_Global_SortingGUI))
 		Return SetError(2, 0, $sMainArray) ; Failed.
 	EndIf
 	$sAlgorithm = __GetAlgorithmString($sStringSplit[2], 1) ; Get Algorithm Code.
@@ -4977,7 +4975,7 @@ Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 	If @error Then
 		FileDelete($sDestination)
 		DirRemove($G_Global_TempDir, 1)
-		$sMsgBox = MsgBox(0x4, __GetLang('PASSWORD_MSGBOX_1', 'Password Not Correct'), __GetLang('PASSWORD_MSGBOX_6', 'Wrong algorithm or password to decrypt this file.') & @LF & __GetLang('PASSWORD_MSGBOX_7', 'Do you want to try with a different password?'), 0, __OnTop($G_Global_SortingGUI))
+		$sMsgBox = MsgBox(0x4, __GetLang('PASSWORD_MSGBOX_1', 'Password Not Correct'), __GetLang('PASSWORD_MSGBOX_6', 'Wrong algorithm or password to decrypt this file.') & @LF & __GetLang('PASSWORD_MSGBOX_7', 'Do you want to try with a different password?'), 10, __OnTop($G_Global_SortingGUI))
 		If $sMsgBox <> 6 Then
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
@@ -5040,7 +5038,7 @@ Func _Sorting_EncryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	$sStringSplit = StringSplit($sDestination, "|") ; 1 = Destination Folder, 2 = Algorithm, 3 = Password, 4 = Remove Source.
 	ReDim $sStringSplit[5]
 	If @OSVersion = "WIN_2000" And StringInStr($sStringSplit[2], "AES") Then
-		MsgBox(0x30, __GetLang('DROP_EVENT_MSGBOX_14', 'Encryption Failed'), __GetLang('DROP_EVENT_MSGBOX_16', 'The selected algorithm is not supported on Windows 2000.'), 0, __OnTop($G_Global_SortingGUI))
+		MsgBox(0x30, __GetLang('DROP_EVENT_MSGBOX_14', 'Encryption Failed'), __GetLang('DROP_EVENT_MSGBOX_16', 'The selected algorithm is not supported on Windows 2000.'), 10, __OnTop($G_Global_SortingGUI))
 		Return SetError(2, 0, $sMainArray) ; Failed.
 	EndIf
 	$sDestination = $sStringSplit[1]
@@ -5163,7 +5161,7 @@ Func _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 		If $sPassword = "" Then
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
-		$sMsgBox = MsgBox(0x4, __GetLang('PASSWORD_MSGBOX_1', 'Password Not Correct'), __GetLang('PASSWORD_MSGBOX_8', 'Wrong password to extract this archive.') & @LF & __GetLang('PASSWORD_MSGBOX_7', 'Do you want to try with a different password?'), 0, __OnTop($G_Global_SortingGUI))
+		$sMsgBox = MsgBox(0x4, __GetLang('PASSWORD_MSGBOX_1', 'Password Not Correct'), __GetLang('PASSWORD_MSGBOX_8', 'Wrong password to extract this archive.') & @LF & __GetLang('PASSWORD_MSGBOX_7', 'Do you want to try with a different password?'), 10, __OnTop($G_Global_SortingGUI))
 		If $sMsgBox <> 6 Then
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
@@ -5773,7 +5771,7 @@ Func _Sorting_RunDelete($sSource, $sMode = 1)
 	Return 1
 EndFunc   ;==>_Sorting_RunDelete
 
-Func _Sorting_StartProgressCopy($sSource, $sDestination, $sAction)
+Func _Sorting_StartProgressCopy($sSource, $sDestination, $sAction) ; <<<<<<<<<<<<<<<<<<<<<<< http://www.autoitscript.com/forum/topic/121833-copy-udf/page-4
 	Local $sError
 
 	If $sAction == "$0" Then ; Move.
@@ -6352,7 +6350,7 @@ Func _Options($oHandle = -1)
 	$oCheckItems[4] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_6', 'Integrate in SendTo menu'), 25, 30 + 15 + 60, 290, 20)
 	$oCheckModeItems[1] = GUICtrlCreateCheckbox("", 25 + 295, 30 + 15 + 60, 20, 20)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_1', 'This integration is created at DropIt startup and removed at closing.'), __GetLang('OPTIONS_PORTABLE_MODE', 'Portable Mode'), 0)
-	$oCheckModeItems[2] = GUICtrlCreateIcon(@ScriptFullPath, -14, 25 + 315, 30 + 15 + 60 + 1, 16, 16)
+	$oCheckModeItems[2] = GUICtrlCreateIcon(@ScriptFullPath, -16, 25 + 315, 30 + 15 + 60 + 1, 16, 16)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_1', 'This integration is created at DropIt startup and removed at closing.'), __GetLang('OPTIONS_PORTABLE_MODE', 'Portable Mode'), 0)
 	$oCheckItems[3] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_8', 'Enable multiple instances'), 25, 30 + 15 + 80)
 	$oCheckItems[18] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_20', 'Check for updates at DropIt startup'), 25, 30 + 15 + 100)
@@ -6373,7 +6371,7 @@ Func _Options($oHandle = -1)
 
 	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_7', 'Activity Log'), 10, 330, 359, 50)
 	$oCheckItems[5] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_1', 'Write log file'), 25, 330 + 15 + 3, 190, 20)
-	$oLogRemove = GUICtrlCreateIcon(@ScriptFullPath, -15, 25 + 216, 330 + 15 + 4, 16, 16)
+	$oLogRemove = GUICtrlCreateIcon(@ScriptFullPath, -17, 25 + 216, 330 + 15 + 4, 16, 16)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_17', 'Remove log file'))
 	$oLogView = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_0', 'View'), 25 + 240, 330 + 15 + 2, 90, 22)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
@@ -6922,10 +6920,10 @@ Func _Monitored_Edit_GUI($mHandle, $mINI, $mListView, $mIndex = -1, $mFolder = -
 	GUICtrlSetState($mInput_Folder, $GUI_DROPACCEPTED)
 	$mButton_Folder = GUICtrlCreateButton("S", 10 + 243, 15, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Folder, __GetLang('SEARCH', 'Search'))
-	GUICtrlSetImage($mButton_Folder, @ScriptFullPath, -6, 0)
+	GUICtrlSetImage($mButton_Folder, @ScriptFullPath, -8, 0)
 	$mButton_Abbreviations = GUICtrlCreateButton("A", 10 + 284, 15, 36, 25, $BS_ICON)
 	GUICtrlSetTip($mButton_Abbreviations, __GetLang('MANAGE_EDIT_MSGBOX_8', 'Abbreviations'))
-	GUICtrlSetImage($mButton_Abbreviations, @ScriptFullPath, -8, 0)
+	GUICtrlSetImage($mButton_Abbreviations, @ScriptFullPath, -10, 0)
 	$mCombo_Profile = GUICtrlCreateCombo("", 10, 15 + 35, 320, 22, 0x0003)
 	GUICtrlSetTip($mCombo_Profile, __GetLang('MONITORED_FOLDER_TIP_1', 'Select the group of associations to use on this folder.'))
 	GUICtrlSetData($mCombo_Profile, __ProfileList_Combo(), $mProfile[1])

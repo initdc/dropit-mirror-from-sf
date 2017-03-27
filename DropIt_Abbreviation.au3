@@ -251,8 +251,8 @@ EndFunc   ;==>_ContextMenuAbbreviations
 
 Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDir = "")
 	Local $sLoadedProperty
-	Local $aEnvArray[127][3] = [ _
-			[126, 0, 0], _
+	Local $aEnvArray[128][3] = [ _
+			[127, 0, 0], _
 			["FileExt", 0, 1], _
 			["FileName", 0, 2], _
 			["FileNameExt", 0, 3], _
@@ -262,6 +262,7 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 			["ParentDirName", 0, 7], _
 			["SubDir", 0, 8], _
 			["FileDrive", 0, 9], _
+			["FileVersion", 0, 10], _
 			["PortableDrive", 5, 25], _
 			["ProfileName", 5, 26], _
 			["Owner", 1, 8], _
@@ -491,6 +492,8 @@ Func __GetFileParameter($sFilePath, $sMainDir, $iParameterCode)
 			$sReturn = StringTrimLeft(__GetParentFolder($sFilePath), StringLen($sMainDir))
 		Case 9 ; File Drive Letter.
 			$sReturn = StringTrimRight(__GetDrive($sFilePath), 1)
+		Case 10 ; File Version.
+			$sReturn = FileGetVersion($sFilePath)
 	EndSwitch
 
 	Return $sReturn

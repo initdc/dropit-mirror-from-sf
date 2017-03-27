@@ -7,11 +7,11 @@
 #include <GUIImageList.au3>
 #include <GUIListView.au3>
 #include <GUIMenu.au3>
-#include <WinAPI.au3>
-#include <WinAPITheme.au3>
 
+#include "APIConstants.au3"
 #include "DropIt_LibVarious.au3"
 #include "Resources.au3"
+#include "WinAPIEx.au3"
 
 Func __ImageConvert($sImagePath, $sSaveDirectory, $sFileExtension = "PNG")
 	#cs

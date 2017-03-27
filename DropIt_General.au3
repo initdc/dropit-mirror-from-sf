@@ -6,15 +6,16 @@
 #include <GUIComboBoxEx.au3>
 #include <GUIConstantsEx.au3>
 #include <GUIImageList.au3>
-#include <WinAPI.au3>
 
 #include "DropIt_Association.au3"
 #include "DropIt_Duplicate.au3"
 #include "DropIt_Global.au3"
 #include "DropIt_ProfileList.au3"
+#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibImages.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
+#include "Lib\udf\WinAPIEx.au3"
 
 Global $G_General_Language
 
@@ -294,7 +295,7 @@ Func __GetProfile($gINI = -1, $gProfile = -1, $gProfileDirectory = -1, $gArray =
 	EndIf
 	If FileExists($gProfileDefault[1][0] & $gProfile & ".ini") = 0 And $gProfile <> "Default" Then ; Check If Profile Exists.
 		If $CmdLine[0] = 0 Then
-			MsgBox(0x30, __GetLang('CMDLINE_MSGBOX_0', 'Profile not found'), __GetLang('CMDLINE_MSGBOX_1', 'It appears DropIt is using an invalid Profile.') & @LF & __GetLang('CMDLINE_MSGBOX_2', 'It will be started using "Default" profile.'), 0, __OnTop())
+			MsgBox(0x30, __GetLang('CMDLINE_MSGBOX_0', 'Profile not found'), __GetLang('CMDLINE_MSGBOX_1', 'It appears DropIt is using an invalid Profile.') & @LF & __GetLang('CMDLINE_MSGBOX_2', 'It will be started using "Default" profile.'), 10, __OnTop())
 		EndIf
 		$gProfile = "Default" ; Default Profile Name.
 		__SetCurrentProfile($gProfile) ; Write Default Profile Name To The Settings INI File.
@@ -481,7 +482,7 @@ Func __IsProfileUnique($sProfile, $sShowMessage = 0, $hHandle = -1)
 		$aProfileList[$A] = StringReplace(StringStripWS($aProfileList[$A], 7), " ", "_")
 		If StringCompare($aProfileList[$A], $sProfile, 0) = 0 Then
 			If $sShowMessage Then
-				MsgBox(0x40, __GetLang('PROFILEUNIQUE_MSGBOX_0', 'Name not available'), __GetLang('PROFILEUNIQUE_MSGBOX_1', 'This profile name already exists.'), 0, __OnTop($hHandle))
+				MsgBox(0x40, __GetLang('PROFILEUNIQUE_MSGBOX_0', 'Name not available'), __GetLang('PROFILEUNIQUE_MSGBOX_1', 'This profile name already exists.'), 10, __OnTop($hHandle))
 			EndIf
 			Return SetError(1, 1, $sProfile)
 		EndIf
@@ -504,7 +505,7 @@ Func __EnsureDirExists($sDestination)
 	EndIf
 	If FileExists($sDestination) = 0 And $sDestination <> "" Then
 		If DirCreate($sDestination) = 0 Then
-			MsgBox(0x40, __GetLang('POSITIONPROCESS_MSGBOX_3', 'Destination Folder Problem'), __GetLang('POSITIONPROCESS_MSGBOX_5', 'The following destination folder does not exist and cannot be created:') & @LF & _WinAPI_PathCompactPathEx($sDestination, 70), 0, __OnTop($G_Global_SortingGUI))
+			MsgBox(0x40, __GetLang('POSITIONPROCESS_MSGBOX_3', 'Destination Folder Problem'), __GetLang('POSITIONPROCESS_MSGBOX_5', 'The following destination folder does not exist and cannot be created:') & @LF & _WinAPI_PathCompactPathEx($sDestination, 70), 10, __OnTop($G_Global_SortingGUI))
 			Return SetError(1, 0, 0)
 		EndIf
 	EndIf

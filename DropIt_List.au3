@@ -2,15 +2,15 @@
 ; List funtions of DropIt
 
 #include-once
-#include <WinAPI.au3>
-
 #include "DropIt_Abbreviation.au3"
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
+#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
 #include "Lib\udf\HashForFile.au3"
 #include "Lib\udf\MPDF.au3"
+#include "Lib\udf\WinAPIEx.au3"
 
 Func __ConvertListProperties($cListProperties, $cProfileName, $cAssociationName)
 	#cs

@@ -42,5 +42,9 @@ Startup Library (Startup.au3)
 http://www.autoitscript.com/forum/topic/124508-startup-create-startup-entries-in-the-startup-folder-or-registry/
 
 
+WinAPI Extended Library (WinAPIEx.au3)
+http://www.autoitscript.com/forum/topic/98712-winapiex-udf/
+
+
 WM_COPYDATA Library (WM_COPYDATA.au3)
 http://www.autoitscript.com/forum/topic/119502-solved-wm-copydata-x64-issue/
