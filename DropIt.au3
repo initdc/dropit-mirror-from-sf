@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt - Sort your files with a drop
-#AutoIt3Wrapper_Res_Fileversion=1.1.0.0
-#AutoIt3Wrapper_Res_ProductVersion=1.1.0.0
+#AutoIt3Wrapper_Res_Fileversion=1.1.1.0
+#AutoIt3Wrapper_Res_ProductVersion=1.1.1.0
 #AutoIt3Wrapper_Res_LegalCopyright=Lupo PenSuite Team
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.lupopensuite.com
@@ -60,13 +60,15 @@ __ExpandEnvStrings(0)
 ; <<<<< Variables >>>>>
 Global $Global_GUI_1, $Global_GUI_2 ; GUI Handles.
 Global $Global_Icon_1 ; Icons Handle.
-Global $Global_TrayMenu[7] = [6] ; TrayMenu Array.
+Global $Global_TrayMenu[14][2] = [[13, 2]] ; TrayMenu Array.
 Global $Global_Customize, $Global_ListViewIndex = -1, $Global_ListViewRules, $Global_ListViewProfiles, $Global_Manage ; ListView Variables.
+Global $Global_ListViewProfiles_Delete, $Global_ListViewProfiles_Enter, $Global_ListViewProfiles_New ; ContextMenu ListViewProfiles Variables.
+Global $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New ; ContextMenu ListViewManage Variables.
 Global $Global_Slider, $Global_SliderLabel ; _Customize_GUI_Edit().
 Global $Global_CompressionEnabled, $Global_DroppedFiles[1] ; Misc.
 Global $UniqueID = "DropIt_E15FF08B-84AC-472A-89BF-5F92DB683165" ; WM_COPYDATA.
 Global $Global_MultipleInstance = 0 ; Multiple Instances.
-Global $Global_LockPosition = 0
+Global $oGlobal_PW_Code = "93fmj342c34cm9j5t" ; Master Password For Encryption (It Is An Example, The Compiled One Is Different).
 ; <<<<< Variables. >>>>>
 
 ; <<<<< ContextMenu. >>>>>
@@ -87,8 +89,8 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 	Local $mGUI = $Global_Manage
 	Local $mTips = __Lang_Get('MANAGE_GUI_MSGBOX_1', '- As destination folders are supported both absolute ("C:\Lupo\My Images") and relative ("..\My Images") paths.  @LF  @LF  - If you want to use different pattern groups, for example on different computers, you can click "Profiles" >> "Customize" to create and manage them.  @LF  @LF  - If you want to ignore files that match with a specified pattern, you can select "Exclude" association type and not insert a destination folder.  @LF  @LF  - If you want to compress files that match with a specified pattern, you can select "Compress" association type.')
 
-	Local $mListView, $mListView_Handle, $mNew, $mDelete, $mHelp, $mClose, $mEnter, $mText, $mType, $mStringSplit
-	Local $mIndex_Selected, $mAssociate
+	Local $mListView, $mListView_Handle, $mNew, $mDeleteDummy, $mHelp, $mClose, $mEnterDummy, $mText, $mType, $mStringSplit
+	Local $mIndex_Selected, $mAssociate, $mNewDummy
 
 	Local $mProfile = __IsProfile(-1, 0) ; Get Array Of Current Profile.
 
@@ -107,8 +109,13 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 
 	_Manage_Update($mListView_Handle, $mProfile[1]) ; Add/Update The ListView With The Custom Patterns.
 
-	$mDelete = GUICtrlCreateDummy()
-	$mEnter = GUICtrlCreateDummy()
+	$mDeleteDummy = GUICtrlCreateDummy()
+	$Global_ListViewRules_Delete = $mDeleteDummy
+	$mEnterDummy = GUICtrlCreateDummy()
+	$Global_ListViewRules_Enter = $mEnterDummy
+	$mNewDummy = GUICtrlCreateDummy()
+	$Global_ListViewRules_New = $mNewDummy
+
 	$mNew = GUICtrlCreateButton("&" & __Lang_Get('NEW', 'New'), 210 - 90 - 78, 240, 78, 26)
 	GUICtrlSetTip($mNew, __Lang_Get('MANAGE_GUI_TIP_0', 'Click to add a pattern or Right-click a pattern to manage it.'))
 	$mHelp = GUICtrlCreateButton("&" & __Lang_Get('HELP', 'Help'), 210 - 38, 240, 76, 26)
@@ -120,7 +127,7 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 	$Global_ListViewIndex = -1 ; Set As No Item Selected.
 	GUIRegisterMsg(0x004E, "WM_NOTIFY")
 	GUISetState(@SW_SHOW)
-	Local $cHotKeys[3][2] = [["^n", $mNew],["{DELETE}", $mDelete],["{ENTER}", $mEnter]]
+	Local $cHotKeys[3][2] = [["^n", $mNewDummy],["{DELETE}", $mDeleteDummy],["{ENTER}", $mEnterDummy]]
 	GUISetAccelerators($cHotKeys)
 
 	While 1
@@ -132,17 +139,17 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 			Case $GUI_EVENT_CLOSE, $mClose
 				ExitLoop
 
-			Case $mNew
+			Case $mNew, $mNewDummy
 				$mAssociate = _Manage_Edit_GUI(-1, -1, -1, -1, -1, $mGUI, 1) ; Show Manage Edit GUI For New Pattern.
 				If $mAssociate = 1 Then $mProfile = _Manage_Update($mListView_Handle, $mProfile) ; Add/Update The ListView With The Custom Patterns.
 
 			Case $mHelp
 				_ExtMsgBox(0, __Lang_Get('OK', 'OK'), __Lang_Get('MANAGE_GUI_MSGBOX_0', 'Tips and Tricks'), $mTips, 0, __OnTop())
 
-			Case $mDelete
+			Case $mDeleteDummy
 				_Manage_Delete($mListView_Handle, $mIndex_Selected, $mProfile[0]) ; Delete Selected Pattern From Current Profile & ListView.
 
-			Case $mEnter
+			Case $mEnterDummy
 				$mIndex_Selected = _GUICtrlListView_GetSelectionMark($mListView_Handle)
 				If Not _GUICtrlListView_GetItemState($mListView_Handle, $mIndex_Selected, $LVIS_SELECTED) Then ContinueLoop
 
@@ -427,15 +434,10 @@ EndFunc   ;==>_Manage_Update
 
 Func _GUICtrlListView_ContextMenu_Manage($cmListView, $cmIndex, $cmSubItem)
 	#forceref $cmSubItem
-	Local $cmGUIManage = $Global_Manage
 	Local Enum $cmItem1 = 1000, $cmItem2, $cmItem3
-	Local $cmStringSplit, $mType, $cmProfile
-
-	$cmProfile = __IsProfile(-1, 1) ; Get Profile Path Of Current Profile.
 
 	If Not IsHWnd($cmListView) Then $cmListView = GUICtrlGetHandle($cmListView)
-	Local $cmText = _GUICtrlListView_GetItemText($cmListView, $cmIndex)
-	Local $cmType = _GUICtrlListView_GetItemText($cmListView, $cmIndex, 1)
+
 	Local $cmContextMenu = _GUICtrlMenu_CreatePopup()
 	If $cmIndex <> -1 And $cmSubItem <> -1 Then ; Won't Show These MenuItem(s) Unless An Item Is Selected.
 		_GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('EDIT', 'Edit'), $cmItem1)
@@ -447,26 +449,13 @@ Func _GUICtrlListView_ContextMenu_Manage($cmListView, $cmIndex, $cmSubItem)
 
 	Switch _GUICtrlMenu_TrackPopupMenu($cmContextMenu, $cmListView, -1, -1, 1, 1, 2)
 		Case $cmItem1
-			If $cmType = "Exclude" Then
-				$cmType = $cmText & "$"
-			ElseIf $cmType = "Compress" Then
-				$cmType = $cmText & "&"
-			Else
-				$cmType = $cmText
-			EndIf
-			$cmStringSplit = StringSplit(IniRead($cmProfile, "Patterns", $cmType, ""), "|") ; Seperate Directory & Description.
-			If $cmStringSplit[0] = 1 Then Local $cmStringSplit[3] = [2, $cmStringSplit[1], ""]
-			$mType = _Manage_GetType($cmListView, $cmIndex) ; Get Pattern Type [Normal, Compress, Exclude].
-			_Manage_Edit_GUI(-1, $cmStringSplit[2], $cmText, $mType, $cmStringSplit[1], $cmGUIManage, 0) ; Show Manage Edit GUI For Selected Pattern.
-			_Manage_Update($cmListView, -1) ; Add/Update The ListView With The Custom Patterns.
-			_GUICtrlListView_SetItemSelected($cmListView, $cmIndex, True, True)
+			GUICtrlSendToDummy($Global_ListViewRules_Enter)
 
 		Case $cmItem2
-			_Manage_Delete($cmListView, $cmIndex, $cmProfile[0]) ; Delete Selected Pattern From Current Profile & ListView.
+			GUICtrlSendToDummy($Global_ListViewRules_Delete)
 
 		Case $cmItem3
-			_Manage_Edit_GUI(-1, -1, -1, -1, -1, $cmGUIManage, 1) ; Show Manage Edit GUI For New Pattern.
-			_Manage_Update($cmListView, -1) ; Add/Update The ListView With The Custom Patterns.
+			GUICtrlSendToDummy($Global_ListViewRules_New)
 
 	EndSwitch
 	_GUICtrlMenu_DestroyMenu($cmContextMenu)
@@ -478,7 +467,8 @@ EndFunc   ;==>_GUICtrlListView_ContextMenu_Manage
 Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 	Local $cGUI = $Global_Customize
 
-	Local $cProfileDirectory, $cListView, $cListView_Handle, $cNew, $cDelete, $cClose, $cEnter, $cIndex_Selected, $cText, $cImage, $cSizeText, $cTransparency
+	Local $cProfileDirectory, $cListView, $cListView_Handle, $cNew, $cClose, $cIndex_Selected, $cText, $cImage, $cSizeText, $cTransparency
+	Local $cDeleteDummy, $cEnterDummy, $cNewDummy
 
 	$cProfileDirectory = __GetDefault(2) ; Get Default Profile Directory.
 
@@ -502,8 +492,13 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 	_Customize_Update($cListView_Handle, $cProfileDirectory, $cProfileList) ; Add/Update Customise GUI With List Of Profiles.
 	If @error Then SetError(1, 1, 0) ; Exit Function If No Profiles.
 
-	$cDelete = GUICtrlCreateDummy()
-	$cEnter = GUICtrlCreateDummy()
+	$cDeleteDummy = GUICtrlCreateDummy()
+	$Global_ListViewProfiles_Delete = $cDeleteDummy
+	$cEnterDummy = GUICtrlCreateDummy()
+	$Global_ListViewProfiles_Enter = $cEnterDummy
+	$cNewDummy = GUICtrlCreateDummy()
+	$Global_ListViewProfiles_New = $cNewDummy
+
 	$cNew = GUICtrlCreateButton("&" & __Lang_Get('NEW', 'New'), 160 - 30 - 74, 175, 74, 25)
 	GUICtrlSetTip($cNew, __Lang_Get('CUSTOMIZE_GUI_TIP_0', 'Click to add a profile or Right-click a profile to manage it.'))
 	$cClose = GUICtrlCreateButton("&" & __Lang_Get('CLOSE', 'Close'), 160 + 30, 175, 74, 25)
@@ -513,7 +508,7 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 	$Global_ListViewIndex = -1 ; Set As No Item Selected.
 	GUIRegisterMsg($WM_NOTIFY, "WM_NOTIFY")
 	GUISetState(@SW_SHOW)
-	Local $cHotKeys[3][2] = [["^n", $cNew],["{DELETE}", $cDelete],["{ENTER}", $cEnter]]
+	Local $cHotKeys[3][2] = [["^n", $cNewDummy],["{DELETE}", $cDeleteDummy],["{ENTER}", $cEnterDummy]]
 	GUISetAccelerators($cHotKeys)
 
 	While 1
@@ -523,14 +518,14 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 			Case $cClose, $GUI_EVENT_CLOSE
 				ExitLoop
 
-			Case $cNew
+			Case $cNew, $cNewDummy
 				_Customize_Edit_GUI($cGUI, -1, -1, -1, -1, 1) ; Show Customize Edit GUI For New Profile.
 				_Customize_Update($cListView_Handle, $cProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
 
-			Case $cDelete
+			Case $cDeleteDummy
 				_Customize_Delete($cListView_Handle, _GUICtrlListView_GetSelectionMark($cListView_Handle), $cProfileDirectory, -1, $cGUI) ; Delete Profile From The Default Profile Directory & ListView.
 
-			Case $cEnter
+			Case $cEnterDummy
 				$cIndex_Selected = _GUICtrlListView_GetSelectionMark($cListView_Handle)
 				If Not _GUICtrlListView_GetItemState($cListView_Handle, $cIndex_Selected, $LVIS_SELECTED) Then ContinueLoop
 
@@ -628,7 +623,6 @@ Func _Customize_Edit_GUI($cHandle = -1, $cProfile = -1, $cImage = -1, $cSizeText
 
 	GUISetState(@SW_SHOW, $cGUI)
 	GUISetState(@SW_SHOW, $cIcon_GUI)
-	GUICtrlSetState($cInput_Name, 576)
 
 	GUIRegisterMsg(0x0114, "WM_HSCROLL") ; Required For Changing The Label Next To The Slider.
 
@@ -861,17 +855,10 @@ EndFunc   ;==>_Customize_Update
 
 Func _GUICtrlListView_ContextMenu_Customize($cmListView, $cmIndex, $cmSubItem)
 	#forceref $cmSubItem
-	Local $cmGUICustomize = $Global_Customize
 	Local Enum $cmItem1 = 1000, $cmItem2, $cmItem3
-	Local $cmProfileDirectory
-
-	$cmProfileDirectory = __GetDefault(2) ; Get Default Profile Directory.
 
 	If Not IsHWnd($cmListView) Then $cmListView = GUICtrlGetHandle($cmListView)
-	Local $cmText = _GUICtrlListView_GetItemText($cmListView, $cmIndex)
-	Local $cmImage = _GUICtrlListView_GetItemText($cmListView, $cmIndex, 1)
-	Local $cmSizeText = _GUICtrlListView_GetItemText($cmListView, $cmIndex, 2)
-	Local $cmTransparency = _GUICtrlListView_GetItemText($cmListView, $cmIndex, 3)
+
 	Local $cmContextMenu = _GUICtrlMenu_CreatePopup()
 	If $cmIndex <> -1 And $cmSubItem <> -1 Then ; Won't Show These MenuItem(s) Unless An Item Is Selected.
 		_GUICtrlMenu_AddMenuItem($cmContextMenu, __Lang_Get('EDIT', 'Edit'), $cmItem1)
@@ -883,17 +870,13 @@ Func _GUICtrlListView_ContextMenu_Customize($cmListView, $cmIndex, $cmSubItem)
 
 	Switch _GUICtrlMenu_TrackPopupMenu($cmContextMenu, $cmListView, -1, -1, 1, 1, 2)
 		Case $cmItem1
-			_Customize_Edit_GUI($cmGUICustomize, $cmText, $cmImage, $cmSizeText, $cmTransparency, 0) ; Show Customize Edit GUI Of Selected Profile.
-			_Customize_Update($cmListView, $cmProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
-			_GUICtrlListView_SetItemSelected($cmListView, $cmIndex, True, True)
+			GUICtrlSendToDummy($Global_ListViewProfiles_Enter)
 
 		Case $cmItem2
-			_Customize_Delete($cmListView, $cmIndex, $cmProfileDirectory, $cmText, $cmGUICustomize) ; Delete Profile From The Default Profile Directory & ListView.
+			GUICtrlSendToDummy($Global_ListViewProfiles_Delete)
 
 		Case $cmItem3
-			_Customize_Edit_GUI($cmGUICustomize, -1, -1, -1, -1, 1) ; Show Customize Edit GUI For New Profile.
-			_Customize_Update($cmListView, $cmProfileDirectory, -1) ; Add/Update Customise GUI With List Of Profiles.
-			_GUICtrlListView_SetItemSelected($cmListView, $cmIndex, True, True)
+			GUICtrlSendToDummy($Global_ListViewProfiles_New)
 
 	EndSwitch
 	_GUICtrlMenu_DestroyMenu($cmContextMenu)
@@ -1642,12 +1625,12 @@ Func _Refresh($rProfileList = -1, $rHideGUI_1 = 0) ; 0 = Show The Main GUI & 1 =
 
 	; Context Menu - These Have To Be Global Variables.
 	$Global_ContextMenu = GUICtrlCreateContextMenu($rIcon_1)
-	$Global_ContextManage = GUICtrlCreateMenuItem(__Lang_Get('MANAGE', 'Manage'), $Global_ContextMenu, 0)
+	$Global_ContextManage = GUICtrlCreateMenuItem(__Lang_Get('PATTERNS', 'Patterns'), $Global_ContextMenu, 0)
 	GUICtrlCreateMenuItem("", $Global_ContextMenu, 1)
 	$Global_ContextProfiles = GUICtrlCreateMenu(__Lang_Get('PROFILES', 'Profiles'), $Global_ContextMenu, 2)
-	$Global_ContextHelp = GUICtrlCreateMenu(__Lang_Get('HELP', 'Help'), $Global_ContextMenu, 3)
-	$Global_ContextOptions = GUICtrlCreateMenuItem(__Lang_Get('OPTIONS', 'Options'), $Global_ContextMenu, 4)
-	$Global_ContextHide = GUICtrlCreateMenuItem(__Lang_Get('HIDE', 'Hide'), $Global_ContextMenu, 5)
+	$Global_ContextOptions = GUICtrlCreateMenuItem(__Lang_Get('OPTIONS', 'Options'), $Global_ContextMenu, 3)
+	$Global_ContextHide = GUICtrlCreateMenuItem(__Lang_Get('HIDE', 'Hide'), $Global_ContextMenu, 4)
+	$Global_ContextHelp = GUICtrlCreateMenu(__Lang_Get('HELP', 'Help'), $Global_ContextMenu, 5)
 	GUICtrlCreateMenuItem("", $Global_ContextMenu, 6)
 	$Global_ContextExit = GUICtrlCreateMenuItem(__Lang_Get('EXIT', 'Exit'), $Global_ContextMenu, 7)
 	$Global_ContextCustom = GUICtrlCreateMenuItem(__Lang_Get('CUSTOMIZE', 'Customize'), $Global_ContextProfiles)
@@ -1723,9 +1706,9 @@ Func _Options($oHandle = -1)
 			["General", "ArchiveEncryptMethod", 2], _
 			["General", "ArchivePassword", 1]]
 
-	Local $oPW, $oPW_Code = "3Tj45y4t0v53h23mr"
+	Local $oPW, $oPW_Code = $oGlobal_PW_Code
 	Local $oLogFile = __GetDefault(513) ; Get Default Directory & LogFile File Name.
-	Local $oGUI, $oLog, $oWriteLog, $oBackup, $oRestore, $oClear, $oState, $oPassword, $oShowPassword, $oTab, $oOK, $oCancel
+	Local $oGUI, $oLog, $oWriteLog, $oBackup, $oRestore, $oClear, $oState, $oPassword, $oShowPassword, $oTab, $oOK, $oCancel, $oMsgBox
 
 	$oGUI = GUICreate(__Lang_Get('OPTIONS', 'Options'), 300, 345, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($oHandle))
 
@@ -2061,6 +2044,14 @@ Func _Options($oHandle = -1)
 				$oPW = ""
 				If Not StringIsSpace(GUICtrlRead($oPassword)) And GUICtrlRead($oPassword) <> "" Then $oPW = _StringEncrypt(1, GUICtrlRead($oPassword), $oPW_Code)
 				IniWrite($oINI, $oINI_Various_Array[8][0], $oINI_Various_Array[8][1], $oPW)
+				If $oPW = "" And GUICtrlRead($oCheckItems[11]) = 1 Then
+					$oMsgBox = _ExtMsgBox(0, __Lang_Get('YES', 'Yes') & "|" & __Lang_Get('NO', 'No'), __Lang_Get('OPTIONS_ENCRYPTION_MSGBOX_0', 'Encryption is enabled'), __Lang_Get('OPTIONS_ENCRYPTION_MSGBOX_1', 'It appears the Password for Encryption is Blank, do you wish to disable?'), 0, __OnTop($oGUI))
+					If $oMsgBox = 1 Then
+						IniWrite($oINI, $oINI_TrueOrFalse_Array[11][0], $oINI_TrueOrFalse_Array[11][1], "False") ; Disable Encryption If Password Is Blank.
+						ExitLoop
+					EndIf
+					ContinueLoop
+				EndIf
 				ExitLoop
 
 		EndSwitch
@@ -2079,7 +2070,8 @@ Func _ExitEvent()
 
 	__SetCurrentPosition() ; Set Current Coordinates/Position Of DropIt.
 	If $Global_MultipleInstance Then __SetMultipleInstances("-")
-	If __Is("UseSendTo") And IniRead($eINI, "General", "SendToMode", "Portable") = "Portable" Then __SendTo_Uninstall() ; Delete SendTo Shortcuts If In Portable Mode.
+	__CheckMultipleInstances() ; Checks All Multiple Instances Are Running.
+	If __Is("UseSendTo") And IniRead($eINI, "General", "SendToMode", "Portable") = "Portable" And __GetMultipleInstances() = 0 Then __SendTo_Uninstall() ; Delete SendTo Shortcuts If In Portable Mode.
 	_GDIPlus_Shutdown()
 	__Log_Write(__Lang_Get('DROPIT_CLOSED', 'DropIt Closed'), __Lang_Get('DATE', 'Date') & " " & @MDAY & "-" & @MON & "-" & @YEAR)
 	Exit
@@ -2090,19 +2082,51 @@ EndFunc   ;==>_ExitEvent
 Func _TrayMenu_Create()
 	Local $tTrayMenu = _TrayMenu_Delete() ; Delete The Current TrayMenu Items.
 
-	$tTrayMenu[1] = TrayCreateItem(__Lang_Get('MANAGE', 'Manage'))
-	$tTrayMenu[2] = TrayCreateItem("")
-	$tTrayMenu[3] = TrayCreateItem(__Lang_Get('OPTIONS', 'Options'))
-	$tTrayMenu[4] = TrayCreateItem(__Lang_Get('SHOW', 'Show'))
-	$tTrayMenu[5] = TrayCreateItem("")
-	$tTrayMenu[6] = TrayCreateItem(__Lang_Get('EXIT', 'Exit'))
-	TrayItemSetOnEvent($tTrayMenu[1], "_ManageEvent")
-	TrayItemSetOnEvent($tTrayMenu[3], "_OptionsEvent")
-	TrayItemSetOnEvent($tTrayMenu[4], "_TrayMenu_ShowGUI")
-	TrayItemSetOnEvent($tTrayMenu[6], "_ExitEvent")
+	Local $tProfileList = __ProfileList() ; Get Array Of All Profiles.
+	$tTrayMenu[1][0] = TrayCreateItem(__Lang_Get('PATTERNS', 'Patterns'))
+	$tTrayMenu[2][0] = TrayCreateItem("")
+	$tTrayMenu[3][0] = TrayCreateMenu(__Lang_Get('PROFILES', 'Profiles'))
+	$tTrayMenu[4][0] = TrayCreateItem(__Lang_Get('OPTIONS', 'Options'))
+	$tTrayMenu[5][0] = TrayCreateItem(__Lang_Get('SHOW', 'Show'))
+	$tTrayMenu[6][0] = TrayCreateMenu(__Lang_Get('HELP', 'Help'))
+	$tTrayMenu[7][0] = TrayCreateItem("")
+	$tTrayMenu[8][0] = TrayCreateItem(__Lang_Get('EXIT', 'Exit'))
+
+	$tTrayMenu[12][0] = TrayCreateItem(__Lang_Get('CUSTOMIZE', 'Customize'), $tTrayMenu[3][0])
+	$tTrayMenu[13][0] = TrayCreateItem("", $tTrayMenu[3][0])
+
+	Local $B = $tTrayMenu[0][0] + 1
+	For $A = 1 To $tProfileList[0]
+		If UBound($tTrayMenu, 1) <= $tTrayMenu[0][0] + 1 Then ReDim $tTrayMenu[UBound($tTrayMenu, 1) * 2][$tTrayMenu[0][1]] ; ReDim's $tTrayMenu If More Items Are Required.
+		$tTrayMenu[$B][0] = TrayCreateItem($tProfileList[$A], $tTrayMenu[3][0], $A + 1, 1)
+		$tTrayMenu[$B][1] = $tProfileList[$A]
+		TrayItemSetOnEvent($tTrayMenu[$B][0], "_ProfileEvent")
+		If $tProfileList[$A] = __GetCurrentProfile() Then TrayItemSetState($tTrayMenu[$B][0], 1) ; __GetCurrentProfile = Get Current Profile From The Settings INI File.
+		$tTrayMenu[0][0] += 1
+		$B += 1
+	Next
+
+	$tTrayMenu[9][0] = TrayCreateItem(__Lang_Get('README', 'Readme'), $tTrayMenu[6][0])
+	$tTrayMenu[9][1] = 'README'
+	$tTrayMenu[10][0] = TrayCreateItem(__Lang_Get('GUIDE', 'Guide'), $tTrayMenu[6][0])
+	$tTrayMenu[10][1] = 'GUIDE'
+	$tTrayMenu[11][0] = TrayCreateItem(__Lang_Get('ABOUT', 'About') & "...", $tTrayMenu[6][0])
+	$tTrayMenu[11][1] = 'ABOUT'
+
+	TrayItemSetOnEvent($tTrayMenu[1][0], "_ManageEvent")
+	TrayItemSetOnEvent($tTrayMenu[4][0], "_OptionsEvent")
+	TrayItemSetOnEvent($tTrayMenu[5][0], "_TrayMenu_ShowGUI")
+	TrayItemSetOnEvent($tTrayMenu[6][0], "_TrayMenu_ShowGUI")
+	TrayItemSetOnEvent($tTrayMenu[8][0], "_ExitEvent")
+	TrayItemSetOnEvent($tTrayMenu[9][0], "_HelpEvent")
+	TrayItemSetOnEvent($tTrayMenu[10][0], "_HelpEvent")
+	TrayItemSetOnEvent($tTrayMenu[11][0], "_HelpEvent")
+	TrayItemSetOnEvent($tTrayMenu[12][0], "_CustomizeEvent")
 	TraySetOnEvent(-13, "_TrayMenu_ShowGUI")
 
+	ReDim $tTrayMenu[$tTrayMenu[0][0] + 1][$tTrayMenu[0][1]] ; Delete Empty Rows.
 	$Global_TrayMenu = $tTrayMenu
+
 	If Not @error Then Return 1
 	Return SetError(1, 1, 0)
 EndFunc   ;==>_TrayMenu_Create
@@ -2110,9 +2134,10 @@ EndFunc   ;==>_TrayMenu_Create
 Func _TrayMenu_Delete()
 	Local $tTrayMenu = $Global_TrayMenu
 
-	For $A = 1 To $tTrayMenu[0]
-		TrayItemDelete($tTrayMenu[$A])
+	For $A = 1 To $tTrayMenu[0][0]
+		TrayItemDelete($tTrayMenu[$A][0])
 	Next
+	Local $tTrayMenu[14][2] = [[13, 2]]
 	Return $tTrayMenu
 EndFunc   ;==>_TrayMenu_Delete
 
@@ -2143,6 +2168,32 @@ Func _TrayMenu_ShowGUI()
 	Return SetError(1, 1, 0)
 EndFunc   ;==>_TrayMenu_ShowGUI
 
+Func _CustomizeEvent()
+	_Customize_GUI($Global_GUI_1) ; Open Customize GUI.
+	_Refresh(-1, 1) ; Refresh The Main GUI & TrayMenu, Including Translation Strings & ContextMenu.
+
+	If Not @error Then Return 1
+	Return SetError(1, 1, 0)
+EndFunc   ;==>_CustomizeEvent
+
+Func _HelpEvent()
+	Local $hTrayMenu = $Global_TrayMenu
+	Switch @TRAY_ID
+		Case $hTrayMenu[9][0]
+			If FileExists(@ScriptDir & "\Guide.pdf") Then ShellExecute(@ScriptDir & "\Guide.pdf")
+
+		Case $hTrayMenu[10][0]
+			If FileExists(@ScriptDir & "\Readme.txt") Then ShellExecute(@ScriptDir & "\Readme.txt")
+
+		Case $hTrayMenu[11][0]
+			_About()
+
+	EndSwitch
+
+	If Not @error Then Return 1
+	Return SetError(1, 1, 0)
+EndFunc   ;==>_HelpEvent
+
 Func _ManageEvent()
 	_Manage_GUI() ; Open Manage GUI.
 	_Refresh(-1, 1) ; Refresh The Main GUI & TrayMenu, Including Translation Strings & ContextMenu.
@@ -2158,6 +2209,22 @@ Func _OptionsEvent()
 	If Not @error Then Return 1
 	Return SetError(1, 1, 0)
 EndFunc   ;==>_OptionsEvent
+
+Func _ProfileEvent()
+	Local $pTrayMenu = $Global_TrayMenu
+	For $A = 14 To $pTrayMenu[0][0]
+		If @TRAY_ID = $pTrayMenu[$A][0] Then
+			__Log_Write(__Lang_Get('MAIN_TIP_2', 'Changed Profile To'), $pTrayMenu[$A][1])
+			__SetCurrentProfile($pTrayMenu[$A][1]) ; Write Selected Profile Name To The Settings INI File.
+			ExitLoop
+		EndIf
+	Next
+	__SetCurrentPosition() ; Set Current Coordinates/Position Of DropIt.
+	_Refresh(-1, 1) ; Refresh The Main GUI & TrayMenu, Including Translation Strings & ContextMenu.
+
+	If Not @error Then Return 1
+	Return SetError(1, 1, 0)
+EndFunc   ;==>_ProfileEvent
 #Region End >>>>> TrayMenu Functions <<<<<
 
 #Region Start >>>>> WM_MESSAGES Functions <<<<<
@@ -2373,7 +2440,7 @@ Func __7ZipCommands($cType, $cDestinationFilePath, $cFlag = -1)
 			["", "", -1], _ ; Add Flag = 128 - Not Used.
 			["", "", -1]] ; Add Flag = 256 - Not Used.
 
-	Local $cINI_Value, $c7Zip_Value, $cNewCommands[3], $cHex, $cCommand, $cDecrypt
+	Local $cINI_Value, $c7Zip_Value, $cNewCommands[3], $cHex, $cCommand, $cDecrypt, $cPW_Code = $oGlobal_PW_Code
 	Local $cINI = __IsSettingsFile() ; Get Default Settings INI File.
 	If $cFlag = -1 Then $cFlag = 1 + 2 + 4 + 8 + 16 + 32 + 64 ; Default With Encryption (If Enabled).
 
@@ -2381,7 +2448,7 @@ Func __7ZipCommands($cType, $cDestinationFilePath, $cFlag = -1)
 		$cCommands[$A][1] = IniRead($cINI, "General", $cCommands[$A][2], $cCommands[$A][1])
 	Next
 
-	$cDecrypt = _StringEncrypt(0, $cCommands[5][1], "3Tj45y4t0v53h23mr")
+	$cDecrypt = _StringEncrypt(0, $cCommands[5][1], $cPW_Code)
 	If @error Then $cDecrypt = ""
 	If $cType = 1 Then Return "x -p" & $cDecrypt
 
@@ -2555,7 +2622,7 @@ EndFunc   ;==>__Backup_Restore
 Func __ByteSuffix($bBytes, $bPlaces = 2)
 	#cs
 		Description: Rounds A Value Of Bytes To Highest Value.
-		Returns: [1024 Bytes = 1 MB]
+		Returns: [1024 Bytes = 1 KB]
 	#ce
 	Local $A, $bArray[6] = [" Bytes", " KB", " MB", " GB", " TB", " PB"]
 	While $bBytes > 1023
@@ -2564,6 +2631,28 @@ Func __ByteSuffix($bBytes, $bPlaces = 2)
 	WEnd
 	Return Round($bBytes, $bPlaces) & $bArray[$A]
 EndFunc   ;==>__ByteSuffix
+
+Func __CheckMultipleInstances()
+	#cs
+		Description: Checks All Multiple Instances In The INI File Are Currently Running.
+		Returns: 1
+	#ce
+	Local $cINI = __IsSettingsFile() ; Get Default Settings INI File.
+
+	Local $cMultipleInstancesINI = _IniReadSection($cINI, "MultipleInstances")
+	If @error Then Return SetError(1, 1, 0)
+	Local $cRunning = 0
+	For $A = 1 To $cMultipleInstancesINI[0][0]
+		If $cMultipleInstancesINI[$A][0] = "Running" Then ContinueLoop
+		$cRunning += 1
+		If Not ProcessExists($cMultipleInstancesINI[$A][1]) Then
+			IniDelete($cINI, $cMultipleInstancesINI[$A][0])
+			IniDelete($cINI, "MultipleInstances", $cMultipleInstancesINI[$A][0])
+			$cRunning -= 1
+		EndIf
+	Next
+	Return IniWrite($cINI, "MultipleInstances", "Running", $cRunning)
+EndFunc   ;==>__CheckMultipleInstances
 
 Func __CMDLine($cTemp_CmdLine, $WM_COPYDATA = 0) ; 0 = Normal CommandLine & 1 = WM_COPYDATA, Required Because The Normal CommandLine Array Shows The Number Of Items And WM_COPYDATA Doesn't.
 	#cs
@@ -2676,7 +2765,7 @@ Func __EnvironmentVariables()
 			["PortableDrive", StringLeft(@AutoItExe, 2)], _ ; Returns: Drive Letter [C: Without The Trailing "\"]
 			["Team", "Lupo PenSuite Team"], _ ; Returns: Team Name [Lupo PenSuite Team]
 			["URL", "http://www.lupopensuite.com/db/oth/dropit.htm"], _ ; Returns: URL Hyperlink [http://www.lupopensuite.com/db/oth/dropit.htm]
-			["VersionNo", "1.1"]] ; Returns: Version Number [1.0]
+			["VersionNo", "1.1.1"]] ; Returns: Version Number [1.0]
 
 	For $A = 1 To $eEnvironmentArray[0][0]
 		EnvSet($eEnvironmentArray[$A][0], $eEnvironmentArray[$A][1])
@@ -2781,7 +2870,6 @@ Func __GetDefault($gFlag = 1, $gSkipInstallationCheck = 0) ; 0 = Don't Skip Inst
 
 	Local $gReturnArray[$gInitialArray[0][0] + 1][$gInitialArray[0][1]] = [[0, 2]]
 	If Not FileExists(@ScriptDir & "\" & "Images\") Then DirCreate(@ScriptDir & "\" & "Images\")
-	If Not FileExists(@ScriptDir & "\" & "Languages\") Then DirCreate(@ScriptDir & "\" & "Languages\")
 	If Not FileExists($gScriptDir & "Profiles\") Then DirCreate($gScriptDir & "Profiles\")
 
 	$gHex = 1
@@ -3366,6 +3454,7 @@ Func __ProfileList_GUI($cProfileName = -1)
 
 	Local $cProfile = __GetCurrentProfile() ; Get Current Profile From The Settings INI File.
 	Local $lGUI = GUICreate(__Lang_Get('PROFILELIST_GUI_LABEL_0', 'Select A Profile'), 230, 70, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop())
+	WinSetTrans($lGUI, "", 0)
 	Local $lCombo = GUICtrlCreateCombo("", 5, 10, 220, 25, 0x0003)
 	For $A = 1 To $cProfileList[0]
 		GUICtrlSetData($lCombo, $cProfileList[$A], $cProfile)
@@ -3379,6 +3468,8 @@ Func __ProfileList_GUI($cProfileName = -1)
 			GUISetState(@SW_HIDE)
 			GUIDelete($lGUI)
 			Return $cProfileList[1]
+		Else
+			WinSetTrans($lGUI, "", 255)
 		EndIf
 
 		Switch GUIGetMsg()
@@ -3397,14 +3488,14 @@ Func __ProfileList_GUI($cProfileName = -1)
 	Return $cProfile
 EndFunc   ;==>__ProfileList_GUI
 
-Func __OnTop($iHandle = -1)
+Func __OnTop($iHandle = -1, $iState = 1)
 	#cs
 		Description: Sets A GUI Handle "OnTop".
 		Returns: GUI OnTop
 	#ce
 	$iHandle = __IsHandle($iHandle) ; Checks If GUI Handle Is A Valid Handle.
 
-	WinSetOnTop($iHandle, "", 1)
+	WinSetOnTop($iHandle, "", $iState)
 	Return $iHandle
 EndFunc   ;==>__OnTop
 
@@ -3525,21 +3616,21 @@ Func __SetCurrentLanguage($sLanguage)
 	Return $sLanguage
 EndFunc   ;==>__SetCurrentLanguage
 
-Func __SetCurrentPosition($pHandle = $Global_GUI_1)
+Func __SetCurrentPosition($sHandle = $Global_GUI_1)
 	#cs
 		Description: Sets The Current Coordinates/Position Of DropIt.
 		Returns: 1
 	#ce
-	If $pHandle = "" Then Return SetError(1, 1, 0)
-	Local $pINI = __IsSettingsFile() ; Get Default Settings INI File.
+	If $sHandle = "" Then Return SetError(1, 1, 0)
+	Local $sINI = __IsSettingsFile() ; Get Default Settings INI File.
 
-	Local $pWinGetPos = WinGetPos($pHandle)
+	Local $sWinGetPos = WinGetPos($sHandle)
 	If @error Then Return SetError(1, 1, 0)
 
 	Local $sINISection = "General"
 	If $Global_MultipleInstance Then $sINISection = $UniqueID
-	IniWrite($pINI, $sINISection, "PosX", $pWinGetPos[0])
-	IniWrite($pINI, $sINISection, "PosY", $pWinGetPos[1])
+	IniWrite($sINI, $sINISection, "PosX", $sWinGetPos[0])
+	IniWrite($sINI, $sINISection, "PosY", $sWinGetPos[1])
 
 	Return 1
 EndFunc   ;==>__SetCurrentPosition
@@ -3572,7 +3663,7 @@ EndFunc   ;==>__SetHandle
 
 Func __SetMultipleInstances($sType = "+") ; Not Activated.
 	#cs
-		Description: Sets The Number Of Additional DropIt Instances.
+		Description: Sets The Number Of Additional DropIt Instances & Lists The Multiple Instance Name With PID. [1_DropIt_MultipleInstance=8967]
 		Returns: 1
 	#ce
 	Local $sRunning = __GetMultipleInstances()
@@ -3580,10 +3671,12 @@ Func __SetMultipleInstances($sType = "+") ; Not Activated.
 	Switch $sType
 		Case "+"
 			$sRunning += 1
+			IniWrite($sINI, "MultipleInstances", $UniqueID, @AutoItPID)
 
 		Case "-"
 			$sRunning -= 1
 			IniDelete($sINI, $UniqueID)
+			IniDelete($sINI, "MultipleInstances", $UniqueID)
 
 	EndSwitch
 	Return IniWrite($sINI, "MultipleInstances", "Running", $sRunning)
@@ -3691,9 +3784,9 @@ Func __SingletonEx($sID = "")
 		WM_COPYDATA_SENDDATA(HWnd($hWnd_Target), $CmdLineRaw) ; Send $CmdLineRaw Files To The First Instance Of DropIt.
 		If __Is("MultipleInstances") Then
 			Local $sMultipleInstances = __GetMultipleInstances() + 1
+			$UniqueID = $sMultipleInstances & "_DropIt_MultipleInstance"
 			__SetMultipleInstances("+")
 			$Global_MultipleInstance = 1
-			$UniqueID = $sMultipleInstances & "_DropIt_MultipleInstance"
 			Return 1
 		Else
 			Exit
@@ -3832,5 +3925,5 @@ Func _IniReadSection($iFile, $iSection) ; Taken From - http://www.autoitscript.c
 		$iSectionReturn[$A + 1][1] = $iValue[$A]
 	Next
 	Return $iSectionReturn
-EndFunc   ;==>__IniReadSection
+EndFunc   ;==>_IniReadSection
 #Region End >>>>> INI Functions <<<<<

@@ -1,0 +1,3 @@
+OPTIONS_ENCRYPTION_MSGBOX_0=Encryption is enabled
+OPTIONS_ENCRYPTION_MSGBOX_1=It appears the Password for Encryption is Blank, do you wish to disable?
+PATTERNS=Patterns
