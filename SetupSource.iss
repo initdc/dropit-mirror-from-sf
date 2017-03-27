@@ -1,6 +1,6 @@
 [Setup]
 AppName=DropIt
-AppVerName=DropIt (v0.8.1)
+AppVerName=DropIt (v0.8.2)
 AppPublisher=Lupo PenSuite Team
 AppPublisherURL=https://sourceforge.net/projects/dropit/
 AppSupportURL=http://www.lupopensuite.com/contact.htm
@@ -9,9 +9,9 @@ DefaultDirName={pf}\DropIt
 DefaultGroupName=DropIt
 AllowNoIcons=yes
 UninstallDisplayIcon={app}\DropIt.exe
-InfoBeforeFile=..\DropIt_v0.8.1_Portable\docs\Readme.txt
+InfoBeforeFile=..\DropIt_v0.8.2_Portable\docs\Readme.txt
 OutputDir=..\
-OutputBaseFilename=DropIt_v0.8.1_Setup
+OutputBaseFilename=DropIt_v0.8.2_Setup
 Compression=lzma/Ultra
 SolidCompression=yes
 
@@ -25,8 +25,8 @@ Name: "associate"; Description: "Add Open with DropIt in the ContextMenu of Fold
 Name: "sendto"; Description: "Add Open with DropIt in the SendTo Menu"; GroupDescription: "SendTo Icon:"; Flags: unchecked
 
 [Files]
-Source: "..\DropIt_v0.8.1_Portable\DropIt.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\DropIt_v0.8.1_Portable\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\DropIt_v0.8.2_Portable\DropIt.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\DropIt_v0.8.2_Portable\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

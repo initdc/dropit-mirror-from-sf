@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Comment=DropIt - To place your files with a drop
 #AutoIt3Wrapper_Res_Description=DropIt
-#AutoIt3Wrapper_Res_Fileversion=0.8.1.0
+#AutoIt3Wrapper_Res_Fileversion=0.8.2.0
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_LegalCopyright=by Lupo PenSuite Team
 #AutoIt3Wrapper_Run_Obfuscator=y
@@ -22,7 +22,7 @@ Opt("TrayIconHide", 1)
 Opt("TrayOnEventMode", 1)
 Opt("TrayMenuMode", 1)
 
-Global $sName = "DropIt", $sVer = " (v0.8.1)", $ii = $sName & " - To place your files with a drop"
+Global $sName = "DropIt", $sVer = " (v0.8.2)", $ii = $sName & " - To place your files with a drop"
 Global $sIni = @ScriptDir & "\settings.ini", $PrDir = @ScriptDir & "\profiles", $sIniPr, $sIm = @ScriptDir & "\img\image.gif", $sPic = @ScriptDir & "\img\ps.gif"
 Global $hGUI1, $hGUI2, $sData, $temp, $i, $top, $Show, $Separ, $Exit, $list, $gaDropFiles[1], $RelPos[2]
 Global Const $WM_DROPFILES = 0x233, $SC_MOVE = 0xF010, $WM_ENTERSIZEMOVE = 0x231, $WM_EXITSIZEMOVE = 0x232
@@ -321,37 +321,34 @@ EndFunc
 
 
 Func MoreMatches($matches, $item, $j)		; OK
-	Local $asso, $sel, $ok, $canc, $ma, $rad[4]
+	Local $asso, $sel, $ok, $canc, $ma, $rad[$j+1]
 	Local $mess = "You have to select the pattern to use."
-	$asso = GUICreate("Pattern ambiguity", 280, 180, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI2)
+	$asso = GUICreate("Pattern ambiguity", 280, 115+21*$j, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI2)
 	
-	GUICtrlCreateGroup("", 8, 4, 264, 135)
-	GUICtrlCreateLabel('Select pattern to use for this item:', 19, 4+17, 240, 20)
-	GUICtrlCreateLabel('"' & $item & '"', 19, 4+37, 240, 40)
+	GUICtrlCreateGroup("Item with pattern ambiguity:", 8, 6, 264, 40)
+	GUICtrlCreateLabel($item, 30, 4+20, 230, 20)
+	GUICtrlCreateGroup("", -99, -99, 1, 1)
+	
+	GUICtrlCreateGroup("Select what pattern use for it:", 8, 40+6*2, 264, 22+21*$j)
 	For $i = 1 To $j
-		If $i = 4 Then ExitLoop
-		$rad[$i] = GUICtrlCreateRadio(" " & $matches[$i][0], 36, 4+37+($i*21))
+		$rad[$i] = GUICtrlCreateRadio(" " & $matches[$i][0], 30, 46+($i*21))
 	Next
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	
-	$ok = GUICtrlCreateButton("OK", 140-20-66, 147, 66, 24)
-	$canc = GUICtrlCreateButton("Cancel", 140+20, 147, 66, 24)
+	$ok = GUICtrlCreateButton("OK", 140-20-66, 82+21*$j, 66, 24)
+	$canc = GUICtrlCreateButton("Cancel", 140+20, 82+21*$j, 66, 24)
 	GUISetState()
 	
 	While 1
 		$sel = GUIGetMsg()
 		Switch $sel
 			Case $ok
-				If GUICtrlRead($rad[1]) = 1 Then
-					$ma = $matches[1][1]
-					ExitLoop
-				ElseIf GUICtrlRead($rad[2]) = 1 Then
-					$ma = $matches[2][1]
-					ExitLoop
-				ElseIf GUICtrlRead($rad[3]) = 1 Then
-					$ma = $matches[3][1]
-					ExitLoop
-				EndIf
+				For $i = 1 To $j
+					If GUICtrlRead($rad[$i]) = 1 Then
+						$ma = $matches[$i][1]
+						ExitLoop
+					EndIf
+				Next
 				MsgBox(0x40000, "Message", $mess)
 				
 			Case $canc, $GUI_EVENT_CLOSE
@@ -368,7 +365,7 @@ EndFunc
 
 
 Func Checking($item, $ff)			; OK
-	Local $str, $match, $pattern, $j = 0, $matches[4][2], $var = IniReadSection($sIniPr, "Patterns")
+	Local $str, $match, $pattern, $j = 0, $matches[8][2], $var = IniReadSection($sIniPr, "Patterns")
 	If Not(@error) Then
 		For $i = 1 To $var[0][0]
 			$match = 0
@@ -381,7 +378,7 @@ Func Checking($item, $ff)			; OK
 				$pattern = StringReplace($str, "*", "(.*?)")
 				If Not($ff = "0") Then $match = StringRegExp(StringLower($item), "^" & $pattern & "$")
 			EndIf
-			If $match = 1 And $j < 4 Then
+			If $match = 1 And $j < 7 Then
 				$j = $j + 1
 				$matches[$j][0] = $var[$i][0]
 				$matches[$j][1] = $var[$i][1]
@@ -826,6 +823,7 @@ Func _Main()
 	If $CmdLine[0] > 0 Then
 		If FileExists($CmdLine[1]) Then
 			GUISetState(@SW_HIDE, $hGUI1)
+			ReDim $gaDropFiles[$CmdLine[0]]
 			For $j = 1 To $CmdLine[0]
 				$gaDropFiles[$j - 1] = $CmdLine[$j]
 			Next
