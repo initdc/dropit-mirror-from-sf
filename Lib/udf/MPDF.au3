@@ -6,6 +6,8 @@
 #include <GDIPlus.au3>
 #include <Misc.au3>
 #include <File.au3>
+#include <String.au3>
+
 ; #INDEX# =======================================================================================================================
 ; Title .........: MIPDF
 ; AutoIt Version : 3.3.6.1
@@ -93,10 +95,13 @@
 ; _StartObject
 ; ===============================================================================================================================
 #region CONSTANTS
-Global $PDF_VERSION = "%PDF-1.5" & @CRLF & "%" & ChrW(199) & ChrW(200) & ChrW(201) & ChrW(202)
-Global $PDF_AUTHOR = "Mihai Iancu"
-Global $PDF_CREATOR = "MIPDF"
-Global $PDF_COPYRIGHT = "© 1973-" & @YEAR & " Mihai Iancu"
+Global $PDF_VERSION = "%PDF-1.5" & chr(10) & "%" & ChrW(226) & ChrW(227) & ChrW(207) & ChrW(211)
+;Global $PDF_AUTHOR = "Mihai Iancu"
+;Global $PDF_CREATOR = "MIPDF"
+;Global $PDF_COPYRIGHT = "© 1973-" & @YEAR & " Mihai Iancu"
+Global $PDF_AUTHOR = ""
+Global $PDF_CREATOR = ""
+Global $PDF_COPYRIGHT = ""
 Global $PDF_TITLE = ""
 Global $PDF_SUBJECT = ""
 Global $PDF_KEYWORDS = ""
@@ -214,7 +219,7 @@ Global $aOBJECTS[2] = [$PDF_OBJECT_NAME, $PDF_OBJECT_OPTIONS]
 Func _BeginPage($iRotate=0)
 	Local $intPage
 	If BitAND($iRotate<>0, Mod($iRotate,90)<>0, $iRotate<>"") Then
-		MsgBox(48, "Error", "When seting rotation of the page, it has to be multiple of 90 or 0!"&@CRLF&"Try again.",3)
+		MsgBox(48, "Error", "When seting rotation of the page, it has to be multiple of 90 or 0!"&chr(10)&"Try again.",3)
 		Exit
 	EndIf
 	$_Pages += 1
@@ -223,7 +228,7 @@ Func _BeginPage($iRotate=0)
 	__EndObj()
 	$_sPage &= $intPage & " 0 R "
 	__InitObj($intPage + 1)
-	__ToBuffer("<< /Length " & $intPage + 2 & " 0 R >>" & @CRLF & "stream")
+	__ToBuffer("<<"&chr(10)&"/Length >>stream")
 	$_iTmpOffset = $_Offset
 	__InsertObjectOnPage()
 	$_CharSpacing = 0
@@ -257,31 +262,27 @@ Func _ClosePDFFile()
 			"/CropBox [" & __ToStr($__SetMargin) & " " & __ToStr($__SetMargin) & " " & __ToStr($_PageWidth - $__SetMargin,1) & " " & __ToStr($_PageHeight - $__SetMargin,1) & "] " & _
 			_Iif($_Orientation = $PDF_ORIENTATION_LANDSCAPE, "/Rotate -90", "") & "/Kids [" & $_sPage & "] " & "/Resources " & $_iResource & " 0 R>>")
 	__EndObj()
+	Local $position_xref = Stringlen($_Buffer)
 	__ToBuffer("xref")
 	__ToBuffer("0 " & $_iMaxObject+1)
-	__ToBuffer("0000000000 65535 f")
+	__ToBuffer("0000000000 65535 f"&chr(13))
 	For $i = 1 To $_iMaxObject
-		__ToBuffer($aXREF[$i])
+		__ToBuffer($aXREF[$i]&chr(13))
 	Next
-	__ToBuffer("trailer" & @CRLF & _
+	__ToBuffer("trailer" & chr(10) & _
 			"<<	/Size " & $_iMaxObject + 1 & "/Info 1 0 R" & "/Root 2 0 R" & ">>")
-	__ToBuffer("startxref" & @CRLF & StringLen("startxref" & @CRLF & $_Buffer & "%%EOF" & @CRLF) + 6)
+	__ToBuffer("startxref" & chr(10) & $position_xref & chr(10) & "%%EOF")
 	$_FileName = FileOpen($PDF_NAME,18)
-	FileWrite($_FileName, $_Buffer & "%%EOF" & @CRLF)
+	FileWrite($_FileName, $_Buffer)
 	FileClose($_FileName)
-	If $_bOpen Then ShellExecute($PDF_NAME)
-
-	$_PaperSize = "A4"
-	$_Orientation = $PDF_ORIENTATION_PORTRAIT
-	$__SetMargin = 0
-	$_Pages = 0
-	$_Offset = 0
-	$_Font = ""
-	$_sPage=" "
-	$_Image=""
-	$_iObject = 0
+	$_Pages = ""
+	$_sPage = ""
+	$_sFONT = ""
+	$_Image = ""
+	$_sObject = ""
+	$_iResource = ""
 	$_Buffer = ""
-	$_bOpen = False
+	If $_bOpen Then ShellExecute($PDF_NAME)
 EndFunc   ;==>_ClosePDFFile
 
 ; #FUNCTION# ====================================================================================================================
@@ -730,6 +731,12 @@ Func _EndObject()
 	$_iTmpOffset = $_Offset - $_iTmpOffset
 	__ToBuffer("endstream")
 	__EndObj()
+	Local $aArray1=_StringBetween($_Buffer,"/Length >>stream","endstream")
+	Local $stringlen
+	for $i=0 to ubound($aArray1)-1
+		$stringlen=$stringlen+stringlen($aArray1[$i])
+	next
+	$_Buffer=StringReplace($_Buffer,"/Length >>stream","/Length "&$stringlen-1&">>stream")
 	__InitObj()
 	__ToBuffer($_iTmpOffset)
 	__EndObj()
@@ -752,7 +759,13 @@ Func _EndPage()
 	$_iTmpOffset = $_Offset - $_iTmpOffset
 	__ToBuffer("endstream")
 	__EndObj()
-	; Scrie dimensiunea
+	Local $aArray1=_StringBetween($_Buffer,"/Length >>stream","endstream")
+	Local $stringlen
+	for $i=0 to ubound($aArray1)-1
+		$stringlen=$stringlen+stringlen($aArray1[$i])
+	next
+	$_Buffer=StringReplace($_Buffer,"/Length >>stream","/Length "&$stringlen-1&">>stream")
+; Scrie dimensiunea
 	__InitObj()
 	__ToBuffer($_iTmpOffset)
 	__EndObj()
@@ -1044,8 +1057,8 @@ Func _InsertImage($sAlias, $iX, $iY, $iW = 0, $iH = 0)
 		$iW = $_iImageW/_GetUnit()
 		$iH = $_iImageH/_GetUnit()
 	EndIf
-	__ToBuffer("q" & @CRLF & __ToStr(__ToSpace($iW)) & " " & " 0 0 " & __ToStr(__ToSpace($iH)) & " " & __ToStr(__ToSpace($iX)) & " " & __ToStr(__ToSpace($iY)) & " cm" & _
-	@CRLF & "/" & $sAlias & " Do" & @CRLF & "Q")
+	__ToBuffer("q" & chr(10) & __ToStr(__ToSpace($iW)) & " " & " 0 0 " & __ToStr(__ToSpace($iH)) & " " & __ToStr(__ToSpace($iX)) & " " & __ToStr(__ToSpace($iY)) & " cm" & _
+	chr(10) & "/" & $sAlias & " Do" & chr(10) & "Q")
 EndFunc   ;==>_InsertImage
 
 ; #FUNCTION# ====================================================================================================================
@@ -1147,7 +1160,7 @@ Func _LoadFontStandard($sAlias, $BaseFont, $sOptions = $PDF_FONT_NORMAL)
 	Local $i = __InitObj()
 	__ToBuffer("<< /Type/Font/Subtype/Type1/Name/" & $sAlias & "/BaseFont/" & $BaseFont & $sTemp & "/Encoding/WinAnsiEncoding >>")
 	__EndObj()
-	$_sFONT = $_sFONT & "/" & $sAlias & " " & $i & " 0 R " & @CRLF
+	$_sFONT = $_sFONT & "/" & $sAlias & " " & $i & " 0 R " & chr(10)
 EndFunc   ;==>_LoadFontStandard
 
 ; #FUNCTION# ====================================================================================================================
@@ -1193,10 +1206,10 @@ Func _LoadFontTT($sAlias, $BaseFont, $sOptions = $PDF_FONT_NORMAL)
 	EndSwitch
 	Local $i = __InitObj()
 	__ToBuffer("<< /Type/Font/Subtype/TrueType/Name/" & $sAlias & "/BaseFont/" & $BaseFont & $sOptions & "/FirstChar " & $FirstChar & "/LastChar " & $LastChar & "/FontDescriptor " & $i + 1 & " 0 R/Encoding/WinAnsiEncoding/Widths [")
-	For $j = $FirstChar To $FirstChar + $LastChar
+	For $j = $FirstChar To $LastChar
 		If $Widths[$j - $FirstChar] <> 0 Then
 			$sTemp &= __ToStr($Widths[$j - $FirstChar]) & " "
-			If Mod($j - $FirstChar + 1, 16) = 0 Or $j = $FirstChar + $LastChar Then
+			If Mod($j - $FirstChar + 1, 16) = 0 Or $j = $LastChar Then
 				__ToBuffer($sTemp)
 				$sTemp = ""
 			EndIf
@@ -1204,7 +1217,7 @@ Func _LoadFontTT($sAlias, $BaseFont, $sOptions = $PDF_FONT_NORMAL)
 	Next
 	__ToBuffer("] >>")
 	__EndObj()
-	$_sFONT = $_sFONT & "/" & $sAlias & " " & $i & " 0 R " & @CRLF
+	$_sFONT = $_sFONT & "/" & $sAlias & " " & $i & " 0 R " & chr(10)
 	$_sFONTNAME = $_sFONTNAME & "<" & $sAlias & ">" & StringRight("0000" & $_Font, 4) & ";"
 	;$i =
 	__InitObj()
@@ -1251,10 +1264,11 @@ Func _LoadResImage($sImgAlias, $sImage)
 				$_iImageW = $iW
 				$_iImageH = $iH
 				$iObj = __InitObj()
-				__ToBuffer("<</Type /XObject /Subtype /Image /Name /" & $sImgAlias & " /Width " & $_iImageW & " /Height " & $_iImageH & " /Filter /DCTDecode /ColorSpace /DeviceRGB /BitsPerComponent 8" & " /Length " & $iObj + 1 & " 0 R" & ">>")
-				__ToBuffer("stream" & @CRLF & $ImgBuf & @CRLF & "endstream")
+				__ToBuffer("<</Type /XObject /Subtype /Image /Name /" & $sImgAlias & " /Width " & $_iImageW & " /Height " & $_iImageH & " /Filter /DCTDecode /ColorSpace /DeviceRGB /BitsPerComponent 8"&chr(10)&"/Length "&stringlen($ImgBuf)&">>stream")
+				__ToBuffer($ImgBuf)
+				__ToBuffer("endstream")
 				__EndObj()
-				$_Image &= "/" & $sImgAlias & " " & $iObj & " 0 R " & @CRLF
+				$_Image &= "/" & $sImgAlias & " " & $iObj & " 0 R " & chr(10)
 				__InitObj()
 				__ToBuffer(StringLen($ImgBuf))
 				__EndObj()
@@ -2718,10 +2732,9 @@ EndFunc   ;==>_SetZoomMode
 ; ===============================================================================================================================
 Func _StartObject($sAlias, $Opt = $PDF_OBJECT_NONE)
 	Local $i = __InitObj()
-	__ToBuffer("<< /Type /XObject /Subtype /Form /FormType 1 /Name /" & $sAlias & " /BBox [" & __ToStr($__SetMargin) & " " & __ToStr($__SetMargin) & " " & __ToStr($_PageWidth - $__SetMargin) & " " & __ToStr($_PageHeight - $__SetMargin) & "] /Matrix [1 0 0 1 0 0] /Length " & $i + 1 & " 0 R >>" & @CRLF & _
-			"stream")
+	__ToBuffer("<< /Type /XObject /Subtype /Form /FormType 1 /Name /" & $sAlias & " /BBox [" & __ToStr($__SetMargin) & " " & __ToStr($__SetMargin) & " " & __ToStr($_PageWidth - $__SetMargin) & " " & __ToStr($_PageHeight - $__SetMargin) & "] /Matrix [1 0 0 1 0 0]"&chr(10)&"/Length >>stream")
 	$_iTmpOffset = $_Offset
-	$_sObject = $_sObject & "/" & $sAlias & " " & $i & " 0 R " & @CRLF
+	$_sObject = $_sObject & "/" & $sAlias & " " & $i & " 0 R " & chr(10)
 	$_iObject = $_iObject + 1
 	ReDim $aOBJECTS[$_iObject]
 	For $_iObject In $aOBJECTS
@@ -2904,7 +2917,7 @@ EndFunc   ;==>__DrawObject
 ; Example .......: No
 ; ===============================================================================================================================
 Func __EndObj()
-	$_Buffer &= "endobj" & @CRLF
+	$_Buffer &= "endobj" & chr(10)
 EndFunc   ;==>__EndObj
 
 ; #INTERNAL_USE_ONLY# ===========================================================================================================
@@ -2922,7 +2935,7 @@ EndFunc   ;==>__EndObj
 ; Example .......: No
 ; ===============================================================================================================================
 Func __Error($sErr, $iLne)
-	MsgBox(16, "PDF Error", "You have an error on line " & $iLne & "." & @CRLF & "Reason: " & $sErr & @CRLF & "Press OK to exit.")
+	MsgBox(16, "PDF Error", "You have an error on line " & $iLne & "." & chr(10) & "Reason: " & $sErr & chr(10) & "Press OK to exit.")
 	Exit
 EndFunc   ;==>__Error
 
@@ -3466,7 +3479,7 @@ Func __InitObj($iObj = 0)
 	If $iObj = 0 Then $iObj = $_iMaxObject + 1
 	If $iObj > $_iMaxObject Then $_iMaxObject = $iObj
 	ReDim $aXREF[$_iMaxObject + 1]
-	$aXREF[$iObj] = StringRight("0000000000" & StringLen($_Buffer)+$_Offset+$iObj+1, 10) & " 00000 n"
+	$aXREF[$iObj] = StringRight("0000000000" & StringLen($_Buffer), 10) & " 00000 n"
 	__ToBuffer($iObj & " 0 obj")
 	Return $iObj
 EndFunc   ;==>__InitObj
@@ -3511,7 +3524,7 @@ EndFunc   ;==>__InsertObjectOnPage
 ; Example .......: No
 ; ===============================================================================================================================
 Func __Test($sText)
-	ConsoleWrite($sText & @CRLF)
+	ConsoleWrite($sText & chr(10))
 EndFunc   ;==>__Test
 
 ; #INTERNAL_USE_ONLY# ===========================================================================================================
@@ -3549,7 +3562,7 @@ EndFunc   ;==>__ToBinary
 ; Example .......: No
 ; ===============================================================================================================================
 Func __ToBuffer($sT)
-	$_Buffer &= $sT & @CRLF
+	$_Buffer &= $sT & chr(10)
 EndFunc   ;==>__ToBuffer
 
 ; #INTERNAL_USE_ONLY# ===========================================================================================================

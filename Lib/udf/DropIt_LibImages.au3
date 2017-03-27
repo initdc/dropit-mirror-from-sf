@@ -7,6 +7,7 @@
 #include <GUIImageList.au3>
 #include <GUIListView.au3>
 #include <GUIMenu.au3>
+#include <WinAPIShPath.au3>
 #include <WinAPITheme.au3>
 
 #include "DropIt_LibVarious.au3"
@@ -17,17 +18,16 @@ Func __ImageConvert($sImagePath, $sSaveDirectory, $sFileExtension = "PNG")
 		Description: Convert The Image File To Another Valid Format.
 		Returns: New Image [New Image.png]
 	#ce
-	Local $hImagePath, $sCLSID, $sFilePath
+	Local $hImage, $sCLSID, $sFilePath
 
 	$sCLSID = _GDIPlus_EncodersGetCLSID($sFileExtension)
-
 	$sFileExtension = StringLower($sFileExtension)
 	$sSaveDirectory = _WinAPI_PathAddBackslash($sSaveDirectory)
-
 	$sFilePath = _WinAPI_PathYetAnotherMakeUniqueName($sSaveDirectory & _WinAPI_PathStripPath(_WinAPI_PathRemoveExtension($sImagePath)) & "." & $sFileExtension)
-	$hImagePath = _GDIPlus_ImageLoadFromFile($sImagePath)
+	$hImage = _GDIPlus_ImageLoadFromFile($sImagePath)
+	_GDIPlus_ImageSaveToFileEx($hImage, $sFilePath, $sCLSID)
+	_GDIPlus_ImageDispose($hImage)
 
-	_GDIPlus_ImageSaveToFileEx($hImagePath, $sFilePath, $sCLSID)
 	Return $sFilePath
 EndFunc   ;==>__ImageConvert
 
@@ -46,6 +46,7 @@ Func __ImageResize($sFilePath, $iWidth, $iHeight)
 	_GDIPlus_GraphicsDispose($hGraphicsContent)
 	_GDIPlus_GraphicsDispose($iNewGraphicsContent)
 	_GDIPlus_ImageDispose($hImage)
+
 	Return $hImageNew
 EndFunc   ;==>__ImageResize
 
@@ -142,7 +143,7 @@ Func __ImageWriteResize($sInFile, $sOutFile, $iOutWidth, $iOutHeight, $iCrop = 0
 	Return 1
 EndFunc   ;==>__ImageWriteResize
 
-Func __IsClassicTheme() ; By guinness 2011.
+Func __IsClassicTheme()
 	#cs
 		Description: Check If Windows Uses Classic Theme.
 		Returns:

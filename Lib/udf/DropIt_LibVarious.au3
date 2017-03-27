@@ -7,8 +7,6 @@
 #include <String.au3>
 #include <WinAPI.au3>
 #include <WinAPIProc.au3>
-#include <WinAPIsysinfoConstants.au3>
-#include <WindowsConstants.au3>
 
 Func _ArraySortEx(ByRef $avArray, $iStartRow = 1, $iEndRow = 0, $iCol1 = 0, $iCol2 = -1, $iCol3 = -1, $iCol4 = -1) ; Taken From: http://www.autoitscript.com/forum/topic/98071-array-multi-column-sort/
 	Local $iLastRow = 0, $iStart = -1, $iEnd = -1
@@ -156,21 +154,36 @@ EndFunc   ;==>__ExpandEventMode
 Func __GetOSLanguage()
 	#cs
 		Description: Get The OS Language.
-		Returns: Language [Italian]
+		Returns: Language [English]
 	#ce
-	Local $aString[22] = [21, '0409 0809 0c09 1009 1409 1809 1c09 2009 2409 2809 2c09 3009 3409', '0404 0804 0c04 1004 0406', '0406', '0413 0813', '0425', _
-			'040b', '040c 080c 0c0c 100c 140c 180c', '0407 0807 0c07 1007 1407', '408', '040e', _
-			'0410 0810', '0411', '0414 0814', '0415', '0816', '0416', _
-			'0418', '0419', '081a 0c1a', '040a 080a 0c0a 100a 140a 180a 1c0a 200a 240a 280a 2c0a 300a 340a 380a 3c0a 400a 440a 480a 4c0a 500a', '041d 081d']
-
-	Local $aLanguage[22] = [21, 'English', 'Chinese', 'Danish', 'Dutch', 'Estonian', 'Finnish', 'French', 'German', 'Greek', 'Hungarian', _
-			'Italian', 'Japanese', 'Norwegian', 'Polish', 'Portuguese', 'Brazilian Portuguese', 'Romanian', 'Russian', 'Serbian', 'Spanish', 'Swedish']
-	For $i = 1 To $aString[0]
-		If StringInStr($aString[$i], @OSLang) Then
-			Return $aLanguage[$i]
+	Local $aLanguage[20][2] = [ _
+			[19, 'English'], _
+			['BrazilianPortuguese', '0416 0816'], _
+			['Danish', '0406'], _
+			['Dutch', '0413 0813'], _
+			['French', '040C 080C 0C0C 100C 140C 180C'], _
+			['German', '0407 0807 0C07 1007 1407'], _
+			['Greek', '0408'], _
+			['Hungarian', '040E'], _
+			['Indonesian', '0421'], _
+			['Italian', '0410 0810'], _
+			['Japanese', '0411'], _
+			['Polish', '0415'], _
+			['Romanian', '0418'], _
+			['Russian', '0419 0444 046D 0485'], _
+			['Serbian', '081A 0C1A 181A 1C1A 241A 281A 2C1A 301A'], _
+			['SimplifiedChinese', '0004 0804 0C04 1004 1404'], _
+			['Spanish', '040A 080A 0C0A 100A 140A 180A 1C0A 200A 240A 280A 2C0A 300A 340A 380A 3C0A 400A 440A 480A 4C0A 500A 540A'], _
+			['Swedish', '041D 081D 083B 143B 1C3B'], _
+			['TraditionalChinese', '0404 7C04'], _
+			['Vietnamese', '042A']]
+	For $A = 1 To $aLanguage[0][0]
+		If StringInStr($aLanguage[$A][1], @OSLang) Then
+			$aLanguage[0][1] = $aLanguage[$A][0]
+			ExitLoop
 		EndIf
 	Next
-	Return $aLanguage[1]
+	Return $aLanguage[0][1]
 EndFunc   ;==>__GetOSLanguage
 
 Func __GetSelectionPointers($hEdit) ; Used In __InsertText()
@@ -182,73 +195,6 @@ Func __GetSelectionPointers($hEdit) ; Used In __InsertText()
 	EndIf
 	Return $aReturn
 EndFunc   ;==>__GetSelectionPointers
-
-Func __GUIGraduallyHide($hHandle, $iVisiblePixels = 50, $iVisibleMarginLeft = 10)
-	#cs
-		Description: Gradually Hide GUI On The Left Of The Screen.
-		Returns: 1
-	#ce
-	Local $aWinPos, $aMousePos, $hControl, $hWin, $hOldWin, $iStep
-	$aWinPos = WinGetPos($hHandle)
-	$aMousePos = MouseGetPos()
-	$hControl = __WindowFromPoint($aMousePos[0], $aMousePos[1])
-	$hWin = _WinAPI_GetAncestor($hControl, 2)
-	If $hWin <> $hOldWin Or ($aMousePos[0] < 1 And $aMousePos[1] > $aWinPos[1] And $aMousePos[1] < $aWinPos[1] + $aWinPos[3]) Then
-		$iStep = Ceiling($aWinPos[2] / 100)
-		If $aWinPos[0] < $iVisibleMarginLeft And ($hWin = $hHandle Or ($aMousePos[0] < 1 And $aMousePos[1] > $aWinPos[1] And $aMousePos[1] < $aWinPos[1] + $aWinPos[3])) Then
-			If WinActive($hHandle) = 0 Then
-				WinActivate($hHandle)
-			EndIf
-			WinMove($hHandle, "", $aWinPos[0] + $iStep, $aWinPos[1], $aWinPos[2], $aWinPos[3])
-		ElseIf $aWinPos[0] > - ($aWinPos[2] - $iVisiblePixels) And $hWin <> $hHandle And ($aMousePos[0] > $aWinPos[3] Or $aMousePos[1] < $aWinPos[1] Or $aMousePos[1] > $aWinPos[1] + $aWinPos[3]) Then
-			If $aWinPos[0] > 0 Then
-				$aWinPos[0] = 0
-			EndIf
-			WinMove($hHandle, "", $aWinPos[0] - $iStep, $aWinPos[1], $aWinPos[2], $aWinPos[3])
-		EndIf
-		$hOldWin = $hWin
-	EndIf
-	Sleep(2)
-	Return 1
-EndFunc   ;==>__GUIGraduallyHide
-
-Func __GUIInBounds($hHandle) ; Original Idea By wraithdu, Modified By guinness.
-	#cs
-		Description: Check If The GUI Is Within View Of The Users Screen.
-		Returns: Move GUI If Out Of Bounds
-	#ce
-	Local $iXPos = 5, $iYPos = 5, $tWorkArea = DllStructCreate($tagRECT)
-	_WinAPI_SystemParametersInfo($SPI_GETWORKAREA, 0, DllStructGetPtr($tWorkArea))
-
-	Local $iLeft = DllStructGetData($tWorkArea, "Left"), $iTop = DllStructGetData($tWorkArea, "Top")
-	Local $iWidth = DllStructGetData($tWorkArea, "Right") - $iLeft
-	If _WinAPI_GetSystemMetrics($SM_CYVIRTUALSCREEN) > $iWidth Then
-		$iWidth = _WinAPI_GetSystemMetrics($SM_CYVIRTUALSCREEN)
-	EndIf
-	$iWidth -= $iLeft
-	Local $iHeight = DllStructGetData($tWorkArea, "Bottom") - $iTop
-	Local $aWinGetPos = WinGetPos($hHandle)
-	If @error Then
-		Return SetError(1, 0, WinMove($hHandle, "", $iXPos, $iYPos))
-	EndIf
-
-	If $aWinGetPos[0] < $iLeft Then
-		$iXPos = $iLeft
-	ElseIf ($aWinGetPos[0] + $aWinGetPos[2]) > $iWidth Then
-		$iXPos = $iWidth - $aWinGetPos[2]
-	Else
-		$iXPos = $aWinGetPos[0]
-	EndIf
-	If $aWinGetPos[1] < $iTop Then
-		$iYPos = $iTop
-	ElseIf ($aWinGetPos[1] + $aWinGetPos[3]) > $iHeight Then
-		$iYPos = $iHeight - $aWinGetPos[3]
-	Else
-		$iYPos = $aWinGetPos[1]
-	EndIf
-	WinMove($hHandle, "", $iXPos, $iYPos)
-	Return 1
-EndFunc   ;==>__GUIInBounds
 
 Func __IniReadSection($sFilePath, $sSection) ; Modified From: http://www.autoitscript.com/forum/topic/32004-iniex-functions-exceed-32kb-limit/
 	#cs
@@ -629,14 +575,3 @@ Func __StringIsValid($sString, $sPattern = '|<>')
 	EndIf
 	Return BitAND(StringRegExp($sString, '[\Q' & StringRegExpReplace($sPattern, "\\E", "E\") & '\E]') = 0, 1)
 EndFunc   ;==>__StringIsValid
-
-Func __WindowFromPoint($iX, $iY) ; Used In __GUIGraduallyHide()
-	Local $stInt64, $aRet, $stPoint = DllStructCreate("long;long")
-	DllStructSetData($stPoint, 1, $iX)
-	DllStructSetData($stPoint, 2, $iY)
-	$stInt64 = DllStructCreate("int64", DllStructGetPtr($stPoint))
-	$aRet = DllCall("user32.dll", "hwnd", "WindowFromPoint", "int64", DllStructGetData($stInt64, 1))
-	If @error Then Return SetError(2, @error, 0)
-	If $aRet[0] = 0 Then Return SetError(3, 0, 0)
-	Return $aRet[0]
-EndFunc   ;==>__WindowFromPoint

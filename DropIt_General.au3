@@ -6,6 +6,7 @@
 #include <GUIComboBoxEx.au3>
 #include <GUIConstantsEx.au3>
 #include <GUIImageList.au3>
+#include <GUIListView.au3>
 #include <WinAPIShPath.au3>
 
 #include "DropIt_Association.au3"
@@ -92,33 +93,36 @@ Func __IsSettingsFile($iINI = -1)
 		Description: Provide A Valid Location Of The Settings INI File.
 		Returns: Settings INI File [C:\Program Files\DropIt\Settings.ini]
 	#ce
-	Local $iFileExists, $iFileGetSize, $iINIData
-
 	If $iINI = -1 Or $iINI = 0 Or $iINI = "" Then
 		$iINI = __GetDefault(64) ; Get Default Settings FullPath.
 	EndIf
-	$iFileExists = FileExists($iINI)
-	$iFileGetSize = FileGetSize($iINI)
-
-	If $iFileExists And $iFileGetSize <> 0 Then
+	If FileExists($iINI) And FileGetSize($iINI) <> 0 Then
 		Return $iINI
 	EndIf
 
-	If $iFileExists = 0 Or $iFileGetSize = 0 Then
-		$iINIData = "Version=" & $G_Global_CurrentVersion & @LF & "Profile=Default" & @LF & "Language=" & __GetOSLanguage() & @LF & "PosX=-1" & @LF & "PosY=-1" & @LF & _
-				"SizeCustom=320;200" & @LF & "SizeManage=460;260" & @LF & "ColumnCustom=100;100;60;50" & @LF & "ColumnManage=130;100;90;115" & @LF & _
-				"OnTop=True" & @LF & "LockPosition=False" & @LF & "CustomTrayIcon=True" & @LF & "MultipleInstances=False" & @LF & "CheckUpdates=False" & @LF & _
-				"StartAtStartup=False" & @LF & "Minimized=False" & @LF & "ShowSorting=True" & @LF & "ShowMonitored=False" & @LF & "UseSendTo=False" & @LF & _
-				"SendToMode=Permanent" & @LF & "ProfileEncryption=False" & @LF & "ScanSubfolders=False" & @LF & "FolderAsFile=False" & @LF & "IgnoreNew=False" & @LF & _
-				"AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & "DupMode=Skip" & @LF & "CreateLog=False" & @LF & _
-				"ShowListView=False" & @LF & "AmbiguitiesCheck=False" & @LF & "GroupOrder=Path" & @LF & "AlertSize=True" & @LF & "AlertDelete=False" & @LF & _
-				"AlertFailed=True" & @LF & "GraduallyHide=False" & @LF & "ChangedSize=False" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & _
-				"MonitoringSize=0" & @LF & "MasterPassword="
+	__IniWriteEx($iINI, $G_Global_GeneralSection, "", "Version=" & $G_Global_CurrentVersion & @LF & "Profile=Default" & @LF & "Language=" & __GetOSLanguage() & @LF & _
+			"PosX=-1" & @LF & "PosY=-1" & @LF & "SizeCustom=320;200;-1;-1" & @LF & "SizeManage=460;260;-1;-1" & @LF & "SizeProcess=500;300;-1;-1" & @LF & _
+			"ColumnCustom=100;100;60;50" & @LF & "ColumnManage=130;100;90;115" & @LF & "ColumnProcess=140;80;180;70" & @LF & _
+			"OnTop=True" & @LF & "LockPosition=False" & @LF & "CustomTrayIcon=True" & @LF & "MultipleInstances=False" & @LF & "CheckUpdates=False" & @LF & _
+			"StartAtStartup=False" & @LF & "Minimized=False" & @LF & "ShowSorting=True" & @LF & "ShowMonitored=False" & @LF & "UseSendTo=False" & @LF & _
+			"SendToMode=Permanent" & @LF & "SendToName=DropIt" & @LF & "SendToIcons=True" & @LF & "ProfileEncryption=False" & @LF & "ScanSubfolders=False" & @LF & _
+			"FolderAsFile=False" & @LF & "AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & "DupMode=Skip" & @LF & _
+			"CreateLog=False" & @LF & "AutoBackup=True" & @LF & "AmbiguitiesCheck=False" & @LF & "IgnoreNew=False" & @LF & "IgnoreInUse=False" & @LF & _
+			"AlertSize=True" & @LF & "AlertDelete=False" & @LF & "AlertFailed=True" & @LF & "AlertAmbiguity=False" & @LF & "GroupOrder=Path" & @LF & "GraduallyHide=False" & @LF & _
+			"GraduallyHideSpeed=5" & @LF & "GraduallyHideTime=0" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & _
+			"MasterPassword=" & @LF & "EndCommandLine=")
+	__IniWriteEx($iINI, "MonitoredFolders", "", "")
+	__IniWriteEx($iINI, "EnvironmentVariables", "", "")
 
-		__IniWriteEx($iINI, $G_Global_GeneralSection, "", $iINIData)
-		__IniWriteEx($iINI, "MonitoredFolders", "", "")
-		__IniWriteEx($iINI, "EnvironmentVariables", "", "")
+	If FileExists($iINI & ".old") = 0 Then ; Create Profile Examples Only If This Is The First DropIt Run And Not An Update.
+		__CreateProfileExample(1) ; Archiver.
+		__CreateProfileExample(2) ; Eraser.
+		__CreateProfileExample(3) ; Extractor.
+		__CreateProfileExample(4) ; List Maker.
+		__CreateProfileExample(5) ; Playlist Maker.
+		__CreateProfileExample(6) ; Gallery Maker.
 	EndIf
+
 	Return $iINI
 EndFunc   ;==>__IsSettingsFile
 #EndRegion >>>>> Main Functions <<<<<
@@ -232,6 +236,102 @@ Func __SetCurrentProfile($sProfile)
 	__IniWriteEx($sINI, $sINISection, "Profile", $sProfile)
 	Return $sINI
 EndFunc   ;==>__SetCurrentProfile
+
+Func __CreateProfileExample($cExample)
+	Local $cName, $cImage, $cSize
+	Local $cProfileDirectory = __GetDefault(2) ; Get Default Profile Directory.
+	Local $cNumberFields = __GetAssociationKey(-1)
+	Local $cArray[5][$cNumberFields + 1] = [[4, $cNumberFields]]
+	For $A = 1 To $cNumberFields
+		$cArray[1][$A] = __GetAssociationKey($A - 1, 1)
+	Next
+
+	Switch $cExample
+		Case 1 ; Archiver.
+			$cName = __GetLang('CUSTOMIZE_EXAMPLE_0', 'Archiver')
+			$cImage = "Big_Box4.png"
+			$cSize = "80"
+			$cArray[2][1] = $cName
+			$cArray[2][2] = $G_Global_StateEnabled
+			$cArray[2][3] = "*;**"
+			$cArray[2][4] = "Compress"
+			$cArray[2][5] = "%Desktop%\" & __GetLang('ARCHIVE', 'Archive') & ".zip"
+		Case 2 ; Eraser.
+			$cName = __GetLang('CUSTOMIZE_EXAMPLE_1', 'Eraser')
+			$cImage = "Big_Delete1.png"
+			$cSize = "80"
+			$cArray[2][1] = $cName
+			$cArray[2][2] = $G_Global_StateEnabled
+			$cArray[2][3] = "*;**"
+			$cArray[2][4] = "Delete"
+			$cArray[2][5] = "Safely Erase"
+		Case 3 ; Extractor.
+			$cName = __GetLang('CUSTOMIZE_EXAMPLE_2', 'Extractor')
+			$cImage = "Big_Box6.png"
+			$cSize = "80"
+			$cArray[2][1] = $cName
+			$cArray[2][2] = $G_Global_StateEnabled
+			$cArray[2][3] = "*.*"
+			$cArray[2][4] = "Extract"
+			$cArray[2][5] = "%ParentDir%"
+		Case 4 ; List Maker.
+			$cName = __GetLang('CUSTOMIZE_EXAMPLE_3', 'List Maker')
+			$cImage = "Big_List1.png"
+			$cSize = "80"
+			$cArray[2][1] = "HTML"
+			$cArray[2][2] = $G_Global_StateEnabled
+			$cArray[2][3] = "*"
+			$cArray[2][4] = "Create List"
+			$cArray[2][5] = "%Desktop%\" & __GetLang('MANAGE_DESTINATION_FILE_NAME', 'DropIt List') & ".html"
+			$cArray[2][7] = "#;%Counter%;" & __GetLang('LIST_LABEL_1', 'Full Name') & ";%FileNameExt%;" & __GetLang('LIST_LABEL_2', 'Directory') & ";%ParentDir%;" & __GetLang('LIST_LABEL_3', 'Size') & ";%FileSize%;" & __GetLang('LIST_LABEL_9', 'Absolute Link') & ";%LinkAbsolute%;" & __GetLang('LIST_LABEL_13', 'Date Modified') & ";%DateModified%"
+			$cArray[3][1] = "PDF"
+			$cArray[3][2] = $G_Global_StateEnabled
+			$cArray[3][3] = "*"
+			$cArray[3][4] = $cArray[2][4]
+			$cArray[3][5] = "%Desktop%\" & __GetLang('MANAGE_DESTINATION_FILE_NAME', 'DropIt List') & ".pdf"
+			$cArray[3][7] = __GetLang('LIST_LABEL_1', 'Full Name') & ";%FileNameExt%;" & __GetLang('LIST_LABEL_2', 'Directory') & ";%ParentDir%;" & __GetLang('LIST_LABEL_3', 'Size') & ";%FileSize%;" & __GetLang('LIST_LABEL_7', 'MD5 Hash') & ";%MD5%"
+			$cArray[4][1] = "XLS"
+			$cArray[4][2] = $G_Global_StateEnabled
+			$cArray[4][3] = "*"
+			$cArray[4][4] = $cArray[2][4]
+			$cArray[4][5] = "%Desktop%\" & __GetLang('MANAGE_DESTINATION_FILE_NAME', 'DropIt List') & ".xls"
+			$cArray[4][7] = __GetLang('LIST_LABEL_1', 'Full Name') & ";%FileNameExt%;" & __GetLang('LIST_LABEL_2', 'Directory') & ";%ParentDir%;" & __GetLang('LIST_LABEL_3', 'Size') & ";%FileSize%;" & __GetLang('LIST_LABEL_33', 'CRC Hash') & ";%CRC%;" & __GetLang('LIST_LABEL_12', 'Date Created') & ";%DateCreated%"
+		Case 5 ; Playlist Maker.
+			$cName = __GetLang('CUSTOMIZE_EXAMPLE_4', 'Playlist Maker')
+			$cImage = "Big_Playlist1.png"
+			$cSize = "80"
+			$cArray[2][1] = "M3U"
+			$cArray[2][2] = $G_Global_StateEnabled
+			$cArray[2][3] = "*.aac;*.flac;*.m4a;*.mp3;*.ogg;*.wma;*.wav"
+			$cArray[2][4] = "Create Playlist"
+			$cArray[2][5] = "%Desktop%\" & __GetLang('PLAYLIST', 'Playlist') & ".m3u"
+			$cArray[3][1] = "PLS"
+			$cArray[3][2] = $G_Global_StateEnabled
+			$cArray[3][3] = $cArray[2][3]
+			$cArray[3][4] = $cArray[2][4]
+			$cArray[3][5] = "%Desktop%\" & __GetLang('PLAYLIST', 'Playlist') & ".pls"
+			$cArray[4][1] = "WPL"
+			$cArray[4][2] = $G_Global_StateEnabled
+			$cArray[4][3] = $cArray[2][3]
+			$cArray[4][4] = $cArray[2][4]
+			$cArray[4][5] = "%Desktop%\" & __GetLang('PLAYLIST', 'Playlist') & ".wpl"
+		Case 6 ; Extractor.
+			$cName = __GetLang('CUSTOMIZE_EXAMPLE_5', 'Gallery Maker')
+			$cImage = "Big_Gallery1.png"
+			$cSize = "80"
+			$cArray[2][1] = $cName
+			$cArray[2][2] = $G_Global_StateEnabled
+			$cArray[2][3] = "*.jpg;*.gif;*.png"
+			$cArray[2][4] = "Create Gallery"
+			$cArray[2][5] = "%Desktop%"
+			$cArray[2][13] = "2;1;"
+		Case Else
+			Return SetError(1, 0, 0)
+	EndSwitch
+	__ArrayToProfile($cArray, $cName, $cProfileDirectory, $cImage, $cSize)
+
+	Return 1
+EndFunc   ;==>__CreateProfileExample
 
 Func __IsCurrentProfile($sProfile)
 	#cs
@@ -411,7 +511,7 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 				$sAssociationField &= $sFields[$B] & "=" & $aArray[$A][$B + 1]
 			EndIf
 		Next
-		__IniWriteEx($sProfilePath, $aArray[$A][1], "", $sAssociationField)
+		__PasteAssociation($sProfilePath, $aArray[$A][1], $sAssociationField)
 	Next
 
 	Return $sProfileName
@@ -581,7 +681,7 @@ Func __SetProgressStatus($sElementsGUI, $sType, $sParam = 0)
 	#ce
 	Switch $sType
 		Case 1 ; Reset Single Progress Bar And Show Second Line With $sParam.
-			GUICtrlSetData($sElementsGUI[1], _WinAPI_PathCompactPathEx($sParam, 75))
+			GUICtrlSetData($sElementsGUI[1], $sParam)
 			GUICtrlSetData($sElementsGUI[3], 0)
 			GUICtrlSetData($sElementsGUI[5], '0 %')
 		Case 2 ; Complete Single Progress Bar.
@@ -658,31 +758,58 @@ EndFunc   ;==>__Log_Write
 #EndRegion >>>>> Log Functions <<<<<
 
 #Region >>>>> Size Functions <<<<<
-Func __GetCurrentSize($gWindow = "")
+Func __GetCurrentSize($sElement, $sDefault)
 	#cs
-		Description: Get The Current Size From The Settings INI File.
-		Returns: Array[2]
-		[0] - Width Size [300]
-		[1] - Height Size [200]
+		Description: Get The Current Size Of An Element (Window Width/Height/Left/Top Or ListView Column Widths) From The Settings INI File.
+		Returns: Array[?]
+		[0] - Counter [2]
+		[1] - Size 1 [300]
+		[2] - Size 2 [200]
 	#ce
-	Local $gINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Return StringSplit(IniRead($gINI, $G_Global_GeneralSection, $gWindow, "400;200"), ";", 2)
+	Local $sINI = __IsSettingsFile() ; Get Default Settings INI File.
+	Local $aLoad = StringSplit($sDefault, ";")
+	Local $aReturn = StringSplit(IniRead($sINI, $G_Global_GeneralSection, $sElement, ""), ";")
+	If $aReturn[0] <> $aLoad[0] Then
+		ReDim $aReturn[$aLoad[0] + 1]
+		$aReturn[0] = $aLoad[0]
+		For $A = 1 To $aReturn[0]
+			If $aReturn[$A] = "" Then
+				$aReturn[$A] = $aLoad[$A]
+			EndIf
+		Next
+	EndIf
+	Return $aReturn
 EndFunc   ;==>__GetCurrentSize
 
-Func __SetCurrentSize($hHandle = "", $hWindow = "")
+Func __SetCurrentSize($sElement, $hHandle, $iType = 0)
 	#cs
-		Description: Set The Current Size Of DropIt Windows.
+		Description: Set The Current Size Of DropIt Element (Window Width/Height/Left/Top Or ListView Column Widths).
 		Returns: 1
 	#ce
-	If $hHandle = "" Then
-		Return SetError(1, 0, 0)
-	EndIf
-	Local $aWinGetClientSize = WinGetClientSize($hHandle)
-	If @error Then
-		Return SetError(1, 0, 0)
-	EndIf
+	Local $sReturn
 	Local $sINI = __IsSettingsFile() ; Get Default Settings INI File.
-	__IniWriteEx($sINI, $G_Global_GeneralSection, $hWindow, $aWinGetClientSize[0] & ";" & $aWinGetClientSize[1])
+	If $iType = 0 Then ; Is Window.
+		Local $aLoadSize = WinGetClientSize($hHandle)
+		If @error Then
+			Return SetError(1, 0, 0)
+		EndIf
+		If $aLoadSize[0] = 0 Then ; Keep Old Size If Window Is Minimized.
+			Return SetError(1, 0, 0)
+		EndIf
+		Local $aLoadPos = WinGetPos($hHandle)
+		If @error Then
+			Return SetError(1, 0, 0)
+		EndIf
+		$sReturn = $aLoadSize[0] & ";" & $aLoadSize[1] & ";" & $aLoadPos[0] & ";" & $aLoadPos[1]
+	ElseIf $iType = 1 Then ; Is ListView.
+		For $A = 0 To _GUICtrlListView_GetColumnCount($hHandle) - 1
+			$sReturn &= _GUICtrlListView_GetColumnWidth($hHandle, $A) & ";"
+		Next
+		$sReturn = StringTrimRight($sReturn, 1)
+	Else
+		Return SetError(1, 0, 0)
+	EndIf
+	__IniWriteEx($sINI, $G_Global_GeneralSection, $sElement, $sReturn)
 	Return 1
 EndFunc   ;==>__SetCurrentSize
 #EndRegion >>>>> Size Functions <<<<<
@@ -696,6 +823,8 @@ Func __GetCompressionLevel($gLevel)
 
 	If StringIsDigit($gLevel) Then
 		Switch $gLevel
+			Case "0"
+				$gReturnValue = __GetLang('COMPRESS_LEVEL_5', 'Store')
 			Case "1"
 				$gReturnValue = __GetLang('COMPRESS_LEVEL_0', 'Fastest')
 			Case "3"
@@ -709,6 +838,8 @@ Func __GetCompressionLevel($gLevel)
 		EndSwitch
 	Else
 		Switch $gLevel
+			Case __GetLang('COMPRESS_LEVEL_5', 'Store')
+				$gReturnValue = "0"
 			Case __GetLang('COMPRESS_LEVEL_0', 'Fastest')
 				$gReturnValue = "1"
 			Case __GetLang('COMPRESS_LEVEL_1', 'Fast')
@@ -836,30 +967,6 @@ Func __ByteSuffix($iBytes)
 	Return Round($iBytes, $iPlaces) & " " & $aArray[$A]
 EndFunc   ;==>__ByteSuffix
 
-Func __Column_Width($sColumn, $aString = -1)
-	#cs
-		Description: Retrive Or Save The Column Width.
-		Returns: Array[?]
-		[0] - Column 1 [90]
-		[1] - Column 2 [165]
-	#ce
-	Local $aReturn, $sReturn
-
-	$sReturn = __IsSettingsFile() ; Get Default Settings INI File.
-	Switch $aString
-		Case -1
-			$aReturn = StringSplit(IniRead($sReturn, $G_Global_GeneralSection, $sColumn, ""), ";")
-
-		Case Else
-			If IsArray($aString) = 0 Then
-				Return SetError(1, 0, 0)
-			EndIf
-			$aReturn = _ArrayToString($aString, ";")
-			__IniWriteEx($sReturn, $G_Global_GeneralSection, $sColumn, $aReturn)
-	EndSwitch
-	Return $aReturn
-EndFunc   ;==>__Column_Width
-
 Func __ComposeLineINI($sKey, $sValue)
 	#cs
 		Description: Add Key Part Only If Needed.
@@ -935,6 +1042,9 @@ Func __GetPercent($gSize, $gUpdateCurrent = 1)
 	Local $gCurrentSize = $G_Global_SortingCurrentSize + $gSize
 	If $gUpdateCurrent = 1 Then
 		$G_Global_SortingCurrentSize = $gCurrentSize
+	EndIf
+	If $G_Global_SortingTotalSize = 0 Then
+		Return 0
 	EndIf
 	Return Round($gCurrentSize / $G_Global_SortingTotalSize * 100)
 EndFunc   ;==>__GetPercent

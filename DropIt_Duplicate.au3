@@ -35,7 +35,7 @@ Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 
 	GUICtrlCreateLabel($dString[1], 10, 10, 480, 18)
 	GUICtrlCreateInput($dItem, 10, 30, 480, 22, BitOR($ES_READONLY, $ES_AUTOHSCROLL, $ES_LEFT))
 
-	$dLabel[0] = GUICtrlCreateLabel(__GetLang('FROM', 'From') & ": " & __GetFileName($dSourceDir), 10, 65, 230, 18)
+	$dLabel[0] = GUICtrlCreateLabel(__GetLang('FROM', 'From') & ": " & __GetFileName($dSourceDir), 10, 65, 230, 18, $STATIC_COMPACT_END)
 	GUICtrlSetTip($dLabel[0], $dSourceDir, "", 0, 2)
 	$dLabel[1] = GUICtrlCreateLabel($dInfo[0], 10, 65 + 20, 80, 18)
 	If $dInfo[0] > $dInfo[2] Then
@@ -57,7 +57,7 @@ Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 
 		GUICtrlSetState($dLabel[3], $GUI_DISABLE)
 	EndIf
 
-	$dLabel[4] = GUICtrlCreateLabel(__GetLang('TO', 'To') & ": " & __GetFileName($dDestinationDir), 10 + 240, 65, 230, 18)
+	$dLabel[4] = GUICtrlCreateLabel(__GetLang('TO', 'To') & ": " & __GetFileName($dDestinationDir), 10 + 240, 65, 230, 18, $STATIC_COMPACT_END)
 	GUICtrlSetTip($dLabel[4], $dDestinationDir, "", 0, 2)
 	$dLabel[5] = GUICtrlCreateLabel($dInfo[2], 10 + 240, 65 + 20, 80, 18)
 	If $dInfo[0] < $dInfo[2] Then
@@ -239,7 +239,7 @@ Func __Duplicate_ProcessOnline($dProfile, $dSourcePath, $dDestinationHost, $dDes
 EndFunc   ;==>__Duplicate_ProcessOnline
 
 Func __Duplicate_Rename($dFileName, $dDestination, $dIsDirectory = 0, $dStyle = 1)
-	Local $dNumber, $dFileExt, $dExists, $dIsArray = 0, $A = 1
+	Local $dNumber, $dFileExt, $dExists, $dIsArray, $A = 1
 	Local $sFileString = $dFileName
 
 	If IsArray($dDestination) Then
@@ -254,23 +254,22 @@ Func __Duplicate_Rename($dFileName, $dDestination, $dIsDirectory = 0, $dStyle = 
 		$dFileExt = __GetFileExtension($sFileString)
 		If $dFileExt <> "" Then
 			$dFileExt = "." & $dFileExt ; To Add It Only If Is A File With Extension.
+			$sFileString = StringTrimRight($sFileString, StringLen($dFileExt))
 		EndIf
-		$sFileString = StringTrimRight($sFileString, StringLen($dFileExt))
 	EndIf
 
 	While 1
+		$dFileName = $sFileString
 		$dNumber = StringFormat("%02d", $A)
 		Switch $dStyle
 			Case 2
-				$dFileName = $sFileString & "_" & $dNumber
+				$dFileName &= "_" & $dNumber
 			Case 3
-				$dFileName = $sFileString & " (" & $dNumber & ")"
+				$dFileName &= " (" & $dNumber & ")"
 			Case Else
-				$dFileName = $sFileString & " " & $dNumber
+				$dFileName &= " " & $dNumber
 		EndSwitch
-		If $dIsDirectory = 0 Then ; If Is A File.
-			$dFileName &= $dFileExt
-		EndIf
+		$dFileName &= $dFileExt
 
 		If $dIsArray Then
 			$dExists = 0

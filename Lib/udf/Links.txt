@@ -2,6 +2,10 @@
 http://www.autoitscript.com/forum/topic/91283-7zread-udf/
 
 
+Binary Library (Binary.au3)
+http://www.autoitscript.com/forum/topic/131037-binary-udf/
+
+
 Copy Library (Copy.au3)
 http://www.autoitscript.com/forum/topic/121833-copy-udf/
 
@@ -18,12 +22,12 @@ Hash For File Library (HashForFile.au3)
 http://www.autoitscript.com/forum/topic/95558-crc32-md4-md5-sha1-for-files/
 
 
+Icon Image Library (IconImage.au3)
+http://www.autoitscript.com/forum/topic/133053-iconimage-udf/
+
+
 Image Get Info Library (ImageGetInfo.au3)
 http://www.autoitscript.com/forum/topic/13096-udf-imagegetinfo/
-
-
-RecFileListToArray Library (RecFileListToArray.au3)
-http://www.autoitscript.com/forum/topic/126198-recfilelisttoarray-new-version-2-dec-12/
 
 
 Secure Delete Library (SecureDelete.au3)

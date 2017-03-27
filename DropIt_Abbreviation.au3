@@ -252,8 +252,8 @@ EndFunc   ;==>_ContextMenuAbbreviations
 
 Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDirs = 0)
 	Local $sLoadedProperty
-	Local $aEnvArray[128][3] = [ _
-			[127, 0, 0], _
+	Local $aEnvArray[147][3] = [ _
+			[146, 0, 0], _
 			["FileExt", 0, 1], _
 			["FileName", 0, 2], _
 			["FileNameExt", 0, 3], _
@@ -264,6 +264,8 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 			["SubDir", 0, 8], _
 			["FileDrive", 0, 9], _
 			["FileVersion", 0, 10], _
+			["DroppedDir", 0, 11], _
+			["DroppedDirName", 0, 12], _
 			["PortableDrive", 5, 25], _
 			["ProfileName", 5, 26], _
 			["Owner", 1, 8], _
@@ -292,6 +294,23 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 			["FlashMode", 4, 10], _
 			["ImageDescription", 4, 11], _
 			["ImageComments", 4, 12], _
+			["ImageWidth", 4, 13], _
+			["ImageHeight", 4, 14], _
+			["ImageOrientation", 4, 15], _
+			["XResolution", 4, 16], _
+			["YResolution", 4, 17], _
+			["ResolutionUnit", 4, 18], _
+			["MaxApertureValue", 4, 19], _
+			["DigitalZoomRatio", 4, 20], _
+			["SubjectDistance", 4, 21], _
+			["ExposureMode", 4, 22], _
+			["WhiteBalance", 4, 23], _
+			["SceneCaptureType", 4, 24], _
+			["ContrastLevel", 4, 25], _
+			["SaturationLevel", 4, 26], _
+			["SharpnessLevel", 4, 27], _
+			["MeteringMode", 4, 28], _
+			["LightSource", 4, 29], _
 			["SongAlbum", 1, 15], _
 			["SongArtist", 1, 13], _
 			["SongGenre", 1, 16], _
@@ -391,7 +410,7 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 			EndIf
 			Switch $aEnvArray[$A][1]
 				Case 0 ; Specific Strings.
-					$sLoadedProperty = __GetFileParameter($sFilePath, $sMainDirs, $aEnvArray[$A][2])
+					$sLoadedProperty = __GetFileParameter($sFilePath, $sDestination, $sMainDirs, $aEnvArray[$A][2])
 				Case 1 ; From Windows Explorer.
 					$sLoadedProperty = __GetFileProperties($sFilePath, $aEnvArray[$A][2])
 					$sLoadedProperty = StringReplace($sLoadedProperty, ":", ".")
@@ -404,7 +423,10 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 				Case 5 ; Macro.
 					$sLoadedProperty = __GetDefinedMacro($sProfile, $aEnvArray[$A][2])
 				Case 6 ; User Input.
-					$sLoadedProperty = __GetUserInput($sDestination, __GetFileName($sFilePath), $sAction)
+					$sLoadedProperty = __GetUserInput($sDestination, $sFilePath, $sAction)
+					If @error Then
+						Return SetError(1, 0, $sDestination) ; To Skip Items If Abbreviation Value Is Not Defined.
+					EndIf
 			EndSwitch
 			If StringStripWS($sLoadedProperty, 8) == "" And $aEnvArray[$A][0] <> "SubDir" Then
 				$sLoadedProperty = StringReplace(__GetLang('ENV_VAR_UNKNOWN', 'Unknown %Abbreviation%', 1), "%Abbreviation%", $aEnvArray[$A][0])
@@ -449,6 +471,40 @@ Func __GetFileExif($sFilePath, $iExifCode)
 			$sReturn = _ImageGetParam($sExif, "ImageDescription")
 		Case 12
 			$sReturn = _ImageGetParam($sExif, "UserComments")
+		Case 13
+			$sReturn = _ImageGetParam($sExif, "Width")
+		Case 14
+			$sReturn = _ImageGetParam($sExif, "Height")
+		Case 15
+			$sReturn = _ImageGetParam($sExif, "Orientation")
+		Case 16
+			$sReturn = _ImageGetParam($sExif, "XResolution")
+		Case 17
+			$sReturn = _ImageGetParam($sExif, "YResolution")
+		Case 18
+			$sReturn = _ImageGetParam($sExif, "ResolutionUnit")
+		Case 19
+			$sReturn = _ImageGetParam($sExif, "MaxApertureValue")
+		Case 20
+			$sReturn = _ImageGetParam($sExif, "DigitalZoomRatio")
+		Case 21
+			$sReturn = _ImageGetParam($sExif, "SubjectDistance")
+		Case 22
+			$sReturn = _ImageGetParam($sExif, "ExposureMode")
+		Case 23
+			$sReturn = _ImageGetParam($sExif, "WhiteBalance")
+		Case 24
+			$sReturn = _ImageGetParam($sExif, "SceneCaptureType")
+		Case 25
+			$sReturn = _ImageGetParam($sExif, "Contrast")
+		Case 26
+			$sReturn = _ImageGetParam($sExif, "Saturation")
+		Case 27
+			$sReturn = _ImageGetParam($sExif, "Sharpness")
+		Case 28
+			$sReturn = _ImageGetParam($sExif, "MeteringMode")
+		Case 29
+			$sReturn = _ImageGetParam($sExif, "LightSource")
 	EndSwitch
 
 	Return $sReturn
@@ -471,7 +527,7 @@ Func __GetFileHash($sFilePath, $iHashCode)
 	Return $sReturn
 EndFunc   ;==>__GetFileHash
 
-Func __GetFileParameter($sFilePath, $sMainDirs, $iParameterCode)
+Func __GetFileParameter($sFilePath, $sDestination, $sMainDirs, $iParameterCode)
 	Local $sReturn = ''
 
 	Switch $iParameterCode
@@ -491,10 +547,17 @@ Func __GetFileParameter($sFilePath, $sMainDirs, $iParameterCode)
 			$sReturn = __GetFileName(__GetParentFolder($sFilePath))
 		Case 8 ; Recreated Directory Structure.
 			$sReturn = __GetSubDir($sFilePath, $sMainDirs)
+			If StringInStr($sDestination, "\%SubDir%") Then
+				$sReturn = StringTrimLeft($sReturn, 1) ; To Avoid Double Backslash "\\".
+			EndIf
 		Case 9 ; File Drive Letter.
 			$sReturn = StringTrimRight(__GetDrive($sFilePath), 1)
 		Case 10 ; File Version.
 			$sReturn = FileGetVersion($sFilePath)
+		Case 11 ; Dropped Folder Path.
+			$sReturn = __GetSubDir($sFilePath, $sMainDirs, 0)
+		Case 12 ; Dropped Folder Name.
+			$sReturn = __GetFileName(__GetSubDir($sFilePath, $sMainDirs, 0))
 	EndSwitch
 
 	Return $sReturn
@@ -615,18 +678,20 @@ Func __GetDefinedMacro($sProfileName, $iMacroCode)
 	Return $sReturn
 EndFunc   ;==>__GetDefinedMacro
 
-Func __GetSubDir($sFilePath, $sMainDirs)
-	Local $sReturn = ''
-
+Func __GetSubDir($sFilePath, $sMainDirs, $iGetSubDir = 1)
 	If IsArray($sMainDirs) Then
 		For $A = 1 To $sMainDirs[0]
 			If StringInStr($sFilePath, $sMainDirs[$A]) Then
-				$sReturn = StringTrimLeft(__GetParentFolder($sFilePath), StringLen($sMainDirs[$A]))
+				If $iGetSubDir Then
+					Return StringTrimLeft(__GetParentFolder($sFilePath), StringLen($sMainDirs[$A]))
+				Else
+					Return $sMainDirs[$A]
+				EndIf
 			EndIf
 		Next
 	EndIf
 
-	Return $sReturn
+	Return ""
 EndFunc   ;==>__GetSubDir
 
 Func __GetUserInput($sDestination, $sFilePath, $sAction)
@@ -647,10 +712,10 @@ Func __GetUserInput($sDestination, $sFilePath, $sAction)
 	__ExpandEventMode(0) ; Disable Event Buttons.
 	$hGUI = GUICreate(__GetLang('USERINPUT_0', 'Define Abbreviation Value'), 440, 250, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
 	GUICtrlCreateLabel($sString[0], 10, 10, 420, 20)
-	GUICtrlCreateInput($sFilePath, 10, 30, 379, 22, BitOR($ES_READONLY, $ES_AUTOHSCROLL, $ES_LEFT))
+	GUICtrlCreateInput(__GetFileName($sFilePath), 10, 30, 379, 22, BitOR($ES_READONLY, $ES_AUTOHSCROLL, $ES_LEFT))
 	$hOpen_Item = GUICtrlCreateButton("O", 10 + 384, 28, 36, 25, $BS_ICON)
 	GUICtrlSetTip($hOpen_Item, $sString[1])
-	GUICtrlSetImage($hOpen_Item, @ScriptFullPath, -27, 0)
+	GUICtrlSetImage($hOpen_Item, @ScriptFullPath, -25, 0)
 
 	GUICtrlCreateLabel(__GetLang('DESTINATION', 'Destination') & ":", 10, 60 + 10, 420, 20)
 	GUICtrlCreateInput($sDestination, 10, 60 + 30, 420, 22, BitOR($ES_READONLY, $ES_AUTOHSCROLL))
@@ -693,5 +758,8 @@ Func __GetUserInput($sDestination, $sFilePath, $sAction)
 	GUIDelete($hGUI)
 	__ExpandEventMode(1) ; Enable Event Buttons.
 
+	If $sText = "" Then
+		Return SetError(1, 0, 0)
+	EndIf
 	Return $sText
 EndFunc   ;==>__GetUserInput

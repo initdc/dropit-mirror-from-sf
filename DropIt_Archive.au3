@@ -3,6 +3,7 @@
 
 #include-once
 #include <Constants.au3>
+#include <Date.au3>
 #include <GUIConstantsEx.au3>
 #include <String.au3>
 #include <WinAPIFiles.au3>
@@ -26,7 +27,7 @@ Func __7ZipGetPassword($sFilePath, $sPassword = "")
 		Case 2 ; Password Needed.
 			If $sPassword = "" Then
 				__ExpandEventMode(0) ; Disable Event Buttons.
-				$sPassword = __InsertPassword_GUI(_WinAPI_PathCompactPathEx(__GetFileName($sFilePath), 68))
+				$sPassword = __InsertPassword_GUI($sFilePath)
 				__ExpandEventMode(1) ; Enable Event Buttons.
 				If $sPassword = -1 Then
 					Return SetError(2, 0, "") ; Skipped.
@@ -59,10 +60,9 @@ Func __7ZipRun($rSourceFilePath, $rDestinationFilePath, $rType = 0, $rDuplicateM
 
 		Case 1 ; Extract Mode.
 			$rCommand = '"' & $7Zip & '" x ' & __ExtractDuplicateMode($rDuplicateMode) & ' "-p' & $rPassword & '" -o"' & $rDestinationFilePath & '" -- "' & $rSourceFilePath & '"'
-			
 
-		Case 2 ; Check Mode.
-			$rCommand = '"' & $7Zip & '" l -slt -- "' & $rSourceFilePath & '"'
+		Case 2 ; Check/List Mode.
+			$rCommand = '"' & $7Zip & '" l "-p' & $rPassword & '" -slt -- "' & $rSourceFilePath & '"'
 			$rNotWait = 1 ; Force To Not Wait.
 
 		Case Else
@@ -98,65 +98,73 @@ Func __7ZipRun($rSourceFilePath, $rDestinationFilePath, $rType = 0, $rDuplicateM
 		ElseIf StringInStr($rLineRead, "Encrypted = -") = 0 Then ; Not Archive.
 			Return SetError(1, 0, 0)
 		EndIf
+		Return $rLineRead
 	EndIf
 
 	Return $rProcess
 EndFunc   ;==>__7ZipRun
 
-Func __Backup_Restore($bHandle = -1, $bType = 0, $bZipFile = -1) ; 0 = Backup & 1 = Restore & 2 = Remove.
+Func __Backup_Restore($bHandle = -1, $bType = 0, $bZipFile = -1)
 	#cs
 		Description: Backup/Restore The Settings INI File & Profiles.
 		Returns: 1
 	#ce
-	Local $bBackupDirectory = __GetDefault(32) ; Get Default Backup Directory.
-	Local $bBackup[3] = [2, __IsSettingsFile(), __GetDefault(2)] ; __GetDefault(2) = Get Default Profiles Directory.
-
-	If FileExists($bBackupDirectory & $bZipFile) Or $bZipFile = -1 Then
-		$bZipFile = "DropIt_Backup_" & @YEAR & "-" & @MON & "-" & @MDAY & "[" & @HOUR & "." & @MIN & "." & @SEC & "].zip"
-	EndIf
+	Local $bSettingsPath = __IsSettingsFile()
+	Local $bDirectories = __GetDefault(35) ; 1 = Settings Directory, 2 = Profiles Directory, 3 = Backup Directory.
 
 	Switch $bType
-		Case 0
-			__7ZipRun($bBackup[1] & '" "' & $bBackup[2], $bBackupDirectory & $bZipFile, 0)
-			MsgBox(0, __GetLang('OPTIONS_BACKUP_MSGBOX_0', 'Backup Created'), __GetLang('OPTIONS_BACKUP_MSGBOX_1', 'Successfully created a DropIt Backup.'), 0, __OnTop($bHandle))
-
-		Case 1
-			Local $bSettingsDirectory = __GetDefault(1) ; __GetDefault(1) = Get The Default Settings Directory.
-			If FileExists($bBackupDirectory) = 0 Or DirGetSize($bBackupDirectory, 2) = 0 Then
-				$bBackupDirectory = __GetDefault(1) ; __GetDefault(1) = Get The Default Settings Directory.
+		Case 0 ; Back Up.
+			If FileExists($bDirectories[3][0] & $bZipFile) Or $bZipFile = -1 Then
+				$bZipFile = "DropIt_Backup_" & @YEAR & "-" & @MON & "-" & @MDAY & "[" & @HOUR & "." & @MIN & "." & @SEC & "].zip"
 			EndIf
-			$bZipFile = FileOpenDialog(__GetLang('OPTIONS_BACKUP_TIP_0', 'Select a DropIt Backup'), $bBackupDirectory, __GetLang('OPTIONS_BACKUP_TIP_1', 'DropIt Backup') & " (*.zip)", 1, "", __OnTop($bHandle))
+			__7ZipRun($bSettingsPath & '" "' & $bDirectories[2][0], $bDirectories[3][0] & $bZipFile, 0)
 			If @error Then
 				Return SetError(1, 0, 0)
 			EndIf
+			MsgBox(0, __GetLang('OPTIONS_BACKUP_MSGBOX_0', 'Backup Created'), __GetLang('OPTIONS_BACKUP_MSGBOX_1', 'Successfully created a DropIt Backup.'), 0, __OnTop($bHandle))
 
-			For $A = 1 To $bBackup[0]
-				If FileExists($bBackup[$A]) = 0 Then
-					ContinueLoop
-				EndIf
-				If _WinAPI_PathIsDirectory($bBackup[$A]) Then
-					DirRemove($bBackup[$A], 1)
-				EndIf
-			Next
-
-			__7ZipRun($bZipFile, $bSettingsDirectory, 1, 1)
+		Case 1 ; Restore.
+			If FileExists($bDirectories[3][0]) = 0 Or DirGetSize($bDirectories[3][0]) = 0 Then
+				$bDirectories[3][0] = $bDirectories[1][0]
+			EndIf
+			$bZipFile = FileOpenDialog(__GetLang('OPTIONS_BACKUP_TIP_0', 'Select a DropIt Backup'), $bDirectories[3][0], __GetLang('OPTIONS_BACKUP_TIP_1', 'DropIt Backup') & " (*.zip)", 1, "", __OnTop($bHandle))
+			If @error Then
+				Return SetError(1, 0, 0)
+			EndIf
+			Local $bTempDir = $bDirectories[1][0] & "TEMPBK\"
+			__SureMove($bSettingsPath, $bTempDir & __GetFileName($bSettingsPath))
+			__SureMove($bDirectories[2][0], $bTempDir & __GetFileName($bDirectories[2][0]))
+			__7ZipRun($bZipFile, $bDirectories[1][0], 1, 1)
+			If @error Then
+				__SureMove($bTempDir & __GetFileName($bSettingsPath), $bSettingsPath)
+				__SureMove($bTempDir & __GetFileName($bDirectories[2][0]), $bDirectories[2][0])
+				Return SetError(1, 0, 0)
+			EndIf
+			DirRemove($bTempDir, 1)
 			Sleep(100)
 			MsgBox(0, __GetLang('OPTIONS_BACKUP_MSGBOX_2', 'Backup Restored'), __GetLang('OPTIONS_BACKUP_MSGBOX_3', 'Successfully restored the selected DropIt Backup.'), 0, __OnTop($bHandle))
 
-		Case 2
-			If FileExists($bBackupDirectory) = 0 Or DirGetSize($bBackupDirectory, 2) = 0 Then
-				$bBackupDirectory = __GetDefault(1) ; __GetDefault(1) = Get The Default Settings Directory.
+		Case 2 ; Remove.
+			If DirGetSize($bDirectories[3][0]) > 0 Then
+				If MsgBox(0x4, __GetLang('OPTIONS_BACKUP_MSGBOX_6', 'Remove Backups'), __GetLang('OPTIONS_BACKUP_MSGBOX_7', 'Are you sure to remove all backup files?'), 0, __OnTop($bHandle)) <> 6 Then
+					Return SetError(1, 0, 0)
+				EndIf
 			EndIf
-			$bZipFile = FileOpenDialog(__GetLang('OPTIONS_BACKUP_TIP_0', 'Select a DropIt Backup'), $bBackupDirectory, __GetLang('OPTIONS_BACKUP_TIP_1', 'DropIt Backup') & " (*.zip)", 1, "", __OnTop($bHandle))
-			If @error Then
-				Return SetError(1, 0, 0)
-			EndIf
+			DirRemove($bDirectories[3][0], 1)
 
-			FileDelete($bZipFile)
-			If DirGetSize($bBackupDirectory, 2) = 0 Then
-				DirRemove($bBackupDirectory, 1) ; Remove Back Directory If Empty.
+		Case 3 ; Auto Back Up.
+			$bZipFile = $bDirectories[3][0] & "DropIt_AutoBackup.zip"
+			If FileExists($bZipFile) Then
+				Local $bDateArray = FileGetTime($bZipFile, 0, 0)
+				If @error Then
+					Return SetError(1, 0, 0)
+				EndIf
+				Local $bDate = StringFormat("%s/%s/%s %s:%s:%s", $bDateArray[0], $bDateArray[1], $bDateArray[2], $bDateArray[3], $bDateArray[4], $bDateArray[5])
+				If _DateDiff('d', $bDate, _NowCalc()) < 3 Then
+					Return SetError(1, 0, 0)
+				EndIf
 			EndIf
-			MsgBox(0, __GetLang('OPTIONS_BACKUP_MSGBOX_4', 'Backup Removed'), __GetLang('OPTIONS_BACKUP_MSGBOX_5', 'Successfully removed the selected DropIt Backup.'), 0, __OnTop($bHandle))
+			__7ZipRun($bSettingsPath & '" "' & $bDirectories[2][0], $bZipFile, 0)
 
 	EndSwitch
 	Return 1
@@ -206,6 +214,20 @@ Func __CompressCommands($cType, $cDestinationFilePath, $sCompressSettings)
 
 	Return $cCommand & ' -ssw -sccUTF-8 "' & $cDestinationFilePath & '"'
 EndFunc   ;==>__CompressCommands
+
+Func __GetContentArchiveArray($sArchive, $sPassword)
+	Local $aArray[1] = [0]
+	If _WinAPI_PathIsDirectory($sArchive) Then
+		Return SetError(1, 0, $aArray)
+	EndIf
+	Local $sText = __7ZipRun($sArchive, "", 2, 0, 1, $sPassword)
+	If @error Then
+		Return SetError(1, 0, $aArray)
+	EndIf
+	$aArray = StringRegExp($sText, '(?i)' & @CRLF & 'Path = (.*?)' & @CRLF, 3)
+	$aArray[0] = UBound($aArray) - 1 ; Replace The Archive Path With The Number Of Items.
+	Return $aArray
+EndFunc   ;==>__GetContentArchiveArray
 
 Func __GetDefaultCompressSettings($sCompressSettings = "", $sDestination = "")
 	Local $sCompress_ZipDefault = "False;zip;5;Deflate;None;", $sCompress_7zDefault = "False;7z;5;LZMA;None;", $sCompress_ExeDefault = "False;exe;5;LZMA;None;"
@@ -276,7 +298,7 @@ Func __ExtractDuplicateMode($iDuplicateMode)
 	Return $iDuplicateMode
 EndFunc   ;==>__ExtractDuplicateMode
 
-Func __InsertPassword_GUI($iFileName)
+Func __InsertPassword_GUI($iFilePath)
 	Local $iCancel, $iGUI, $iInput, $iOK, $iPassword
 
 	$iGUI = GUICreate(__GetLang('PASSWORD_MSGBOX_0', 'Enter Password'), 320, 150, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
@@ -286,7 +308,7 @@ Func __InsertPassword_GUI($iFileName)
 
 	GUICtrlCreateLabel(__GetLang('MOREMATCHES_LABEL_0', 'Loaded item:'), 10, 12, 300, 18)
 	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlCreateLabel($iFileName, 10, 12 + 18, 300, 30)
+	GUICtrlCreateLabel(__GetFileName($iFilePath), 10, 12 + 18, 300, 30, $STATIC_COMPACT_END)
 	GUICtrlSetBkColor(-1, 0xffffff)
 	GUICtrlSetFont(-1, -1, 800)
 
@@ -385,3 +407,51 @@ Func __Password_GUI()
 	__EncryptionFolder(1) ; Decrypt Profiles.
 	Return 1
 EndFunc   ;==>__Password_GUI
+
+Func __RenameToCompress($sFilePath, $sStringContent, ByRef $iTempMoved)
+	Local $sFileExt, $sTempFilePath, $sNewFilePath, $A = 1, $sTempName = $G_Global_TempName
+
+	If StringInStr($sStringContent, "\" & __GetFileName($sFilePath) & @CRLF) = 0 Then
+		Return $sFilePath
+	EndIf
+	$sTempFilePath = __GetParentFolder($sFilePath) & "\" & $sTempName & "\" & __GetFileName($sFilePath)
+	$iTempMoved = 1 ; At Least One File/Folder Renamed.
+
+	If _WinAPI_PathIsDirectory($sTempFilePath) = 0 Then ; If Is A File.
+		$sFileExt = __GetFileExtension($sTempFilePath) ; txt
+		If $sFileExt <> "" Then
+			$sFileExt = "." & $sFileExt ; To Add It Only If Is A File With Extension.
+			$sTempFilePath = StringTrimRight($sTempFilePath, StringLen($sFileExt))
+		EndIf
+	EndIf
+
+	While 1
+		$sNewFilePath = $sTempFilePath & " (" & StringFormat("%02d", $A) & ")" & $sFileExt
+		If StringInStr($sStringContent, "\" & __GetFileName($sNewFilePath) & @CRLF) = 0 Then
+			ExitLoop
+		EndIf
+		$A += 1
+	WEnd
+	__SureMove($sFilePath, $sNewFilePath) ; Temporarily Move File/Folder In A Subdirectory.
+
+	Return $sNewFilePath
+EndFunc   ;==>__RenameToCompress
+
+Func __RestoreCompressedItems($sString, $aMainArray, $iFrom, $iTo) ; Used To Restore The Position Of Files/Folders Temporarily Moved In A Subdirectory For Compression.
+	Local $aArray = StringSplit($sString, @CRLF, 1)
+	If IsArray($aArray) = 0 Then
+		Return SetError(1, 0, 0)
+	EndIf
+	Local $iCounter
+	For $A = $iFrom To $iTo
+		If $aMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+			ContinueLoop
+		EndIf
+		$iCounter += 1
+		If $aArray[$iCounter] <> $aMainArray[$A][0] Then ; File/Folder Was Moved In Temporarily Subdirectory.
+			__SureMove($aArray[$iCounter], $aMainArray[$A][0])
+			DirRemove(__GetParentFolder($aArray[$iCounter]), 0) ; 0 = To Remove Temporarily Subdirectory Only If Empty.
+		EndIf
+	Next
+	Return 1
+EndFunc   ;==>__RestoreCompressedItems
