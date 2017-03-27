@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Comment=DropIt - To place your files with a drop
 #AutoIt3Wrapper_Res_Description=DropIt
-#AutoIt3Wrapper_Res_Fileversion=0.7.1.0
+#AutoIt3Wrapper_Res_Fileversion=0.7.2.0
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_LegalCopyright=by Lupo PenSuite Team
 #AutoIt3Wrapper_Run_Obfuscator=y
@@ -22,7 +22,7 @@ Opt("TrayIconHide", 1)
 Opt("TrayOnEventMode", 1)
 Opt("TrayMenuMode", 1)
 
-Global $sName = "DropIt", $sVer = " (v0.7.1)", $ii = $sName & " - To place your files with a drop"
+Global $sName = "DropIt", $sVer = " (v0.7.2)", $ii = $sName & " - To place your files with a drop"
 Global $sIni = @ScriptDir & "\settings.ini", $sIm = @ScriptDir & "\img\image.gif", $sPic = @ScriptDir & "\img\ps.gif"
 Global $hGUI1, $hGUI2, $sData, $temp, $i, $top, $Show, $Separ, $Exit, $list, $gaDropFiles[1], $RelPos[2]
 Global Const $WM_DROPFILES = 0x233, $SC_MOVE = 0xF010, $WM_ENTERSIZEMOVE = 0x231, $WM_EXITSIZEMOVE = 0x232
@@ -30,7 +30,7 @@ Global $xD = IniRead($sIni, "General", "SizeX", "64"), $yD = IniRead($sIni, "Gen
 Global $EP = "Exclusion-Pattern"
 Global $tips = '- As destination folders are supported both absolute ("C:\Lupo\My Images") and relative ("..\My Images") paths.' & @LF & @LF & '- If you want to exclude files that match with a specified pattern, you can add "$" at the end of the pattern (for example:  *.exe$ ).' & @LF & @LF & '- If you need more info about supported pattern rules, you can simply click the "Rules" button.'
 Global $prs = 'Supported pattern rules for files:' & @LF & '*.zip   = all files with "zip" extension' & @LF & 'penguin.*   = all files named "penguin"' & @LF & 'penguin*.*   = all files that begins with "penguin"' & @LF & '*penguin.*   = all files that ends with "penguin"' & @LF & '*penguin*   = all files that contains "penguin"' & @LF & @LF & 'Supported pattern rules for folders:' & @LF & 'robot**   = all folders that begins with "robot"' & @LF & '**robot   = all folders that ends with "robot"' & @LF & '**robot**   = all folders that contains "robot"' & @LF & @LF & 'Add "$" at the end of a pattern to skip files that' & @LF & 'match with it during the dropping (ex:  sky*.jpg$ ).'
-Global $er1 = "You have to select a destination folder to associate it.", $er2 = "You have to insert a correct pattern to add the association.", $er3 = "Destination folder already associated for this pattern.", $me1 = "Insert the desired destination folder and write a pattern, to positioning files that match with it:", $me2 = "Change the destination folder for files that match with the selected pattern or delete this association:"
+Global $er1 = "You have to select a destination folder to associate it.", $er2 = "You have to insert a correct pattern to add the association.", $er3 = "Destination folder already associated for this pattern.", $me1 = "Insert the desired destination folder and write a pattern, to place there files that match with it:", $me2 = "Change the destination folder for files that match with the selected pattern or delete this association:"
 
 
 If FileExists($sIm) Then
@@ -186,7 +186,7 @@ Func Options()		; OK
 	
 	; group of general options
 	GUICtrlCreateGroup("General",10, 6, 240, 104)
-	$check1 = GUICtrlCreateCheckbox("Show software always on top", 24, 6+16)
+	$check1 = GUICtrlCreateCheckbox("Show target image always on top", 24, 6+16)
 	$check2 = GUICtrlCreateCheckbox("Lock target image position", 24, 6+16+20)
 	$check3 = GUICtrlCreateCheckbox("Active association also for folders", 24, 6+16+40)
 	$check4 = GUICtrlCreateCheckbox("Set automatic choice for duplicates", 24, 6+16+60)
@@ -586,7 +586,6 @@ EndFunc
 
 Func DropEvent()		; OK
 	Local $decision
-	GUISetState(@SW_SHOW, $hGUI2)
 	If IniRead($sIni, "General", "AskMode", "False") = "True" Then
 		$decision = MsgBox(0x40004, "Choose positioning mode", "Do you want to 'move' these files in destination folders?" & @LF & "(otherwise they will be 'copied' in destination folders)")
 		If $decision = 6 Then
@@ -599,7 +598,6 @@ Func DropEvent()		; OK
 		$temp = $gaDropFiles[$i]
 		Position($temp)
 	Next
-	GUISetState(@SW_HIDE, $hGUI2)
 EndFunc
 
 
@@ -695,6 +693,16 @@ Func _Main()
 		IniWriteSection($sIni, "Patterns", "")
 	EndIf
 	
+	; Background mode
+	If $CmdLine[0] > 0 Then
+		GUISetState(@SW_HIDE, $hGUI1)
+		For $j = 1 To $CmdLine[0]
+			$gaDropFiles[$j - 1] = $CmdLine[$j]
+		Next
+		DropEvent()
+		Exit
+	EndIf
+	
 	$menu = GUICtrlCreateContextMenu($icon)
 	$func1 = GUICtrlCreateMenuItem("Manage", $menu)
 	GUICtrlCreateMenuItem("", $menu)
@@ -722,19 +730,13 @@ Func _Main()
 		WinSetOnTop($hGUI1, "", 0)
 	EndIf
 	
-	; Normal or Background mode
-	If $CmdLine[0] > 0 Then
-		For $j = 1 To $CmdLine[0]
-			$gaDropFiles[$j - 1] = $CmdLine[$j]
-		Next
-		DropEvent()
-	EndIf
-	
 	While 1
 		$nMsg = GUIGetMsg()
 		Switch $nMsg
 			Case $GUI_EVENT_DROPPED
+				GUISetState(@SW_SHOW, $hGUI2)
 				DropEvent()
+				GUISetState(@SW_HIDE, $hGUI2)
 				
 			Case $func1
 				GUICtrlSetState($icon, $GUI_DISABLE)
