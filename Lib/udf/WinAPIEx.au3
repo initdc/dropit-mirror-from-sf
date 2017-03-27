@@ -6689,48 +6689,6 @@ Func _WinAPI_DrawThemeTextEx($hTheme, $iPartId, $iStateId, $hDC, $sText, $tRECT,
 EndFunc   ;==>_WinAPI_DrawThemeTextEx
 
 ; #FUNCTION# ====================================================================================================================
-; Name...........: _WinAPI_DuplicateHandle
-; Description....: Duplicates an object handle.
-; Syntax.........: _WinAPI_DuplicateHandle ( $hProcess, $hSource, $hTarget [, $iAccess [, $iOptions [, $fInherit]]] )
-; Parameters.....: $hProcess - Handle to the process with the handle to be duplicated. The handle must have the $PROCESS_DUP_HANDLE access right.
-;                  $hSource  - Handle to be duplicated. This is an open object handle that is valid in the context of the source process.
-;                  $hTarget  - Handle to the process that is to receive the duplicated handle. The handle must have the
-;                              $PROCESS_DUP_HANDLE access right.
-;                  $iAccess  - The access requested for the new handle. This parameter is ignored if the $iOptions parameter
-;                              specifies the $DUPLICATE_SAME_ACCESS flag. Otherwise, the flags that can be specified depend on the
-;                              type of object whose handle is to be duplicated.
-;                  $iOptions - Optional actions. This parameter can be zero, or any combination of the following values.
-;
-;                              $DUPLICATE_CLOSE_SOURCE
-;                              $DUPLICATE_SAME_ACCESS
-;
-;                  $fInherit - Specifies whether the handle is inheritable, valid values:
-;                  |TRUE     - The duplicate handle can be inherited by new processes created by the target process.
-;                  |FALSE    - The new handle cannot be inherited. (Default)
-; Return values..: Success   - The duplicate handle. This handle is valid in the context of the target process.
-;                  Failure   - 0 and sets the @error flag to non-zero.
-; Author.........: Yashied
-; Modified.......:
-; Remarks........: The duplicate handle refers to the same object as the original handle. Therefore, any changes to the object are
-;                  reflected through both handles. For example, if you duplicate a file handle, the current file position is always
-;                  the same for both handles. For file handles to have different file positions, use the _WinAPI_CreateFile()
-;                  function to create file handles that share access to the same file.
-; Related........:
-; Link...........: @@MsdnLink@@ DuplicateHandle
-; Example........: Yes
-; ===============================================================================================================================
-
-Func _WinAPI_DuplicateHandle($hProcess, $hSource, $hTarget, $iAccess = 0, $iOptions = 2, $fInherit = 0)
-
-	Local $Ret = DllCall('kernel32.dll', 'int', 'DuplicateHandle', 'ptr', $hProcess, 'ptr', $hSource, 'ptr', $hTarget, 'ptr*', 0, 'dword', $iAccess, 'int', $fInherit, 'dword', $iOptions)
-
-	If (@error) Or (Not $Ret[0]) Then
-		Return SetError(1, 0, 0)
-	EndIf
-	Return $Ret[4]
-EndFunc   ;==>_WinAPI_DuplicateHandle
-
-; #FUNCTION# ====================================================================================================================
 ; Name...........: _WinAPI_DwmEnableBlurBehindWindow
 ; Description....: Enables the blur effect on a specified window.
 ; Syntax.........: _WinAPI_DwmEnableBlurBehindWindow ( $hWnd [, $fEnable [, $fTransition [, $hRgn]]] )

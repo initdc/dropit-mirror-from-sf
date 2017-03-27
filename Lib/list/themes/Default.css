@@ -4,20 +4,19 @@
 /* ---------------------------------------------------------- */
 
 html { background-color: #f2f8fb; }
+#dropitList { background-color: #f2f8fb; color: #314051;}
 
-body { color: #314051; }
+#dropitList a { color: #0096BF; text-decoration: none; }
+#dropitList a:hover { color: #0096BF; text-decoration: underline; }
 
-a { color: #0096BF; text-decoration: none; }
-a:hover { color: #0096BF; text-decoration: underline; }
+#dropitList a#di-top { color: #314051; }
+#dropitList a#di-top:hover { color: #0096BF; }
 
-a#top { color: #314051; }
-a#top:hover { color: #0096BF; }
+#dropitList h1 { color: #0096BF; text-shadow: 1px 1px #fff; }
 
-h1 { color: #0096BF; text-shadow: 1px 1px #fff; }
+#dropitList #di-infoline li { border-right-color: #314051; }
 
-#infoline li { border-right-color: #314051; }
-
-#mainTable {
+#dropitList #di-mainTable {
 	-moz-box-shadow: 0px 3px 8px #CBD5DE;
 	-webkit-box-shadow: 0px 3px 8px #CBD5DE;
 	box-shadow: 0 3px 8px #CBD5DE;
@@ -30,28 +29,26 @@ h1 { color: #0096BF; text-shadow: 1px 1px #fff; }
 	-moz-border-radius: 4px;
 	-webkit-border-radius: 4px;
 	border-radius: 4px;
-	border-bottom-color: #fff;
+	border: 1px solid #fff;
 }
 
-#mainTable tr:last-child td { border-bottom: none; }
+#dropitList #di-mainTable tr:last-child td { border-bottom: none; }
 
-#mainTable th:first-child {
+#dropitList #di-mainTable th:first-child {
 	-ms-border-top-left-radius: 4px;
 	-webkit-border-top-left-radius: 4px;
 	-moz-border-radius-topleft: 4px;
 	border-top-left-radius: 4px;
 }
 
-#mainTable th:last-child {
+#dropitList #di-mainTable th:last-child {
 	-ms-border-top-right-radius: 4px;
 	-webkit-border-top-right-radius: 4px;
 	-moz-border-radius-topright: 4px;
 	border-top-right-radius: 4px;
 }
 
-#mainTable a:hover { background-color: #1C93CB; }
-
-#mainTable a {
+#dropitList #di-mainTable a {
 	padding: 2px 12px;
 	color: #fff;
 	background-color: #52B4E0;
@@ -60,9 +57,12 @@ h1 { color: #0096BF; text-shadow: 1px 1px #fff; }
 	-webkit-border-radius: 2px;
 	border-radius: 2px;
 	text-decoration: none;
+	font-weight: bold;
 }
 
-th {
+#dropitList #di-mainTable a:hover { background-color: #1C93CB; }
+
+#dropitList th {
 	border-bottom: none;
 	text-transform: uppercase;
 	font-size: 10px;
@@ -79,9 +79,9 @@ th {
 	padding-bottom: 8px;
 }
 
-td { border-bottom: 1px solid #e4eff8; }
+#dropitList td { border-bottom: 1px solid #e4eff8; }
 
-th.active {
+#dropitList th.di-active {
 	background-color: #0D8BC9;
 	background: -moz-linear-gradient(top,#0D8BC9 0%,#12A0E5 100%);
 	background: -webkit-gradient(linear,left top,left bottom,color-stop(0%,#0D8BC9),color-stop(100%,#12A0E5));
@@ -90,15 +90,14 @@ th.active {
 	background: -ms-linear-gradient(top,#0D8BC9 0%,#12A0E5 100%);
 }
 
-tr:nth-child(2n) { background-color: #ebf5fc; }
-tr.odd { background-color: #fff; }
-tr.even { background-color: #ebf5fc; }
+#dropitList tr, #dropitList tr.di-odd { background-color: #fff; }
+#dropitList tr:nth-child(2n), #dropitList tr.di-even { background-color: #ebf5fc; }
 
-td.activeColumn { background-color: #EBF5FC; border-bottom-color: #E4EFF8; }
-tr:hover { background-color: #daf5fc; }
-td.activeColumn:hover, tr:hover td.activeColumn { background-color: #d1eefc; }
+#dropitList .di-sortable td.di-activeColumn { background-color: #D2E0F2; border-color: #C5D6EE; }
+#dropitList .di-sortable tr:hover td { background-color: #DEE8F6; border-color: #DEE8F6; }
+#dropitList .di-sortable td.di-activeColumn:hover, #dropitList .di-sortable tr:hover td.di-activeColumn { background-color: #C5D6EE; border-color: #C5D6EE; }
 
-.sortable thead th:hover {
+#dropitList .di-sortable th:hover {
 	background: #0D8BC9;
 	background: -moz-linear-gradient(top,#0D8BC9 0%,#12A0E5 100%);
 	background: -webkit-gradient(linear,left top,left bottom,color-stop(0%,#0D8BC9),color-stop(100%,#12A0E5));
@@ -108,9 +107,9 @@ td.activeColumn:hover, tr:hover td.activeColumn { background-color: #d1eefc; }
 	color: #fff;
 }
 
-.tableSortArrow { top: 0; }
+#dropitList .di-tableSortArrow { top: 0; }
 
-form.filter input { color: #314051; }
-form.filter input.searchField { border-color: #D7E8F7; }
-form.filter input.clearFilterButton { color: #93beea; }
-form.filter input.clearFilterButton:hover { color: #0096BF; }
+#dropitList form.di-filter input { color: #314051; }
+#dropitList form.di-filter input.di-searchField { border-color: #D7E8F7; }
+#dropitList form.di-filter input.di-clearFilterButton { color: #93beea; }
+#dropitList form.di-filter input.di-clearFilterButton:hover { color: #0096BF; }

@@ -1,9 +1,15 @@
-var mainTable = document.getElementById('mainTable');
-mainTable.className = "sortable";
+var mainTable, t;
 
-for(i=0; i < mainTable.getElementsByTagName("TH").length; i++) {
-	var headValue = mainTable.getElementsByTagName("TH")[i].innerHTML;
-	mainTable.getElementsByTagName("TH")[i].innerHTML = "<div>" + headValue + "</div>";
+function prepareTable() {
+	mainTable = document.getElementById('di-mainTable');
+	mainTable.className = "di-sortable";
+
+	for(i=0; i < mainTable.getElementsByTagName("TH").length; i++) {
+		var headValue = mainTable.getElementsByTagName("TH")[i].innerHTML;
+		mainTable.getElementsByTagName("TH")[i].innerHTML = "<div>" + headValue + "</div>";
+	}
+
+	t = new SortableTable(mainTable);
 }
 
 function SortableTable(tableEl) {
@@ -37,15 +43,14 @@ function SortableTable(tableEl) {
 		this.sortColumnIndex = column;
 		cells = document.getElementsByTagName('TD');
 		for (i=0;i<cells.length;i++) {
-			removeClass(cells[i], "activeColumn");
+			removeClass(cells[i], "di-activeColumn");
 		}
 		
-		var zebra = "odd";
+		var zebra = "di-odd";
 		
 		for (i=0;i<this.tbody[0].rows.length;i++) {
-			addClass(this.tbody[0].rows[i].cells[column], "activeColumn");		
+			addClass(this.tbody[0].rows[i].cells[column], "di-activeColumn");
 		}
-		
 		
 	    var newRows = new Array();
 	    for (i=0;i<this.tbody[0].rows.length;i++) {
@@ -53,7 +58,7 @@ function SortableTable(tableEl) {
 		}
 		newRows.sort(sortfn);
 
-		if (document.getElementsByClassName==undefined) {
+		if (document.getElementsByClassName == undefined) {
 			document.getElementsByClassName = function(className) {
 				var hasClassName = new RegExp("(?:^|\\s)"+className+"(?:$|\\s)");
 				var allElements = document.getElementsByTagName("*");
@@ -67,14 +72,14 @@ function SortableTable(tableEl) {
 			}
 		}
 
-		var arrows = document.getElementsByClassName('tableSortArrow');
+		var arrows = document.getElementsByClassName('di-tableSortArrow');
 		for (i=0;i<arrows.length;i++) {
 			var arrowParent = arrows[i].parentNode;
 			arrowParent.removeChild(arrows[i]);
 		}
 		var spanEl = document.createElement('span');
-		spanEl.className = 'tableSortArrow';
-		if (cell.getAttribute('sortdir')=='down') {
+		spanEl.className = 'di-tableSortArrow';
+		if (cell.getAttribute('sortdir') == 'down') {
 			newRows.reverse();
 			spanEl.appendChild(document.createTextNode(' \u25bc'));
 			cell.setAttribute('sortdir','up');
@@ -158,9 +163,9 @@ function SortableTable(tableEl) {
 			this.sTable.sort(this);
 			theads = this.parentNode.getElementsByTagName('TH');
 			for (j=0; j < theads.length; j++) {
-				removeClass(theads[j], "active");
+				removeClass(theads[j], "di-active");
 			}
-			addClass(this, "active");
+			addClass(this, "di-active");
 			zebraStripes();
 			return false;
 		}
@@ -169,19 +174,17 @@ function SortableTable(tableEl) {
 }
 
 var zebraStripes = function () {
-	var zebra = "odd";
+	var zebra = "di-odd";
 	var counter = 0;
 	for (var r = 1; r < mainTable.rows.length; r++) {
 		if(mainTable.rows[r].style.display == '') {
-			if(counter == 0) zebra = "odd";
+			if(counter == 0) zebra = "di-odd";
 			mainTable.rows[r].className = zebra;
-			(zebra == "odd") ? zebra = "even" : zebra = "odd";
+			(zebra == "di-odd") ? zebra = "di-even" : zebra = "di-odd";
 			counter++;
 		}
 	}
 }
-
-var t = new SortableTable(mainTable, 100);
 
 function hasClass(ele,cls) {
 	return ele.className.match(new RegExp('(\\s|^)'+cls+'(\\s|$)'));
@@ -197,3 +200,9 @@ function removeClass(ele,cls) {
 		ele.className=ele.className.replace(reg,' ');
 	}
 }
+
+addLoadEvent(function() {
+	prepareTable();
+	zebraStripes();
+	}
+);

@@ -1,59 +1,65 @@
-html { background-color: #fff; overflow-y: scroll; padding: 0; margin: 0; }
+html { overflow-y: scroll; }
+html, body, #dropitList { padding: 0; margin: 0; }
 
-body { font: 12px/1.3 Arial, sans-serif; padding: 0; margin: 0 auto; display: table; }
+#di-container, #di-main-wrap, #di-header, #di-footer-wrap, #dropitList ul#infoline, #di-mainTable { padding: 0; margin: 0; position: relative; }
 
-#container, #main-wrap, #header, #footer-wrap, ul, #mainTable { position: relative; padding: 0; margin: 0; }
-#container { margin: 0 auto; padding: 15px 30px 40px 30px; display: table; }
-#header { padding-top: 1px; }
+#dropitList { font: 12px/1.3 Arial, sans-serif; *float: left; }
 
-textarea, input { outline:none; }
+#di-container { margin: 0 auto; padding: 15px 30px 40px; display: table; }
+#di-header { padding-top: 1px; }
 
-a { outline: none; color: #333; text-decoration: underline; }
-a#top { display: block; margin-top: 30px; float: none; position: relative; margin-bottom: 30px; text-decoration: none; }
+#dropitList textarea, #dropitList input { outline: none; }
 
-h1 { font-size: 220%; margin: 15px 0; }
+#dropitList a { outline: none; color: #333; text-decoration: underline; }
+a#di-top { display: block; margin-top: 30px; display: inline; position: relative; margin-bottom: 30px; text-decoration: none; }
 
-.center { text-align: center; }
-.right { text-align: right; }
+#dropitList h1 { font-size: 220%; margin: 15px 0; }
 
-#infoline { padding: 0; margin: 0; margin-bottom: 15px; }
+.di-center { text-align: center; }
+.di-right { text-align: right; }
 
-#infoline li {
+#di-infoline { padding: 0; margin: 0; margin-bottom: 15px; }
+
+#di-infoline li {
 	border-right: 1px solid #333;
 	display: inline;
 	padding-right: 10px;
 	margin-right: 10px;
 }
 
-#infoline li:last-child, #infoline .last { border: none; }
+#di-infoline li:last-child, #di-infoline .di-last { border: none; }
 
-#mainTable { border-bottom: 1px solid #333; margin: 10px 0 25px 0; min-width: 500px; }
+#di-mainTable { border-bottom: 1px solid #333; margin: 10px 0 25px 0; cursor: default; }
+/* #di-mainTable { table-layout: fixed; overflow: hidden; word-wrap: break-word; } */
 
-th, td { padding: 6px 8px; vertical-align: top; }
+#dropitList th, #dropitList td { padding: 6px 8px; vertical-align: top; }
 
-th {
+#dropitList th {
 	text-align: left;
 	white-space: nowrap;
 	border-bottom: 1px solid #333;
 	font-weight: normal;
 }
 
-thead th div { position: relative; padding-right: 10px; }
-.sortable thead th { cursor: pointer; }
+#dropitList th div { *width: 100%; *padding-right: 8px; }
 
-.tableSortArrow {
+#dropitList thead th div { position: relative; }
+.di-sortable thead th, .di-sortable thead th:hover { cursor: pointer; }
+
+.di-tableSortArrow {
 	position: absolute;
 	right: 0px;
+	*right: 5px;
 	top: 2px;
 	font-size: 9px;
 }
 
-#footer span { font-style: italic; }
+#di-footer span { font-style: italic; }
 
-form.filter { position: absolute; top: 15px; right: 0; }
-form.filter#fixed { position: fixed; top: 30px; right: 30px; _position: absolute; _top: 15px; _right: 0; }
+form.di-filter { position: absolute; top: 15px; right: 0; }
+form.di-filter#di-fixed { position: fixed; top: 30px; right: 30px; _position: absolute; _top: 15px; _right: 0; }
 
-form.filter input.searchField {
+form.di-filter input.di-searchField {
     width: 120px;
 	height: 16px;
 	border: 1px solid #333;
@@ -61,27 +67,26 @@ form.filter input.searchField {
     position: relative;
 }
 
-form.filter input.clearFilterButton {
+form.di-filter input.di-clearFilterButton {
 	position: absolute;
 	right: 0;
 	top: 0;
 	width: 28px;
 	height: 28px;
-	margin-right: 0px;
+	margin-right: 0;
 	padding-left: 0;
 	text-decoration: none;
-	cursor: pointer;
 	border: none;
 	background-color: transparent;
 }
 
-form.filter input.clearFilterButton:hover { cursor: pointer; }
+form.di-filter input.di-clearFilterButton:hover { cursor: pointer; }
 
-a.clearFilterLink {
+a.di-clearFilterLink {
     border: none;
-	font-weight: normal;
 	cursor: pointer;
-	text-decoration: underline;	
+	text-decoration: underline;
+	margin-left: 5px;
 }
 
-.noResults { padding: 30px 0 50px 0; }
+.di-noResults { padding: 30px 0 50px; }

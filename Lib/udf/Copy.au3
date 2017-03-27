@@ -598,19 +598,13 @@ EndFunc   ;==>_Copy_CallbackDlg
 ; ===============================================================================================================================
 
 Func _Copy_CloseDll()
-
-	Local $aResult
-
 	If $cpDLL = -1 Then
 		Return SetError(1, 0, 0)
 	EndIf
-	$aResult = DllCall($cpDLL, 'int', 'GetThreadCountInfo', 'ptr', 0, 'dword*', 0)
+	DllCall($cpDLL, 'int', 'GetThreadCountInfo', 'ptr', 0, 'dword*', 0)
 	If @error Then
 		Return SetError(5, 0, 0)
 	EndIf
-	;If $aResult[2] Then ; <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< It Seems To Bypass The Issue.
-	;	Return SetError(4, 0, 0)
-	;EndIf
 	OnAutoItExitUnRegister('__CP_AutoItExit')
 	DllClose($cpDLL)
 	$cpDLL = -1

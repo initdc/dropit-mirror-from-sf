@@ -1,6 +1,6 @@
 #include-once
 
-; #AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6
+; #AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6 -w 7
 ; #INDEX# =======================================================================================================================
 ; Title .........: _Startup
 ; AutoIt Version : v3.2.12.1 or higher
@@ -34,6 +34,7 @@
 ; Syntax.........: _StartupFolder_Install([$sName = @ScriptName, [$sFilePath = @ScriptFullPath, [$iAllUsers = 0]]])
 ; Parameters ....: $sName - [Optional] Name of the program. [Default = Script name.]
 ;                  $sFilePath - [Optional] Location of the program executable. [Default = Full script location.]
+;                  $sCommandline - [Optional] Commandline arguments to be passed to the application. [Default = None.]
 ;                  $iAllUsers - [Optional] Add to Current Users (0) or All Users (1). [Default = 0 - Current user.]
 ; Requirement(s).: v3.2.12.1 or higher
 ; Return values .: Success - FileCreateShortcut() Return code.
@@ -41,10 +42,10 @@
 ; Author ........: guinness
 ; Example........; Yes
 ;=====================================================================================================================
-Func _StartupFolder_Install($sName = @ScriptName, $sFilePath = @ScriptFullPath, $iAllUsers = 0)
+Func _StartupFolder_Install($sName = @ScriptName, $sFilePath = @ScriptFullPath, $sCommandline = "", $iAllUsers = 0)
 	Local $sStartup = ""
 
-	$sName = StringLower(StringReplace($sName, ".exe", ""))
+	$sName = StringReplace($sName, ".exe", "")
 	If $sName = "" Or $sFilePath = "" Then
 		Return SetError(1, 0, 0)
 	EndIf
@@ -56,7 +57,7 @@ Func _StartupFolder_Install($sName = @ScriptName, $sFilePath = @ScriptFullPath, 
 	Else
 		$sStartup = @StartupDir & "\"
 	EndIf
-	Return FileCreateShortcut($sFilePath, $sStartup & $sName & ".lnk", $sStartup)
+	Return FileCreateShortcut($sFilePath, $sStartup & $sName & ".lnk", $sStartup, $sCommandline)
 EndFunc   ;==>_StartupFolder_Install
 
 ; #FUNCTION# =========================================================================================================
@@ -75,7 +76,7 @@ EndFunc   ;==>_StartupFolder_Install
 Func _StartupFolder_Uninstall($sName = @ScriptName, $sFilePath = @ScriptFullPath, $iAllUsers = 0)
 	Local $aFileGetShortcut, $hSearch, $iStringLen = 0, $sFile, $sStartup = ""
 
-	$sName = StringLower(StringReplace($sName, ".exe", ""))
+	$sName = StringReplace($sName, ".exe", "")
 	If $sName = "" Or $sFilePath = "" Then
 		Return SetError(1, 0, 0)
 	EndIf

@@ -2,6 +2,10 @@ Base Code For HTML Themes (themes, base.css)
 http://dropit.sourceforge.net/
 
 
+HTML Mini Lightbox (minilightbox.css, minilightbox.js)
+http://dropit.sourceforge.net/
+
+
 Modified HTML Filter Table (filter.js)
 http://leparlement.org/filterTable
 See also http://www.vonloesch.de/node/23

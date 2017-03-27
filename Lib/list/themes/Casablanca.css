@@ -4,32 +4,30 @@
 /* based on Casablanca table style by Rodrigo Castilho Galvao Ferreira
 /* ---------------------------------------------------------- */
 
-body { color: #666666; font-family: "Trebuchet MS", "Verdana", sans-serif; }
+#dropitList { color: #666666; font-family: "Trebuchet MS", "Verdana", sans-serif; }
 
-a { color: #CC3300; text-decoration: none; font-weight: bold; border-bottom: 1px dotted #E63C1E; }
-a:hover { color: #E63C1E; }
+#dropitList a { color: #C30; text-decoration: none; font-weight: bold; border-bottom: 1px dotted #E63C1E; }
+#dropitList a:hover { color: #E63C1E; }
 
-a#top { color: #666; border: none; font-weight: normal; }
-a#top:hover { color: #333; }
+#dropitList a#di-top { color: #666; border: none; font-weight: normal; }
+#dropitList a#di-top:hover { color: #333; }
 
-h1 { color: #E63C1E; }
+#dropitList h1 { color: #E63C1E; }
 
-#infoline li { border-right-color: #ccc; }
+#dropitList #di-infoline li { border-right-color: #ccc; }
 
-#container { margin: 0 auto; }
-
-#mainTable {
+#dropitList #di-mainTable {
   border: none;
   border-top: 30px solid #E63C1E;
   padding: 0;
-  margin-top: 0px;
+  margin-top: 10px;
   border-collapse: collapse;
 }
 
-td { padding-top: 15px; padding-bottom: 15px; }
+#dropitList td { padding-top: 15px; padding-bottom: 15px; }
 
-th {
-	background-color: #CC3300;
+#dropitList th {
+	background-color: #C30;
 	font-weight: bold;
     border: none;
     color: #FFB3A6;
@@ -37,27 +35,25 @@ th {
 	line-height: 16px;
 }
 
-.sortable th:hover { color: #fff; }
+#dropitList .di-sortable th:hover, #dropitList .di-sortable th.di-active { color: #fff; }
 
-.sortable th.active { color: #fff; }
+#dropitList tr:nth-child(2n) { background-color: #f0f0f0; }
+#dropitList tr.di-odd { background-color: #fff; }
+#dropitList tr.di-even { background-color: #f0f0f0; }
 
-tr:nth-child(2n) { background-color: #F7F7F7; }
-tr.odd { background-color: #fff; }
-tr.even { background-color: #F7F7F7; }
+#dropitList .di-sortable td.di-activeColumn { color: #333; font-weight: bold; }
 
-td.activeColumn { color: #333; font-weight: bold; }
+#dropitList .di-tableSortArrow { top: -1px; }
 
-.tableSortArrow { top: -1px; }
-
-form.filter input.searchField {
+#dropitList form.di-filter input.di-searchField {
     background-color: #f7f7f7;
-	color: #999;
-	border: 1px solid #dedede;
+	color: #777;
+	border: 1px solid #c7c7c7;
 }
 
-form.filter input:focus { border-color: #ccc; color: #333; }
+#dropitList form.di-filter input:focus { border-color: #ccc; color: #333; }
 
-input.clearFilterButton:hover { color: #CC3300; }
-input.clearFilterButton { color: #aaa; }
+#dropitList form.di-filter input.di-clearFilterButton:hover { color: #C30; }
+#dropitList form.di-filter input.di-clearFilterButton { color: #aaa; }
 
-a.clearFilterLink:hover { color: #CC3300; }
+#dropitList a.di-clearFilterLink:hover { color: #C30; }

@@ -11,9 +11,9 @@ DefaultDirName={pf}\DropIt
 DefaultGroupName=DropIt
 AllowNoIcons=yes
 UninstallDisplayIcon={app}\DropIt.exe
-InfoBeforeFile=..\DropIt_v{#MyAppVer}_Portable\Readme.txt
+InfoBeforeFile=..\DropIt_v{#MyAppVer}_Portable_x64\Readme.txt
 OutputDir=..\
-OutputBaseFilename=DropIt_v{#MyAppVer}_Setup
+OutputBaseFilename=DropIt_v{#MyAppVer}_Setup_x64
 Compression=lzma2/Ultra
 SolidCompression=yes
 VersionInfoVersion={#MyAppVer}
@@ -28,8 +28,8 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\DropIt_v{#MyAppVer}_Portable\DropIt.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\DropIt_v{#MyAppVer}_Portable\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\DropIt_v{#MyAppVer}_Portable_x64\DropIt.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\DropIt_v{#MyAppVer}_Portable_x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
