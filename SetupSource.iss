@@ -1,4 +1,4 @@
-#define MyAppVer "3.5"
+#define MyAppVer "3.6"
 
 [Setup]
 AppName=DropIt

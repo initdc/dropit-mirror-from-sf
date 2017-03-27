@@ -1,2 +1,0 @@
-Copy.au3: http://www.autoitscript.com/forum/topic/121833-copy-udf/
-Resources.au3: http://www.autoitscript.com/forum/topic/51103-resources-udf/
