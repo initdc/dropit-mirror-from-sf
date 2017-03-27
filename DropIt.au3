@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Comment=DropIt - To place your files with a drop
 #AutoIt3Wrapper_Res_Description=DropIt
-#AutoIt3Wrapper_Res_Fileversion=0.7.2.0
+#AutoIt3Wrapper_Res_Fileversion=0.8.1.0
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_LegalCopyright=by Lupo PenSuite Team
 #AutoIt3Wrapper_Run_Obfuscator=y
@@ -22,14 +22,14 @@ Opt("TrayIconHide", 1)
 Opt("TrayOnEventMode", 1)
 Opt("TrayMenuMode", 1)
 
-Global $sName = "DropIt", $sVer = " (v0.7.2)", $ii = $sName & " - To place your files with a drop"
-Global $sIni = @ScriptDir & "\settings.ini", $sIm = @ScriptDir & "\img\image.gif", $sPic = @ScriptDir & "\img\ps.gif"
+Global $sName = "DropIt", $sVer = " (v0.8.1)", $ii = $sName & " - To place your files with a drop"
+Global $sIni = @ScriptDir & "\settings.ini", $PrDir = @ScriptDir & "\profiles", $sIniPr, $sIm = @ScriptDir & "\img\image.gif", $sPic = @ScriptDir & "\img\ps.gif"
 Global $hGUI1, $hGUI2, $sData, $temp, $i, $top, $Show, $Separ, $Exit, $list, $gaDropFiles[1], $RelPos[2]
 Global Const $WM_DROPFILES = 0x233, $SC_MOVE = 0xF010, $WM_ENTERSIZEMOVE = 0x231, $WM_EXITSIZEMOVE = 0x232
 Global $xD = IniRead($sIni, "General", "SizeX", "64"), $yD = IniRead($sIni, "General", "SizeY", "64")
 Global $EP = "Exclusion-Pattern"
-Global $tips = '- As destination folders are supported both absolute ("C:\Lupo\My Images") and relative ("..\My Images") paths.' & @LF & @LF & '- If you want to exclude files that match with a specified pattern, you can add "$" at the end of the pattern (for example:  *.exe$ ).' & @LF & @LF & '- If you need more info about supported pattern rules, you can simply click the "Rules" button.'
-Global $prs = 'Supported pattern rules for files:' & @LF & '*.zip   = all files with "zip" extension' & @LF & 'penguin.*   = all files named "penguin"' & @LF & 'penguin*.*   = all files that begins with "penguin"' & @LF & '*penguin.*   = all files that ends with "penguin"' & @LF & '*penguin*   = all files that contains "penguin"' & @LF & @LF & 'Supported pattern rules for folders:' & @LF & 'robot**   = all folders that begins with "robot"' & @LF & '**robot   = all folders that ends with "robot"' & @LF & '**robot**   = all folders that contains "robot"' & @LF & @LF & 'Add "$" at the end of a pattern to skip files that' & @LF & 'match with it during the dropping (ex:  sky*.jpg$ ).'
+Global $tips = '- As destination folders are supported both absolute ("C:\Lupo\My Images") and relative ("..\My Images") paths.' & @LF & @LF & '- If you want to use different pattern groups, for example on different computers, you can click "Profiles" -> "Customize" to create and manage them.' & @LF & @LF & '- If you want to exclude files that match with a specified pattern, you can add "$" at the end of the pattern itself (for example:  *.exe$ ).' & @LF & @LF & '- If you need more info about supported pattern rules, you can click the "Rules" button and see a list of possible patterns.'
+Global $prs = 'Supported pattern rules for files:' & @LF & '*.zip   = all files with "zip" extension' & @LF & 'penguin.*   = all files named "penguin"' & @LF & 'penguin*.*   = all files that begins with "penguin"' & @LF & '*penguin.*   = all files that ends with "penguin"' & @LF & '*penguin*   = all files that contains "penguin"' & @LF & @LF & 'Supported pattern rules for folders:' & @LF & 'robot**   = all folders that begins with "robot"' & @LF & '**robot   = all folders that ends with "robot"' & @LF & '**robot**   = all folders that contains "robot"' & @LF & @LF & 'Add "$" at the end of a pattern to skip files that' & @LF & 'match with it during the dropping (eg:  sky*.jpg$ ).'
 Global $er1 = "You have to select a destination folder to associate it.", $er2 = "You have to insert a correct pattern to add the association.", $er3 = "Destination folder already associated for this pattern.", $me1 = "Insert the desired destination folder and write a pattern, to place there files that match with it:", $me2 = "Change the destination folder for files that match with the selected pattern or delete this association:"
 
 
@@ -44,7 +44,7 @@ EndIf
 Func Manage()		; OK
 	Local $DFA, $sel, $close, $help, $tem, $var, $ff, $decision
 	Local $hListBox, $Dir1, $Dir2, $fo1, $fo2, $se1, $se2, $bot1, $bot2, $bot3, $bot4
-	$DFA = GUICreate("Destination Folders Association", 410, 280, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI1)
+	$DFA = GUICreate("Destination Folders Association [" & IniRead($sIni, "General", "Profile", "Default") & "]", 410, 280, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI1)
 	
 	GUICtrlCreateGroup("Add Association", 10, 6, 280, 115)
 	GUICtrlCreateLabel($me1, 21, 6+17, 260, 40)
@@ -77,7 +77,7 @@ Func Manage()		; OK
 	GUICtrlCreateGroup("Pattern List", 300, 6, 100, 234)
 	$hListBox = GUICtrlCreateList("", 308, 6+18, 84, 211, BitOr($LBS_DISABLENOSCROLL, $LBS_STANDARD))
 	_GUICtrlListBox_BeginUpdate($hListBox)
-	$var = IniReadSection($sIni, "Patterns")
+	$var = IniReadSection($sIniPr, "Patterns")
 	If Not @error Then
 		For $i = 1 To $var[0][0]
 			_GUICtrlListBox_AddString($hListBox, $var[$i][0])
@@ -115,12 +115,12 @@ Func Manage()		; OK
 				If $ff = "" Or Not(StringInStr($ff, "*")) Then
 					MsgBox(0x40000, "Message", $er2)
 				Else
-					If IniRead($sIni, "Patterns", $ff, "0") = "0" Then
+					If IniRead($sIniPr, "Patterns", $ff, "0") = "0" Then
 						If StringRight($ff, 1) = '$' Then $tem = $EP
 						If $tem = "" Then
 							MsgBox(0x40000, "Message", $er1)
 						Else
-							IniWrite($sIni, "Patterns", $ff, $tem)
+							IniWrite($sIniPr, "Patterns", $ff, $tem)
 							_GUICtrlListBox_AddString($hListBox, $ff)
 							_GUICtrlListBox_Sort($hListBox)
 							GUICtrlSetData($Dir1, "")
@@ -134,7 +134,7 @@ Func Manage()		; OK
 			Case $bot3
 				$decision = MsgBox(0x40004, "Delete Association", 'Are you sure to delete this association?')
 				If $decision = 6 Then
-					IniDelete($sIni, "Patterns", GUICtrlRead($fo2))
+					IniDelete($sIniPr, "Patterns", GUICtrlRead($fo2))
 					_GUICtrlListBox_DeleteString($hListBox, _GUICtrlListBox_FindString($hListBox, $ff))
 					GUICtrlSetData($Dir2, "")
 					GUICtrlSetData($fo2, "")
@@ -146,12 +146,12 @@ Func Manage()		; OK
 				If $tem = "" Then
 					MsgBox(0x40000, "Message", $er1)
 				Else
-					IniWrite($sIni, "Patterns", $ff, $tem)
+					IniWrite($sIniPr, "Patterns", $ff, $tem)
 				EndIf
 				
 			Case $hListBox
 				$ff = GUICtrlRead($hListBox)
-				$tem = IniRead($sIni, "Patterns", $ff, "")
+				$tem = IniRead($sIniPr, "Patterns", $ff, "")
 				If Not($tem = "") Then
 					GUICtrlSetState($bot3, $GUI_ENABLE)
 					If StringRight($ff, 1) = '$' Then
@@ -168,7 +168,7 @@ Func Manage()		; OK
 				EndIf
 				
 			Case $help
-					MsgBox(0x40000, "Tips of this tool", $tips)
+					MsgBox(0x40000, "Tips and tricks", $tips)
 				
 			Case $close, $GUI_EVENT_CLOSE
 				ExitLoop
@@ -271,14 +271,14 @@ Func Options()		; OK
 				EndIf
 				
 			Case $ok
-				$tp = "False"
+				$top = "False"
 				If GUICtrlRead($check1) = 1 Then
-					$tp = "True"
+					$top = "True"
 					WinSetOnTop($hGUI1, "", 1)
 				Else
 					WinSetOnTop($hGUI1, "", 0)
 				EndIf
-				IniWrite($sIni, "General", "OnTop", $tp)
+				IniWrite($sIni, "General", "OnTop", $top)
 				
 				$tp = "False"
 				If GUICtrlRead($check2) = 1 Then $tp = "True"
@@ -368,7 +368,7 @@ EndFunc
 
 
 Func Checking($item, $ff)			; OK
-	Local $str, $match, $pattern, $j = 0, $matches[4][2], $var = IniReadSection($sIni, "Patterns")
+	Local $str, $match, $pattern, $j = 0, $matches[4][2], $var = IniReadSection($sIniPr, "Patterns")
 	If Not(@error) Then
 		For $i = 1 To $var[0][0]
 			$match = 0
@@ -445,12 +445,12 @@ Func Associate($item, $ff)		; OK
 				If $ff = "" Or Not(StringInStr($ff, "*")) Then
 					MsgBox(0x40000, "Message", $er2)
 				Else
-					If IniRead($sIni, "Patterns", $ff, "0") = "0" Then
+					If IniRead($sIniPr, "Patterns", $ff, "0") = "0" Then
 						If StringRight($ff, 1) = '$' Then $tem = $EP
 						If $tem = "" Then
 							MsgBox(0x40000, "Message", $er1)
 						Else
-							IniWrite($sIni, "Patterns", $ff, $tem)
+							IniWrite($sIniPr, "Patterns", $ff, $tem)
 							ExitLoop
 						EndIf
 					Else
@@ -677,9 +677,123 @@ Func SetRelPos($hW, $iM, $wp, $lp)		; OK
 EndFunc
 
 
+Func ListProfiles()		; OK
+    Local $search, $file, $profiles[16]
+	$profiles[0] = 0
+	$search = FileFindFirstFile($PrDir & "\*.ini")
+	If $search = -1 Then Return $profiles
+	While 1
+		$file = FileFindNextFile($search)
+		If @error Then ExitLoop
+		If $profiles[0] = 15 Then ExitLoop
+		$profiles[0] = $profiles[0] + 1
+		$profiles[$profiles[0]] = StringTrimRight($file, 4)
+	WEnd
+	FileClose($search)
+	Return $profiles
+EndFunc
+
+
+Func Customize($profiles)			; OK
+	Local $cust, $sel, $bt1, $bt2, $bt3, $bt4, $new, $edit, $del, $tem, $tem2, $hListBox, $decision
+	$cust = GUICreate("Customize Profiles", 200, 222, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI1)
+	
+	$new = GUICtrlCreateInput("", 10, 10, 80, 20)
+	$bt1 = GUICtrlCreateButton("Create", 50-32, 32, 64, 24)
+	GUICtrlSetTip($bt1, "Create a new profile")
+	$edit = GUICtrlCreateInput("", 10, 10+60, 80, 20)
+	$bt2 = GUICtrlCreateButton("Rename", 50-32, 32+60, 64, 24)
+	GUICtrlSetTip($bt2, "Rename selected profile")
+	$del = GUICtrlCreateInput("", 10, 10+120, 80, 20)
+	$bt3 = GUICtrlCreateButton("Remove", 50-32, 32+120, 64, 24)
+	GUICtrlSetTip($bt3, "Remove selected profile")
+	$hListBox = GUICtrlCreateList("", 100, 10, 90, 180, BitOr($LBS_DISABLENOSCROLL, $LBS_STANDARD))
+	$bt4 = GUICtrlCreateButton("Close", 100-35, 190, 70, 24)
+	GUICtrlSetState($edit, $GUI_DISABLE)
+	GUICtrlSetState($del, $GUI_DISABLE)
+	
+	_GUICtrlListBox_BeginUpdate($hListBox)
+	For $i = 1 To $profiles[0]
+		_GUICtrlListBox_AddString($hListBox, $profiles[$i])
+	Next
+    _GUICtrlListBox_UpdateHScroll($hListBox)
+    _GUICtrlListBox_EndUpdate($hListBox)
+	
+	GUISetState()
+	While 1
+		$sel = GUIGetMsg()
+		Switch $sel
+			Case $hListBox
+				$tem = GUICtrlRead($hListBox)
+				If Not($tem = "") Then
+					GUICtrlSetState($edit, $GUI_ENABLE)
+					GUICtrlSetData($edit, $tem)
+					GUICtrlSetData($del, $tem)
+				EndIf
+				
+			Case $bt1
+				$tem = GUICtrlRead($new)
+				If Not($tem = "") Then
+					If FileExists($PrDir & "\" & $tem & ".ini") Then
+						MsgBox(0x40000, "Name Not Available", "This profile name already exists.")
+					Else
+						_GUICtrlListBox_AddString($hListBox, $tem)
+						IniWriteSection($PrDir & "\" & $tem & ".ini", "Patterns", "")
+						GUICtrlSetData($new, "")
+					EndIf
+				EndIf
+				
+			Case $bt2
+				$tem = GUICtrlRead($edit)
+				If Not($tem = "") Then
+					If FileExists($PrDir & "\" & $tem & ".ini") Then
+						MsgBox(0x40000, "Name Not Available", "This profile name already exists.")
+					Else
+						$decision = MsgBox(0x40004, "Rename Selected Profile", 'Are you sure to rename this profile?')
+						If $decision = 6 Then
+							$tem2 = GUICtrlRead($hListBox)
+							_GUICtrlListBox_ReplaceString($hListBox, _GUICtrlListBox_FindString($hListBox, $tem2), $tem)
+							FileMove($PrDir & "\" & $tem2 & ".ini", $PrDir & "\" & $tem & ".ini", 8)
+							If $tem2 = IniRead($sIni, "General", "Profile", "Default") Then
+								IniWrite($sIni, "General", "Profile", $tem)
+								$sIniPr = $PrDir & "\" & $tem & ".ini"
+							EndIf
+							GUICtrlSetData($edit, "")
+							GUICtrlSetData($del, "")
+						EndIf
+					EndIf
+				EndIf
+				
+			Case $bt3
+				$decision = MsgBox(0x40004, "Remove Selected Profile", 'Are you sure to remove this profile?')
+				If $decision = 6 Then
+					$tem = GUICtrlRead($hListBox)
+					_GUICtrlListBox_DeleteString($hListBox, _GUICtrlListBox_FindString($hListBox, $tem))
+					FileDelete($PrDir & "\" & $tem & ".ini")
+					If $tem = IniRead($sIni, "General", "Profile", "Default") Then
+						IniWrite($sIni, "General", "Profile", "Default")
+						$sIniPr = $PrDir & "\Default.ini"
+						If Not FileExists($PrDir) Then DirCreate($PrDir)
+						If Not FileExists($sIniPr) Then IniWriteSection($sIniPr, "Patterns", "")
+					EndIf
+					GUICtrlSetData($edit, "")
+					GUICtrlSetData($del, "")
+				EndIf
+				
+			Case $bt4, $GUI_EVENT_CLOSE
+				ExitLoop
+			
+			EndSwitch
+	WEnd
+	GUIDelete($cust)
+	If $top = "True" Then WinSetOnTop($hGUI1, "", 1)
+	Return ListProfiles()
+EndFunc
+
+
 Func _Main()
-	Local $icon, $menu, $nMsg, $x, $y, $dim, $gif, $pos, $j
-	Local $func1, $func2, $func3, $func4, $func5
+	Local $icon, $menu, $nMsg, $x, $y, $dim, $gif, $pos, $j, $tem
+	Local $func1, $func3, $func2, $func4, $func5, $func6, $custom, $prof[16], $profiles[16]
 	$x = IniRead($sIni, "General", "PosX", "-1")
 	$y = IniRead($sIni, "General", "PosY", "-1")
 	$hGUI1 = GUICreate($sName, $xD, $yD, $x, $y, $WS_POPUP, BitOR($WS_EX_ACCEPTFILES, $WS_EX_LAYERED, $WS_EX_TOOLWINDOW, $WS_EX_TOPMOST))
@@ -687,30 +801,65 @@ Func _Main()
 	GUICtrlSetState($icon, $GUI_DROPACCEPTED)
 	GUICtrlSetTip($icon, $ii)
 	
+	; Creation of INI files
 	If Not FileExists($sIni) Then
-		$sData = "PosX=-1" & @LF & "PosY=-1" & @LF & "LockPos=False" & @LF & "OnTop=True" & @LF & "SizeX=64" & @LF & "SizeY=64" & @LF & "NoAsk=False" & @LF & "Duplicates=Overwrite" & @LF & "Mode=Move" & @LF & "AskMode=False" & @LF & "AskForFolders=False"
+		$sData = "Profile=Default" & @LF & "PosX=-1" & @LF & "PosY=-1" & @LF & "LockPos=False" & @LF & "OnTop=True" & @LF & "SizeX=64" & @LF & "SizeY=64" & @LF & "NoAsk=False" & @LF & "Duplicates=Overwrite" & @LF & "Mode=Move" & @LF & "AskMode=False" & @LF & "AskForFolders=False"
 		IniWriteSection($sIni, "General", $sData)
-		IniWriteSection($sIni, "Patterns", "")
 	EndIf
+	$sData = IniRead($sIni, "General", "Profile", "Default")
+	If $sData = "" Then
+		$sData = "Default"
+		IniWrite($sIni, "General", "Profile", $sData)
+	EndIf
+	$sIniPr = $PrDir & "\" & $sData & ".ini"
+	If Not FileExists($PrDir) Then DirCreate($PrDir)
+	$tem = IniReadSection($sIni, "Patterns")
+	If @error Then
+		If Not FileExists($sIniPr) Then IniWriteSection($sIniPr, "Patterns", "")
+	Else
+		IniWriteSection($sIniPr, "Patterns", $tem)
+		IniDelete($sIni, "Patterns")
+	EndIf
+	$profiles = ListProfiles()
 	
 	; Background mode
 	If $CmdLine[0] > 0 Then
-		GUISetState(@SW_HIDE, $hGUI1)
-		For $j = 1 To $CmdLine[0]
-			$gaDropFiles[$j - 1] = $CmdLine[$j]
-		Next
-		DropEvent()
-		Exit
+		If FileExists($CmdLine[1]) Then
+			GUISetState(@SW_HIDE, $hGUI1)
+			For $j = 1 To $CmdLine[0]
+				$gaDropFiles[$j - 1] = $CmdLine[$j]
+			Next
+			DropEvent()
+			Exit
+		Else
+			$sData = StringTrimLeft($CmdLine[1], 1)
+			If StringLeft($CmdLine[1], 1) = "-" And FileExists($PrDir & "\" & $sData & ".ini") Then
+				IniWrite($sIni, "General", "Profile", $sData)
+				$sIniPr = $PrDir & "\" & $sData & ".ini"
+			Else
+				MsgBox(0, "Invalid Command", "You are running " & $sName & " with an invalid command." & @LF & "It will be normally started.")
+			EndIf
+		EndIf
 	EndIf
 	
+	; Context menu
 	$menu = GUICtrlCreateContextMenu($icon)
-	$func1 = GUICtrlCreateMenuItem("Manage", $menu)
-	GUICtrlCreateMenuItem("", $menu)
-	$func2 = GUICtrlCreateMenuItem("Options", $menu)
-	$func3 = GUICtrlCreateMenuItem("Hide", $menu)
-	$func4 = GUICtrlCreateMenuItem("About...", $menu)
-	GUICtrlCreateMenuItem("", $menu)
-	$func5 = GUICtrlCreateMenuItem("Exit", $menu)
+	$func1 = GUICtrlCreateMenuItem("Manage", $menu, 0)
+	GUICtrlCreateMenuItem("", $menu, 1)
+	$func2 = GUICtrlCreateMenu("Profiles", $menu, 2)
+	$func3 = GUICtrlCreateMenuItem("Options", $menu, 3)
+	$func4 = GUICtrlCreateMenuItem("Hide", $menu, 4)
+	$func5 = GUICtrlCreateMenuItem("About...", $menu, 5)
+	GUICtrlCreateMenuItem("", $menu, 6)
+	$func6 = GUICtrlCreateMenuItem("Exit", $menu, 7)
+	
+	; Context submenu
+	$custom = GUICtrlCreateMenuItem("Customize", $func2)
+	GUICtrlCreateMenuItem("", $func2)
+	For $i = 1 To $profiles[0]
+		$prof[$i] = GUICtrlCreateMenuItem($profiles[$i], $func2, $i+1, 1)
+		If $profiles[$i] = IniRead($sIni, "General", "Profile", "Default") Then GUICtrlSetState($prof[$i], $GUI_CHECKED)
+    Next
 	
 	GUIRegisterMsg($WM_DROPFILES, "WM_DROPFILES_UNICODE_FUNC")
 	GUIRegisterMsg($WM_SYSCOMMAND, "WM_SYSCOMMAND")
@@ -732,32 +881,57 @@ Func _Main()
 	
 	While 1
 		$nMsg = GUIGetMsg()
-		Switch $nMsg
-			Case $GUI_EVENT_DROPPED
+		Select
+			Case $nMsg = $GUI_EVENT_DROPPED
 				GUISetState(@SW_SHOW, $hGUI2)
 				DropEvent()
 				GUISetState(@SW_HIDE, $hGUI2)
 				
-			Case $func1
+			Case $nMsg = $func1
 				GUICtrlSetState($icon, $GUI_DISABLE)
 				Manage()
 				GUICtrlSetState($icon, $GUI_ENABLE)
+			
+			Case $nMsg = $custom
+				GUICtrlSetState($icon, $GUI_DISABLE)
+				$profiles = Customize($profiles)
+				GUICtrlSetState($icon, $GUI_ENABLE)
+				GUICtrlDelete($func2)
+				; Recreate submenu
+				$func2 = GUICtrlCreateMenu("Profiles", $menu, 2)
+				$custom = GUICtrlCreateMenuItem("Customize", $func2)
+				GUICtrlCreateMenuItem("", $func2)
+				For $i = 1 To $profiles[0]
+					$prof[$i] = GUICtrlCreateMenuItem($profiles[$i], $func2, $i+1, 1)
+					If $profiles[$i] = IniRead($sIni, "General", "Profile", "Default") Then GUICtrlSetState($prof[$i], $GUI_CHECKED)
+				Next
 				
-			Case $func2
+			Case $nMsg >= $prof[1] And $nMsg <= $prof[$profiles[0]]
+				For $i = 1 To $profiles[0]
+					If $nMsg = $prof[$i] Then
+						IniWrite($sIni, "General", "Profile", $profiles[$i])
+						$sIniPr = $PrDir & "\" & $profiles[$i] & ".ini"
+					EndIf
+				Next
+				
+			Case $nMsg = $func3
 				GUICtrlSetState($icon, $GUI_DISABLE)
 				Options()
 				GUICtrlSetState($icon, $GUI_ENABLE)
 				
-			Case $func3
+			Case $nMsg = $func4
 				MyTrayMenu()
 				
-			Case $func4
+			Case $nMsg = $func5
 				MsgBox(0x40040, "About", "      " & $sName & $sVer & @LF & @LF & "Software developed by Lupo PenSuite Team." & @LF & "Released under Open Source GPL.")
 				
-			Case $func5, $GUI_EVENT_CLOSE
+			Case $nMsg = $func6
 				ExitLoop
 				
-		EndSwitch
+			Case $nMsg = $GUI_EVENT_CLOSE
+				ExitLoop
+				
+		EndSelect
 	WEnd
 	ExitEvent()
 EndFunc
