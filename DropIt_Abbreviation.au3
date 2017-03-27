@@ -250,10 +250,10 @@ Func _ContextMenuAbbreviations($mButton_Abbreviations, $mMenuGroup, $mNumberAbbr
 	Return $mValue
 EndFunc   ;==>_ContextMenuAbbreviations
 
-Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDirs = 0)
+Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDirs = 0)
 	Local $sLoadedProperty
-	Local $aEnvArray[147][3] = [ _
-			[146, 0, 0], _
+	Local $aEnvArray[149][3] = [ _
+			[148, 0, 0], _
 			["FileExt", 0, 1], _
 			["FileName", 0, 2], _
 			["FileNameExt", 0, 3], _
@@ -273,6 +273,7 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 			["Company", 1, 26], _
 			["Subject", 1, 19], _
 			["Category", 1, 20], _
+			["Rating", 1, 27], _
 			["FileType", 1, 2], _
 			["Attributes", 1, 6], _
 			["Comments", 1, 21], _
@@ -282,6 +283,7 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 			["CameraMaker", 1, 25], _
 			["CameraModel", 1, 11], _
 			["Dimensions", 1, 10], _
+			["ProductName", 1, 28], _
 			["Megapixels", 4, 1], _
 			["ISO", 4, 2], _
 			["FNumber", 4, 3], _
@@ -413,19 +415,27 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 					$sLoadedProperty = __GetFileParameter($sFilePath, $sDestination, $sMainDirs, $aEnvArray[$A][2])
 				Case 1 ; From Windows Explorer.
 					$sLoadedProperty = __GetFileProperties($sFilePath, $aEnvArray[$A][2])
-					$sLoadedProperty = StringReplace($sLoadedProperty, ":", ".")
+					If $sFixInvalidChars Then
+						$sLoadedProperty = __GetValidFilename($sLoadedProperty)
+					EndIf
 				Case 2 ; Date And Time.
 					$sLoadedProperty = __GetFileTime($sFilePath, $aEnvArray[$A][0], $aEnvArray[$A][2])
 				Case 3 ; Hash.
 					$sLoadedProperty = __GetFileHash($sFilePath, $aEnvArray[$A][2])
 				Case 4 ; Exif.
 					$sLoadedProperty = __GetFileExif($sFilePath, $aEnvArray[$A][2])
+					If $sFixInvalidChars Then
+						$sLoadedProperty = __GetValidFilename($sLoadedProperty)
+					EndIf
 				Case 5 ; Macro.
 					$sLoadedProperty = __GetDefinedMacro($sProfile, $aEnvArray[$A][2])
 				Case 6 ; User Input.
 					$sLoadedProperty = __GetUserInput($sDestination, $sFilePath, $sAction)
 					If @error Then
 						Return SetError(1, 0, $sDestination) ; To Skip Items If Abbreviation Value Is Not Defined.
+					EndIf
+					If $sFixInvalidChars Then
+						$sLoadedProperty = __GetValidFilename($sLoadedProperty)
 					EndIf
 			EndSwitch
 			If StringStripWS($sLoadedProperty, 8) == "" And $aEnvArray[$A][0] <> "SubDir" Then

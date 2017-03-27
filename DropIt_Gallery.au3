@@ -135,7 +135,8 @@ Func __Gallery_WriteHTML($lSubArray, $lGalleryPath, $lElementsGUI, $lStringPrope
 		If $lPhotoTitle <> "" Then ; Image Titles Are Defined.
 			If StringInStr($lPhotoTitle, "%") Then
 				$lPhotoTitle = StringReplace($lPhotoTitle, "%Counter%", $A)
-				$lPhotoTitle = _ReplaceAbbreviation($lPhotoTitle, $lSubArray[$A], $lProfile, "$H")
+				$lPhotoTitle = _ReplaceAbbreviation($lPhotoTitle, 0, $lSubArray[$A], $lProfile, "$H")
+				$lPhotoTitle = StringRegExpReplace($lPhotoTitle, '[<>"]', '')
 			EndIf
 			If $lFileType = 'photos' Then
 				$lDifferentString = ''
@@ -155,7 +156,8 @@ Func __Gallery_WriteHTML($lSubArray, $lGalleryPath, $lElementsGUI, $lStringPrope
 					$lArray[$B] = "-"
 				ElseIf StringInStr($lArray[$B], "%") Then
 					$lArray[$B] = StringReplace($lArray[$B], "%Counter%", $A)
-					$lArray[$B] = _ReplaceAbbreviation($lArray[$B], $lSubArray[$A], $lProfile, "$H")
+					$lArray[$B] = _ReplaceAbbreviation($lArray[$B], 0, $lSubArray[$A], $lProfile, "$H")
+					$lArray[$B] = StringRegExpReplace($lArray[$B], '[<>"]', '')
 				EndIf
 				$lPhotoTitle = ""
 				If $lTitleArray[$B] <> "" Then

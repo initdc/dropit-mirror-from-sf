@@ -14,8 +14,8 @@ Create PDF Library (MPDF.au3)
 http://www.autoitscript.com/forum/topic/118827-create-pdf-from-your-application/
 
 
-Embedding Library (Resources.au3)
-http://www.autoitscript.com/forum/topic/51103-resources-udf/
+Embedding Library (ResourcesEx.au3)
+http://www.autoitscript.com/forum/topic/162499-resourcesex-udf/
 
 
 Hash For File Library (HashForFile.au3)

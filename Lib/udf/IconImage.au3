@@ -80,25 +80,6 @@ Global Enum _
 	$ICONIMAGE_ALIGN_BOTTOMLEFT		= 12,	_
 	$ICONIMAGE_ALIGN_BOTTOMRIGHT	= 36
 
-; for _IconImage_RotateFlip()
-Global Enum _
-	$GDIP_RotateNoneFlipNone   = 0,	_
-	$GDIP_Rotate90FlipNone     = 1,	_
-	$GDIP_Rotate180FlipNone    = 2,	_
-	$GDIP_Rotate270FlipNone    = 3,	_
-	$GDIP_RotateNoneFlipX      = 4,	_
-	$GDIP_Rotate90FlipX        = 5,	_
-	$GDIP_Rotate180FlipX       = 6,	_
-	$GDIP_Rotate270FlipX       = 7,	_
-	$GDIP_RotateNoneFlipY      = $GDIP_Rotate180FlipX,		_
-	$GDIP_Rotate90FlipY        = $GDIP_Rotate270FlipX,		_
-	$GDIP_Rotate180FlipY       = $GDIP_RotateNoneFlipX,		_
-	$GDIP_Rotate270FlipY       = $GDIP_Rotate90FlipX,			_
-	$GDIP_RotateNoneFlipXY     = $GDIP_Rotate180FlipNone,		_
-	$GDIP_Rotate90FlipXY       = $GDIP_Rotate270FlipNone,		_
-	$GDIP_Rotate180FlipXY      = $GDIP_RotateNoneFlipNone,	_
-	$GDIP_Rotate270FlipXY      = $GDIP_Rotate90FlipNone
-
 ; for _IconImage_Scale()
 Global Enum _
 	$GDIP_ModeInvalid				= -1,	_
@@ -630,7 +611,7 @@ Func _IconImage_ToGdipBitmap($IconImage)
 		;If Not $Gdibmp Then
 			;Local $Size = _IconImage_GetSize($IconImage)
 			;Local $hIcon = _IconImage_ToHandle($IconImage, $Size[0], $Size[1])
-			;Local $Ret = DllCall($ghGDIPDll, "int", "GdipCreateBitmapFromHICON", "hwnd", $hIcon, "ptr*", 0)
+			;Local $Ret = DllCall($__g_hGDIPDll, "int", "GdipCreateBitmapFromHICON", "hwnd", $hIcon, "ptr*", 0)
 			;If Not @Error And $Ret[0] = 0 Then
 				;$Gdibmp = $Ret[2]
 			;EndIf
@@ -749,14 +730,14 @@ Func _IconImage_Scale($IconImage, $Width, $Height = Default, $Quality = $GDIP_Mo
 			If @Error Then ExitLoop
 
 			$Scan0Ptr = _MemGlobalAlloc($Width * $Height * 4, $GMEM_ZEROINIT)
-			Local $Ret = DllCall($ghGDIPDll, "int", "GdipCreateBitmapFromScan0", "int", $Width, "int", $Height, "int", 4 * $Width, "uint", $GDIP_PXF32ARGB, "ptr", $Scan0Ptr, "ptr*", 0)
+			Local $Ret = DllCall($__g_hGDIPDll, "int", "GdipCreateBitmapFromScan0", "int", $Width, "int", $Height, "int", 4 * $Width, "uint", $GDIP_PXF32ARGB, "ptr", $Scan0Ptr, "ptr*", 0)
 			If @Error Or $Ret[0] Then ExitLoop
 			$Gdibmp2 = $Ret[6]
 
 			$Graph = _GDIPlus_ImageGetGraphicsContext($Gdibmp2)
 			If @Error Then ExitLoop
 
-			DllCall($ghGDIPDll, "int", "GdipSetInterpolationMode", "ptr", $Graph, "int", $Quality)
+			DllCall($__g_hGDIPDll, "int", "GdipSetInterpolationMode", "ptr", $Graph, "int", $Quality)
 			If Not _GDIPlus_GraphicsDrawImageRect($Graph, $Gdibmp, 0, 0, $Width, $Height) Then ExitLoop
 
 			$NewImage = _IconImage_FromGdipBitmap($Gdibmp2)
@@ -777,7 +758,7 @@ Func _IconImage_RotateFlip($IconImage, $Flag)
 		$Gdibmp = _IconImage_ToGdipBitmap($IconImage)
 		If @Error Then ExitLoop
 
-		DllCall($ghGDIPDll, "int", "GdipImageRotateFlip", "ptr", $Gdibmp, "int", $Flag)
+		DllCall($__g_hGDIPDll, "int", "GdipImageRotateFlip", "ptr", $Gdibmp, "int", $Flag)
 		$NewImage = _IconImage_FromGdipBitmap($Gdibmp)
 		$Error = @Error
 	Until 1
@@ -917,7 +898,7 @@ Func _IconImage_SaveGdipBitmapToBinary($Gdibmp, $Type = "PNG")
 		If @Error Then ExitLoop
 
 		Local $GUID = _WinAPI_GUIDFromString(_GDIPlus_EncodersGetCLSID($Type))
-		Local $Ret = DllCall($ghGDIPDll, "int", "GdipSaveImageToStream", "ptr", $Gdibmp, "ptr", $Stream, "ptr", DllStructGetPtr($GUID), "ptr", 0)
+		Local $Ret = DllCall($__g_hGDIPDll, "int", "GdipSaveImageToStream", "ptr", $Gdibmp, "ptr", $Stream, "ptr", DllStructGetPtr($GUID), "ptr", 0)
 		If @Error Or $Ret[0] Then ExitLoop
 
 		$Binary = _IconImage_ReadStream($Stream)
@@ -933,7 +914,7 @@ Func _IconImage_LoadGdipBitmapFromBinary($Data)
 		$Stream = _IconImage_CreateStream($Data)
 		If @Error Then ExitLoop
 
-		Local $Ret = DllCall($ghGDIPDll, "int", "GdipCreateBitmapFromStream", "ptr", $Stream, "ptr*", 0)
+		Local $Ret = DllCall($__g_hGDIPDll, "int", "GdipCreateBitmapFromStream", "ptr", $Stream, "ptr*", 0)
 		If @Error Or $Ret[0] Then ExitLoop
 		$Gdibmp = $Ret[2]
 		$Error = 0
@@ -954,15 +935,15 @@ Func _IconImage_32BitAlphaToGdipBitmap($IconImage)
 	Local $Buffer = _BinaryToDLLStruct($IconImage)
 	Local $Scan0Ptr = DllStructGetPtr($Buffer) + DllStructGetSize($Header)
 	Do
-		Local $Ret = DllCall($ghGDIPDll, "int", "GdipCreateBitmapFromScan0", "int", $Width, "int", $Height, "int", 4 * $Width, "uint", $GDIP_PXF32ARGB, "ptr", $Scan0Ptr, "ptr*", 0)
+		Local $Ret = DllCall($__g_hGDIPDll, "int", "GdipCreateBitmapFromScan0", "int", $Width, "int", $Height, "int", 4 * $Width, "uint", $GDIP_PXF32ARGB, "ptr", $Scan0Ptr, "ptr*", 0)
 		If @Error Or $Ret[0] Then ExitLoop
 		$NewGdibmp = $Ret[6]
 
-		$Ret = DllCall($ghGDIPDll, "int", "GdipCloneImage", "ptr", $NewGdibmp, "ptr*", 0)
+		$Ret = DllCall($__g_hGDIPDll, "int", "GdipCloneImage", "ptr", $NewGdibmp, "ptr*", 0)
 		If @Error Or $Ret[0] Then ExitLoop
 		$Gdibmp = $Ret[2]
 
-		DllCall($ghGDIPDll, "int", "GdipImageRotateFlip", "ptr", $Gdibmp, "int", 6)
+		DllCall($__g_hGDIPDll, "int", "GdipImageRotateFlip", "ptr", $Gdibmp, "int", 6)
 		$Error = 0
 	Until 1
 	If $NewGdibmp Then _GDIPlus_ImageDispose($NewGdibmp)

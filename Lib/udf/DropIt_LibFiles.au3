@@ -359,16 +359,16 @@ Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gMode = 0) ; Modifie
 		Supported Global Numeration:
 		0 Name, 1 Size, 2 Type, 3 Date Modified, 4 Date Created, 5 Date Opened, 6 Attributes, 7 Status, 8 Owner, 9 Date Taken,
 		10 Dimensions, 11 Camera Model, 12 Authors, 13 Artists, 14 Title, 15 Album, 16 Genre, 17 Year, 18 Track Number,
-		19 Subject, 20 Category, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate, 25 Camera Maker, 26 Company.
+		19 Subject, 20 Category, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate, 25 Camera Maker, 26 Company, 27 Rating, 28 Product Name.
 		This Numeration Is Automatically Converted For Win2000, WinXP, Win2003, WinVista, Win7, Win8, Win8.1.
 		More Properties And Relative Numeration Are Reported At The AutoIt Webpage.
 	#ce
 	Local $gFileName, $gFileDir, $gObjShell, $gObjFolder, $gObjFile, $gFileProperty, $gFileProperties[2]
 
 	If $gMode = 0 Then
-		Local $gArrayWin2000[27] = [0, 1, 2, 3, 6, 7, 4, 100, 8, 100, 100, 100, 10, 100, 11, 100, 100, 100, 100, 12, 13, 5, 15, 33, 30, 100, 100]
-		Local $gArrayWinXP[27] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 25, 26, 24, 9, 16, 10, 17, 20, 18, 19, 11, 12, 14, 15, 21, 22, 100, 100]
-		Local $gArrayWin7[27] = [0, 1, 2, 3, 4, 5, 6, 7, 10, 12, 31, 30, 20, 13, 21, 14, 16, 15, 26, 22, 23, 24, 25, 27, 28, 32, 33]
+		Local $gArrayWin2000[29] = [0, 1, 2, 3, 6, 7, 4, 100, 8, 100, 100, 100, 10, 100, 11, 100, 100, 100, 100, 12, 13, 5, 15, 33, 30, 100, 100, 100, 19]
+		Local $gArrayWinXP[29] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 25, 26, 24, 9, 16, 10, 17, 20, 18, 19, 11, 12, 14, 15, 21, 22, 100, 100, 100, 38]
+		Local $gArrayWin7[29] = [0, 1, 2, 3, 4, 5, 6, 7, 10, 12, 31, 30, 20, 13, 21, 14, 16, 15, 26, 22, 23, 24, 25, 27, 28, 32, 33, 19, 270]
 		If @OSVersion == "WIN_XP" Or @OSVersion == "WIN_XPe" Or @OSVersion == "WIN_2003" Then
 			$gPropertyNumber = $gArrayWinXP[$gPropertyNumber]
 		ElseIf @OSVersion == "WIN_2000" Then
@@ -429,6 +429,17 @@ Func __GetRelativePath($sFilePath, $sFilePathRef = @ScriptDir)
 	EndIf
 	Return $sFilePathNew
 EndFunc   ;==>__GetRelativePath
+
+Func __GetValidFilename($sString)
+	#cs
+		Description: Convert String To A Valid Filename.
+		Returns: New String
+	#ce
+	Local $sMoreInvalidChars = '*?"<>|'
+	$sString = StringReplace(StringReplace(StringReplace($sString, ":", "."), "/", "-"), "\", "-")
+	$sString = StringRegExpReplace($sString, '[\Q' & $sMoreInvalidChars & '\E]', '')
+	Return $sString
+EndFunc   ;==>__GetValidFilename
 
 Func __IsReadOnly($sFilePath)
 	#cs

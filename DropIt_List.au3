@@ -189,7 +189,7 @@ Func __List_ReplaceAbbreviations($lString, $lFilePath, $lListPath, $lProfile, $l
 		$lString = StringReplace($lString, "%LinkRelative%", $lRelativePath)
 	EndIf
 	$lString = StringReplace($lString, "%Counter%", $lCounter)
-	$lString = _ReplaceAbbreviation($lString, $lFilePath, $lProfile, "$8")
+	$lString = _ReplaceAbbreviation($lString, 0, $lFilePath, $lProfile, "$8")
 
 	Return $lString
 EndFunc   ;==>__List_ReplaceAbbreviations
@@ -272,7 +272,8 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lSettings, $lStrin
 					$lAlign = ' class="di-right"'
 				EndIf
 				$lArray[$B] = StringReplace($lArray[$B], "%Counter%", $A)
-				$lArray[$B] = _ReplaceAbbreviation($lArray[$B], $lSubArray[$A], $lProfile, "$8")
+				$lArray[$B] = _ReplaceAbbreviation($lArray[$B], 0, $lSubArray[$A], $lProfile, "$8")
+				$lArray[$B] = StringRegExpReplace($lArray[$B], '[<>"]', '')
 			EndIf
 			If StringIsDigit($lArray[$B]) Then
 				$lAlign = ' class="di-right"'

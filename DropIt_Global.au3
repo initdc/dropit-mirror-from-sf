@@ -3,7 +3,7 @@
 
 #include-once
 
-Global $G_Global_CurrentVersion = "7.0"
+Global $G_Global_CurrentVersion = "8.0"
 
 Global $G_Global_EncryptionKey = "profiles-password-fake" ; Key For Profiles Encryption.
 Global $G_Global_PasswordKey = "archives-password-fake" ; Key For Archives Encryption.
@@ -26,6 +26,7 @@ Global $G_Global_TempName = '~TempDropIt'
 
 Global Const $STATIC_CRYPT_FILE_EXT = ".fcrt"
 Global Const $STATIC_CRYPT_FOLDER_EXT = ".zcrt"
+Global Const $STATIC_TEMP_ZIP_EXT = ".dropit.zip"
 Global Const $STATIC_MODIFIER_ESCAPE_CHAR = "#"
 Global Const $STATIC_ABBREVIATION_ESCAPE_CHAR = "%"
 Global Const $STATIC_FILTERS_DIVIDER = "|"

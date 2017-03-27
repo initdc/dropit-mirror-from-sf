@@ -8,7 +8,7 @@
 #include "DropIt_LibVarious.au3"
 
 Func __Tray_BitmapIcon($gb_Bitmap)
-	Local $ts_Return = DllCall($ghGDIPDll, "int", "GdipCreateHICONFromBitmap", "hwnd", $gb_Bitmap, "int*", 0)
+	Local $ts_Return = DllCall($__g_hGDIPDll, "int", "GdipCreateHICONFromBitmap", "hwnd", $gb_Bitmap, "int*", 0)
 	If @error Or Not $ts_Return[0] Then
 		Return SetError(@error, @extended, $ts_Return[2])
 	EndIf

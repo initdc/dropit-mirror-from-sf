@@ -405,10 +405,6 @@ Func _BinaryReplace($Binary, $Search, $Replace, $Occur = 0)
 	$Search = Binary($Search)
 	$Replace = Binary($Replace)
 
-	Local $BinaryLen = BinaryLen($Binary)
-	Local $SearchLen = BinaryLen($Search)
-	Local $ReplaceLen = BinaryLen($Replace)
-
 	Local $Len1 = BinaryLen($Binary)
 	Local $Buffer1 = DllStructCreate("byte[" & $Len1 & "]")
 	DllStructSetData($Buffer1, 1, $Binary)

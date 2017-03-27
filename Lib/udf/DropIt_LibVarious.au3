@@ -3,6 +3,7 @@
 
 #include-once
 #include <Array.au3>
+#include <Crypt.au3>
 #include <GUIConstantsEx.au3>
 #include <String.au3>
 #include <WinAPI.au3>
@@ -562,6 +563,18 @@ Func __ShowPassword($iControlID)
 	GUICtrlSetState($iControlID, $GUI_FOCUS)
 	Return $sPasswordCharacter = 0
 EndFunc   ;==>__ShowPassword
+
+Func __StringEncrypt($fEncrypt, $sData, $sPassword)
+	_Crypt_Startup() ; Start the Crypt library.
+	Local $sReturn = ''
+	If $fEncrypt Then ; If the flag is set to True then encrypt, otherwise decrypt.
+		$sReturn = _Crypt_EncryptData($sData, $sPassword, $CALG_RC4)
+	Else
+		$sReturn = BinaryToString(_Crypt_DecryptData($sData, $sPassword, $CALG_RC4))
+	EndIf
+	_Crypt_Shutdown() ; Shutdown the Crypt library.
+	Return $sReturn
+EndFunc   ;==>__StringEncrypt
 
 Func __StringIsValid($sString, $sPattern = '|<>')
 	#cs

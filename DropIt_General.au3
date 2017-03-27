@@ -16,6 +16,7 @@
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibImages.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
+#include "Lib\udf\ResourcesEx.au3"
 
 Global $G_General_Language
 
@@ -102,15 +103,15 @@ Func __IsSettingsFile($iINI = -1)
 
 	__IniWriteEx($iINI, $G_Global_GeneralSection, "", "Version=" & $G_Global_CurrentVersion & @LF & "Profile=Default" & @LF & "Language=" & __GetOSLanguage() & @LF & _
 			"PosX=-1" & @LF & "PosY=-1" & @LF & "SizeCustom=320;200;-1;-1" & @LF & "SizeManage=460;260;-1;-1" & @LF & "SizeProcess=500;300;-1;-1" & @LF & _
-			"ColumnCustom=100;100;60;50" & @LF & "ColumnManage=130;100;90;115" & @LF & "ColumnProcess=140;80;180;70" & @LF & _
-			"OnTop=True" & @LF & "LockPosition=False" & @LF & "CustomTrayIcon=True" & @LF & "MultipleInstances=False" & @LF & "CheckUpdates=False" & @LF & _
-			"StartAtStartup=False" & @LF & "Minimized=False" & @LF & "ShowSorting=True" & @LF & "ShowMonitored=False" & @LF & "UseSendTo=False" & @LF & _
-			"SendToMode=Permanent" & @LF & "SendToName=DropIt" & @LF & "SendToIcons=True" & @LF & "ProfileEncryption=False" & @LF & "ScanSubfolders=False" & @LF & _
-			"FolderAsFile=False" & @LF & "AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & "DupMode=Skip" & @LF & _
-			"CreateLog=False" & @LF & "AutoBackup=True" & @LF & "AmbiguitiesCheck=False" & @LF & "IgnoreNew=False" & @LF & "IgnoreInUse=False" & @LF & _
+			"ColumnCustom=100;100;60;50" & @LF & "ColumnManage=130;100;90;115" & @LF & "ColumnProcess=140;80;180;70" & @LF & "OnTop=True" & @LF & _
+			"LockPosition=False" & @LF & "CustomTrayIcon=True" & @LF & "MultipleInstances=False" & @LF & "CheckUpdates=False" & @LF & "StartAtStartup=False" & @LF & _
+			"Minimized=False" & @LF & "ShowSorting=True" & @LF & "ShowMonitored=False" & @LF & "MouseScroll=True" & @LF & "MonitoredFolderHotkeys=False" & @LF & _
+			"UseSendTo=False" & @LF & "SendToMode=Permanent" & @LF & "SendToName=DropIt" & @LF & "SendToIcons=True" & @LF & "ProfileEncryption=False" & @LF & _
+			"ScanSubfolders=False" & @LF & "FolderAsFile=False" & @LF & "AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & _
+			"DupMode=Skip" & @LF & "CreateLog=False" & @LF & "AutoBackup=True" & @LF & "AmbiguitiesCheck=False" & @LF & "IgnoreNew=False" & @LF & "IgnoreInUse=False" & @LF & _
 			"AlertSize=True" & @LF & "AlertDelete=False" & @LF & "AlertFailed=True" & @LF & "AlertAmbiguity=False" & @LF & "GroupOrder=Path" & @LF & "GraduallyHide=False" & @LF & _
-			"GraduallyHideSpeed=5" & @LF & "GraduallyHideTime=0" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & _
-			"MasterPassword=" & @LF & "EndCommandLine=")
+			"GraduallyHideSpeed=5" & @LF & "GraduallyHideTime=0" & @LF & "GraduallyHideVisPx=8" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & _
+			"MonitoringSize=0" & @LF & "MasterPassword=" & @LF & "EndCommandLine=")
 	__IniWriteEx($iINI, "MonitoredFolders", "", "")
 	__IniWriteEx($iINI, "EnvironmentVariables", "", "")
 
@@ -357,6 +358,7 @@ Func __IsProfile($iProfile = -1, $iArray = 0)
 		[8] - Image Directory [C:\Program Files\DropIt\Images\]
 		If $iArray = 1 Then Return Profile Full Path [C:\Program Files\DropIt\Profiles\ProfileName.ini]
 		If $iArray = 2 Then Return Image Full Path [C:\Program Files\DropIt\Images\Default.png]
+		If $iArray = 3 Then Return Profile Name [ProfileName]
 	#ce
 	Local $iINI = __IsSettingsFile() ; Get Default Settings INI File.
 	Local $iProfileDirectory = __GetDefault(2) ; Get Default Profile Directory.
@@ -411,7 +413,7 @@ Func __GetProfile($gINI = -1, $gProfile = -1, $gProfileDirectory = -1, $gArray =
 	If FileExists($gProfileDefault[2][0] & $gReturn[4]) = 0 Then
 		$gReturn[4] = $gProfileDefault[3][0]
 		If FileExists($gProfileDefault[2][0] & $gReturn[4]) = 0 Then
-			_ResourceSaveToFile(__GetDefault(128), "IMAGE")
+			_Resource_SaveToFile(__GetDefault(128), "IMAGE")
 		EndIf
 		$gSize = __ImageSize($gProfileDefault[2][0] & $gReturn[4])
 		__IniWriteEx($gReturn[0], $G_Global_TargetSection, "Image", $gReturn[4])
@@ -428,10 +430,13 @@ Func __GetProfile($gINI = -1, $gProfile = -1, $gProfileDirectory = -1, $gArray =
 	$gReturn[8] = $gProfileDefault[2][0]
 
 	If $gArray = 1 Then
-		Return $gReturn[0] ; Profile Directory And Profile Name.
+		Return $gReturn[0] ; Profile Path.
 	EndIf
 	If $gArray = 2 Then
-		Return $gReturn[3] ; Image Directory And Image Name.
+		Return $gReturn[3] ; Profile Image Path.
+	EndIf
+	If $gArray = 3 Then
+		Return $gReturn[1] ; Profile Name.
 	EndIf
 	Return $gReturn ; Array.
 EndFunc   ;==>__GetProfile
@@ -523,16 +528,16 @@ Func __ProfileToArray($sProfileName)
 		Return: Array
 	#ce
 	Local $aAssociations = __GetAssociations($sProfileName) ; Get Associations Array For The Current Profile.
-	Local $aArray[$aAssociations[0][0] + 1][$aAssociations[0][1] + 1] = [[$aAssociations[0][0], $aAssociations[0][1], $sProfileName]]
+	Local $aArray[$aAssociations[0][0]][$aAssociations[0][1]]
 
-	For $A = 1 To $aAssociations[0][0]
+	For $A = 0 To $aAssociations[0][0] - 1
 		For $B = 0 To $aAssociations[0][1] - 1
 			If $B = 3 Then ; Convert Action.
-				$aArray[$A][$B + 1] = __GetActionString($aAssociations[$A][$B])
-			ElseIf $B = 4 And $aAssociations[$A][3] == "$6" Then ; Destination For Delete Action.
-				$aArray[$A][$B + 1] = __GetDeleteString($aAssociations[$A][$B])
+				$aArray[$A][$B] = __GetActionString($aAssociations[$A + 1][$B])
+			ElseIf $B = 4 And $aAssociations[$A + 1][3] == "$6" Then ; Destination For Delete Action.
+				$aArray[$A][$B] = __GetDeleteString($aAssociations[$A + 1][$B])
 			Else
-				$aArray[$A][$B + 1] = $aAssociations[$A][$B]
+				$aArray[$A][$B] = $aAssociations[$A + 1][$B]
 			EndIf
 		Next
 	Next
@@ -546,6 +551,8 @@ Func __ArrayToCSV($aArray, $sDestination)
 		Returns: 1
 	#ce
 	Local $hFileOpen, $sString, $iNumberFields = __GetAssociationKey(-1)
+	Local $iRows = UBound($aArray, 1), $iCols = UBound($aArray, 2)
+
 	For $A = 1 To $iNumberFields
 		$sString &= '"' & __GetAssociationKey($A - 1, 1) & '"'
 		If $A <> $iNumberFields Then
@@ -555,10 +562,10 @@ Func __ArrayToCSV($aArray, $sDestination)
 		EndIf
 	Next
 
-	For $A = 1 To $aArray[0][0]
-		For $B = 1 To $aArray[0][1]
+	For $A = 0 To $iRows - 1
+		For $B = 0 To $iCols - 1
 			$sString &= '"' & $aArray[$A][$B] & '"'
-			If $B < $aArray[0][1] Then
+			If $B < $iCols - 1 Then
 				$sString &= ', '
 			EndIf
 		Next

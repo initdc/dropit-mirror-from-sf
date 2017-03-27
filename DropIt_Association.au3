@@ -99,6 +99,10 @@ Func __GetActionResult($gAction)
 			$gReturn = __GetLang('POSITIONPROCESS_LOG_18', 'Decrypted')
 		Case "$H"
 			$gReturn = __GetLang('POSITIONPROCESS_LOG_19', 'Added to Gallery')
+		Case "$I"
+			$gReturn = __GetLang('POSITIONPROCESS_LOG_20', 'Split')
+		Case "$J"
+			$gReturn = __GetLang('POSITIONPROCESS_LOG_21', 'Joined')
 		Case Else
 			$gReturn = __GetLang('POSITIONPROCESS_LOG_5', 'Moved')
 	EndSwitch
@@ -148,6 +152,10 @@ Func __GetActionString($gAction)
 				$gReturn = __GetLang('ACTION_DECRYPT', 'Decrypt')
 			Case "$H"
 				$gReturn = __GetLang('ACTION_GALLERY', 'Create Gallery')
+			Case "$I"
+				$gReturn = __GetLang('ACTION_SPLIT', 'Split')
+			Case "$J"
+				$gReturn = __GetLang('ACTION_JOIN', 'Join')
 			Case Else ; Move.
 				$gReturn = __GetLang('ACTION_MOVE', 'Move')
 		EndSwitch
@@ -187,6 +195,10 @@ Func __GetActionString($gAction)
 				$gReturn = "$G"
 			Case __GetLang('ACTION_GALLERY', 'Create Gallery'), 'Create Gallery'
 				$gReturn = "$H"
+			Case __GetLang('ACTION_SPLIT', 'Split'), 'Split'
+				$gReturn = "$I"
+			Case __GetLang('ACTION_JOIN', 'Join'), 'Join'
+				$gReturn = "$J"
 			Case Else ; __GetLang('ACTION_MOVE', 'Move').
 				$gReturn = "$0"
 		EndSwitch
@@ -278,7 +290,7 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 	Switch $gAction
 		Case "$6"
 			$gDestination = __GetDeleteString($gDestination)
-		Case "$3", "$4", "$5", "$8", "$F", "$G", "$H"
+		Case "$3", "$4", "$5", "$8", "$F", "$G", "$H", "$I", "$J"
 			$gStringSplit = StringSplit($gDestination, "|")
 			$gDestination = $gStringSplit[1]
 		Case "$C"
@@ -490,11 +502,12 @@ Func __GetAssociationKey($gParameter = -1, $gType = 0)
 		Description: Get A Key String ($gParameter = Number) Or A Key Number ($gParameter = String).
 		Returns: Key $gType = 0 [ExtractSettings] Or Key $gType = 1 [EXTRACT SETTINGS]
 	#ce
-	Local $gIsNumber = StringIsDigit($gParameter), $gNumberFields = 19
+	Local $gIsNumber = StringIsDigit($gParameter), $gNumberFields = 21
 	If $gParameter = -1 Then
 		Return $gNumberFields
 	EndIf
-	Local $gFields[$gNumberFields] = ["Name", "State", "Rules", "Action", "Destination", "Filters", "List Properties", "HTML Theme", "Site Settings", "Crypt Settings", "Gallery Properties", "Gallery Theme", "Gallery Settings", "Compress Settings", "Extract Settings", "Open With Settings", "List Settings", "Favourite Association", "Use RegEx"]
+	Local $gFields[$gNumberFields] = ["Name", "State", "Rules", "Action", "Destination", "Filters", "List Properties", "HTML Theme", "Site Settings", "Crypt Settings", "Gallery Properties", _
+			"Gallery Theme", "Gallery Settings", "Compress Settings", "Extract Settings", "Open With Settings", "List Settings", "Favourite Association", "Use RegEx", "Split Settings", "Join Settings"]
 	For $A = 0 To $gNumberFields
 		If $gType = 0 Then
 			$gFields[$A] = StringStripWS($gFields[$A], 8)
@@ -514,7 +527,7 @@ Func __GetAssociations($gProfile = -1)
 	#cs
 		Description: Get Associations Of The Current Profile [-1] Or Specified Profile Name [Valid Profile Name].
 		Returns: Array[0][0] - Number Of Items [?]
-		[0][1] - Number Of Fields [19]
+		[0][1] - Number Of Fields [21]
 		[0][2] - Profile Name [Profile]
 
 		Array[A][0] - Association Name [Example]
@@ -536,6 +549,8 @@ Func __GetAssociations($gProfile = -1)
 		[A][16] - List Settings [True;True;True;True]
 		[A][17] - Favourite Association [False]
 		[A][18] - Consider As Regular Expressions [False]
+		[A][19] - Split Settings [10MB]
+		[A][20] - Join Settings [False]
 	#ce
 	$gProfile = __IsProfile($gProfile, 0) ; Get Array Of Selected Profile.
 

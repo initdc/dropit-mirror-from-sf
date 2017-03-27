@@ -10,6 +10,7 @@
 #include <WinAPIShPath.au3>
 #include <WindowsConstants.au3>
 
+#include "DropIt_Duplicate.au3"
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
@@ -52,7 +53,7 @@ Func __7ZipRun($rSourceFilePath, $rDestinationFilePath, $rType = 0, $rDuplicateM
 	EndIf
 
 	Switch $rType
-		Case 0 ; Compress Mode.
+		Case 0, 4 ; Compress Mode.
 			$rCommand = '"' & $7Zip & '"' & __CompressCommands($rType, $rDestinationFilePath, $rPassword) & ' -- "' & $rSourceFilePath & '"'
 
 		Case 3 ; Compress List Mode.
@@ -176,7 +177,7 @@ Func __CompressCommands($cType, $cDestinationFilePath, $sCompressSettings)
 		Returns: Needed Commands
 	#ce
 	Local $cEncryption, $cCommand = ' a'
-	If $cType = 3 Then ; Update Archive.
+	If $cType = 3 Or $cType = 4 Then ; Update Archive.
 		$cCommand = ' u -ux2y2z2'
 	ElseIf FileExists($cDestinationFilePath) Then ; Create New Archive.
 		FileDelete($cDestinationFilePath)
@@ -186,10 +187,13 @@ Func __CompressCommands($cType, $cDestinationFilePath, $sCompressSettings)
 		ReDim $sCompressSettings[7] ; Number Of Settings.
 	EndIf
 	$cEncryption = StringReplace($sCompressSettings[5], "-", "")
-	$sCompressSettings[6] = _StringEncrypt(0, $sCompressSettings[6], $G_Global_PasswordKey)
+	$sCompressSettings[6] = __StringEncrypt(0, $sCompressSettings[6], $G_Global_PasswordKey)
 	If @error Then
 		$cEncryption = "None"
 		$sCompressSettings[6] = ""
+	EndIf
+	If $sCompressSettings[3] = 0 Then ; Storage Mode (No Compression).
+		$sCompressSettings[4] = 'Copy'
 	EndIf
 	If $sCompressSettings[2] <> "zip" Then
 		$cCommand &= ' -t7z'
@@ -214,6 +218,21 @@ Func __CompressCommands($cType, $cDestinationFilePath, $sCompressSettings)
 
 	Return $cCommand & ' -ssw -sccUTF-8 "' & $cDestinationFilePath & '"'
 EndFunc   ;==>__CompressCommands
+
+Func __CreateTempZIP($sSource)
+	Local $sFileName = __GetFileName($sSource)
+	Local $sFilePath = $G_Global_TempDir & "\" & $sFileName & ".zip"
+	DirCreate($G_Global_TempDir)
+	If FileExists($sFilePath) Then
+		$sFilePath = $G_Global_TempDir & "\" & __Duplicate_Rename($sFileName & ".zip", $G_Global_TempDir, 0, 2)
+	EndIf
+	__7ZipRun($sSource & "\*", $sFilePath, 0)
+	If @error Then
+		FileDelete($sFilePath)
+		Return SetError(1, 0, 0)
+	EndIf
+	Return $sFilePath
+EndFunc   ;==>__CreateTempZIP
 
 Func __GetContentArchiveArray($sArchive, $sPassword)
 	Local $aArray[1] = [0]
@@ -383,7 +402,7 @@ Func __Password_GUI()
 			Case $pOK
 				$pPW = IniRead($pINI, $G_Global_GeneralSection, "MasterPassword", "")
 				$pPWFailedAttempts += 1
-				If StringCompare(GUICtrlRead($pMasterPassword), _StringEncrypt(0, $pPW, $pPW_Code), 1) <> 0 Then
+				If StringCompare(GUICtrlRead($pMasterPassword), __StringEncrypt(0, $pPW, $pPW_Code), 1) <> 0 Then
 					MsgBox(0x30, __GetLang('PASSWORD_MSGBOX_1', 'Password Not Correct') & ' - ' & $pPWFailedAttempts, __GetLang('PASSWORD_MSGBOX_2', 'You have to enter the correct password to use DropIt.'), 0, __OnTop($pGUI))
 					GUICtrlSetData($pMasterPassword, "")
 					ControlClick($pGUI, "", $pMasterPassword)

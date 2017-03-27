@@ -232,6 +232,28 @@ EndFunc
 
 ; #FUNCTION# ===============================================================================================
 ;
+; Name...........: _StringM_KeepSingleChars
+; Description ...: Return a String with or without a group of characters
+; Syntax.........: _StringM_KeepSingleChars($sString, $sChars, $delete = 0)
+; Parameters ....: $sString - the source string
+;				   $sChars - the group of characters
+;                  $delete - 1 to remove characters or 0 to keep them
+; Return values .: Return a String with or without the group of characters
+; GlobalVar .....:
+; Author ........: Lupo73
+; Modified.......:
+; Remarks .......: The function is case sensitive
+; Related .......:
+; Link ..........;
+; Example .......; No
+; ============================================================================================
+Func _StringM_KeepSingleChars($sString, $sChars, $delete = 0)
+	Local $sExclude = $delete ? "" : "^"
+	Return StringRegExpReplace($sString, "[" & $sExclude & "\Q" & $sChars & "\E]", "")
+EndFunc
+
+; #FUNCTION# ===============================================================================================
+;
 ; Name...........: _StringM_AddLeadingZeros
 ; Description ...: Return a String filled with a number of leading zeros
 ; Syntax.........: _StringM_AddLeadingZeros($sString, $iLeadingZeros = 0)

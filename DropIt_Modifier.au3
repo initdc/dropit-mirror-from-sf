@@ -23,7 +23,7 @@
 
 
 ; #VARIABLES# ==============================================================================================
-Global $i_Modifier_ModifierRulesLength = 44  ;Note UBound($modifierRules) - 1 not used
+Global $i_Modifier_ModifierRulesLength = 46  ;Note UBound($modifierRules) - 1 not used
 Global Const $i_Modifier_ModifierRule = 0         ;Indexes of inner array
 Global Const $i_Modifier_ModifierWhat = 1
 Global Const $i_Modifier_ModifierAction = 2
@@ -37,7 +37,7 @@ Global $s_Modifier_VarEscapeChar = $STATIC_ABBREVIATION_ESCAPE_CHAR
 
 
 
-;StringRegExpReplace ("/1", "(.*)\1 \2(.*)", "$1$2", [count] )
+;StringRegExpReplace("/1", "(.*)\1 \2(.*)", "$1$2", [count])
 ;Attention: action from ModifierRule is with "\" and action from ModifierWhat is "/"
 ;Modifier array [n][6] = [n]["Modifier Rule", "Applicantion Rule (What)", "Application (Action)", "MultiAction"..]
 Global $aas_Modifier_ModifierRules[$i_Modifier_ModifierRulesLength][6] = [ _
@@ -47,42 +47,46 @@ Global $aas_Modifier_ModifierRules[$i_Modifier_ModifierRulesLength][6] = [ _
 	["[-]", "(.)(.*)", 'StringLower("/1") & "/2"'], _
 	["[-][-]", "(.+)", '_StringM_LowerAllExceptFirstLetter("/1")'],  _
 	["[-][-][-]", "(.+)", 'StringLower("/1")'],  _
+	["[?][?]", "(.+)" , '_StringM_UpperLowerString("/1", false)'], _
+	["[?][ ][?]", "(.+)" , '_StringM_UpperLowerString("/1")'], _
 	["[>](\d+)[,](\d+)", "(.+)", 'StringMid("/1", \1, \2)'], _
 	["[<](\d+)[,](\d+)", "(.+)", 'StringMid("/1", StringLen("/1") - \1 - \2 + 2, \2)'], _
 	["[-](\d+)[,](\d+)", "(.+)", 'StringMid("/1", \1, \2 - \1 + 1)'], _
-	["[r][(](.+)[,](.+)[)]", "(.+)", 'StringReplace("/1", "\1", "\2")'], _
-	["[r][:](.+[,].+)([|].+[,].+)*", "(.+)", 'StringReplace("/1", "\1", "\2")', "|", "(.+)[,](.+)", 2], _
-	["[d][(](.+)[)]", "(.+)", 'StringReplace("/1", "\1", "")'], _
-	["[d][-][(](.+),(.+)[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 0)'], _
-	["[d][-][-][(](.+)[,](.+)[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 1)'], _
-	["[d][o][-][(](.+)[,](.+)[,](-?\d)+[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 0, \3)'], _
-	["[d][o][-][-][(](.+)[,](.+)[,](-?\d)+[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 1, \3)'], _
-	["[d][o][o][-][(](.+)[,](.+)[,](-?\d)+[,](-?\d)+[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 0, \3, \4)'], _
-	["[d][o][o][-][-][(](.+)[,](.+)[,](-?\d)+[,](-?\d)+[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 1, \3, \4)'], _
-	["[c][>](.+)", "(.+)", 'StringTrimLeft("/1", \1)'], _
-	["[c][<](.+)", "(.+)", 'StringTrimRight("/1", \1)'], _
-	["[l][z][(](.+)[)]", "(.+)", '_StringM_AddLeadingZeros("/1", \1)'], _
-	["[d][:](.+)([|].+)*", "(.+)", 'StringReplace("/1", "\1", "")', "|", "(.+)", 2], _
 	["[s][>][(](.+)[)]", "(.+)", 'StringMid("/1", StringInStr("/1", "\1"))' ], _
 	["[s][>][-][(](.+)[)]", "(.+)" , 'StringMid("/1", StringInStr("/1", "\1") + StringLen("\1"))'], _
 	["[s][<][(](.+)[)]", "(.+)", 'StringMid("/1", 1, StringInStr("/1", "\1") + StringLen("\1") - 1)'], _
 	["[s][<][-][(](.+)[)]", "(.+)" , 'StringMid("/1", 1, StringInStr("/1", "\1") - 1)'], _
 	["[s][-][(](.+),(.+)[)]", "(.+)" , '_StringM_getStringBetween("/1", "\1", "\2", true)'], _
 	["[s][-][-][(](.+),(.+)[)]", "(.+)" , '_StringM_getStringBetween("/1", "\1", "\2")'], _
-	["[?][?]", "(.+)" , '_StringM_UpperLowerString("/1", false)'], _
-	["[?][ ][?]", "(.+)" , '_StringM_UpperLowerString("/1")'], _
+	["[r][(](.+)[,](.+)[)]", "(.+)", 'StringReplace("/1", "\1", "\2")'], _
+	["[r][:](.+[,].+)([|].+[,].+)*", "(.+)", 'StringReplace("/1", "\1", "\2")', "|", "(.+)[,](.+)", 2], _ ; DEPRECATED.
+	["[d][(](.+)[)]", "(.+)", 'StringReplace("/1", "\1", "")'], _
+	["[d][:](.+)([|].+)*", "(.+)", 'StringReplace("/1", "\1", "")', "|", "(.+)", 2], _ ; DEPRECATED.
+	["[d][>](.+)", "(.+)", 'StringTrimLeft("/1", \1)'], _
+	["[d][<](.+)", "(.+)", 'StringTrimRight("/1", \1)'], _
+	["[c][>](.+)", "(.+)", 'StringTrimLeft("/1", \1)'], _ ; DEPRECATED.
+	["[c][<](.+)", "(.+)", 'StringTrimRight("/1", \1)'], _ ; DEPRECATED.
+	["[d][-][(](.+),(.+)[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 0)'], _ ; DEPRECATED.
+	["[d][-][-][(](.+)[,](.+)[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 1)'], _ ; DEPRECATED.
+	["[d][o][-][(](.+)[,](.+)[,](-?\d)+[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 0, \3)'], _ ; DEPRECATED.
+	["[d][o][-][-][(](.+)[,](.+)[,](-?\d)+[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 1, \3)'], _ ; DEPRECATED.
+	["[d][o][o][-][(](.+)[,](.+)[,](-?\d)+[,](-?\d)+[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 0, \3, \4)'], _ ; DEPRECATED.
+	["[d][o][o][-][-][(](.+)[,](.+)[,](-?\d)+[,](-?\d)+[)]", "(.+)", '_StringM_DeleteBetween("/1", "\1", "\2", 1, \3, \4)'], _ ; DEPRECATED.
+	["[k][(](.+)[)]", "(.+)", '_StringM_KeepSingleChars("/1", "\1", 0)'], _
+	["[k][-][(](.+)[)]", "(.+)", '_StringM_KeepSingleChars("/1", "\1", 1)'], _
 	["[a][>][(](.+),(.+)[)]", "(.+)" , '_StringInsert("/1", "\1", \2 - 1)'], _
 	["[a][<][(](.+),(.+)[)]", "(.+)" , '_StringInsert("/1", "\1", - \2 + 1)'], _
-	["[E][n][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2)'], _
-	["[D][e][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2)'], _
-	["[E][n][N][P][t][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, true, false)'], _
-	["[D][e][N][P][t][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, true, false)'], _
-	["[E][n][N][S][p][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, false, true)'], _
-	["[D][e][N][S][p][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, false, true)'], _
-	["[E][n][N][S][p][P][t][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, true, true)'], _
-	["[D][e][N][S][p][P][t][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, true, true)'], _
-	["[E][n][(](.+)[,](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, false, false, "\2")'], _
-	["[D][e][(](.+)[,](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, false, false, "\2")']]
+	["[l][z][(](.+)[)]", "(.+)", '_StringM_AddLeadingZeros("/1", \1)'], _
+	["[E][n][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2)'], _ ; DEPRECATED.
+	["[D][e][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2)'], _ ; DEPRECATED.
+	["[E][n][N][P][t][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, true, false)'], _ ; DEPRECATED.
+	["[D][e][N][P][t][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, true, false)'], _ ; DEPRECATED.
+	["[E][n][N][S][p][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, false, true)'], _ ; DEPRECATED.
+	["[D][e][N][S][p][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, false, true)'], _ ; DEPRECATED.
+	["[E][n][N][S][p][P][t][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, true, true)'], _ ; DEPRECATED.
+	["[D][e][N][S][p][P][t][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, true, true)'], _ ; DEPRECATED.
+	["[E][n][(](.+)[,](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, false, false, "\2")'], _ ; DEPRECATED.
+	["[D][e][(](.+)[,](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, false, false, "\2")']] ; DEPRECATED.
 
 
 ; ==========================================================================================================
@@ -92,7 +96,7 @@ Global $aas_Modifier_ModifierRules[$i_Modifier_ModifierRulesLength][6] = [ _
 ; ==========================================================================================================
 
 ;#INTERNAL_USE_ONLY# =======================================================================================
-; Func _Modifier_ActiveModifier($sVarValue,$sModifierRequest)
+; Func _Modifier_ActiveModifier($sVarValue, $sModifierRequest)
 ; ==========================================================================================================
 
 ; #FUNCTION# ===============================================================================================
@@ -119,8 +123,8 @@ Func _Modifier_StringReplaceModifier($sWhereReplace, $sVarName, $sVarValue)
 	$sWhereReplace = StringReplace($sWhereReplace, $sVEC & $sVarName & $sVEC, $sVarValue)
 	Local $iOccurrences = StringInStr($sWhereReplace, $sVEC & $sVarName & $sMEC)
 	While $iOccurrences > 0
-		Local $sModifierRequest = _StringM_ExtractBetweenString($sWhereReplace,$iOccurrences,$sMEC,$sVEC)
-		Local $sAction = __Modifier_ActiveMultiModifier($sVarValue,$sModifierRequest)
+		Local $sModifierRequest = _StringM_ExtractBetweenString($sWhereReplace, $iOccurrences, $sMEC, $sVEC)
+		Local $sAction = __Modifier_ActiveMultiModifier($sVarValue, $sModifierRequest)
 		$sWhereReplace = StringReplace($sWhereReplace, $sVEC & $sVarName & $sMEC & $sModifierRequest & $sVEC, $sAction)
 		$iOccurrences = StringInStr($sWhereReplace, $sVEC & $sVarName & $sMEC)
 	WEnd
@@ -131,7 +135,7 @@ EndFunc
 ;
 ; Name...........: __Modifier_ActiveModifier
 ; Description ...: Find the modifier and apply it on a string, if not find return not apply
-; Syntax.........: __Modifier_ActiveModifier($sVarValue,$sModifierRequest)
+; Syntax.........: __Modifier_ActiveModifier($sVarValue, $sModifierRequest)
 ; Parameters ....: $sVarValue - string to modify
 ;                  $sModifierRequest - modifier found
 ; Return values .: String modified or if modifer not found or empty, the original string
@@ -159,12 +163,12 @@ Func __Modifier_ActiveModifier($sVarValue, $sModifierRequest)
 		Return __Modifier_ActiveMonoModifier($sVarValue, $sModifierRequest, $iI, $aas_Modifier_ModifierRules[$iI][$i_Modifier_ModifierRule])
 	EndIf
 
-	$sModifierRequest = StringTrimLeft($sModifierRequest,$aas_Modifier_ModifierRules[$iI][$i_Modifier_MultiNameCut])
+	$sModifierRequest = StringTrimLeft($sModifierRequest, $aas_Modifier_ModifierRules[$iI][$i_Modifier_MultiNameCut])
 
-	Local $as_Array = StringSplit($sModifierRequest,$aas_Modifier_ModifierRules[$iI][$i_Modifier_MultiSplitter], 2)
+	Local $as_Array = StringSplit($sModifierRequest, $aas_Modifier_ModifierRules[$iI][$i_Modifier_MultiSplitter], 2)
 
 	For $elem in $as_Array
-		$sVarValue = __Modifier_ActiveMonoModifier($sVarValue,$elem,$iI,$aas_Modifier_ModifierRules[$iI][$i_Modifier_MultiAction])
+		$sVarValue = __Modifier_ActiveMonoModifier($sVarValue, $elem, $iI, $aas_Modifier_ModifierRules[$iI][$i_Modifier_MultiAction])
 	Next
 
 	Return $sVarValue
@@ -192,7 +196,7 @@ EndFunc
 ;
 ; Name...........: __Modifier_ActiveMultiModifier
 ; Description ...: Find the modifiers between Modifier_Escape_Char and apply them on a string
-; Syntax.........: __Modifier_ActiveMultiModifier($sVarValue,$sModifierRequest)
+; Syntax.........: __Modifier_ActiveMultiModifier($sVarValue, $sModifierRequest)
 ; Parameters ....: $sVarValue - string to modify
 ;                  $sModifierRequest - modifiers found
 ; Return values .: String modified or if modifers not found or empty, the original string
@@ -204,10 +208,10 @@ EndFunc
 ; Link ..........;
 ; Example .......; NO
 ; ============================================================================================
-Func __Modifier_ActiveMultiModifier($sVarValue,$sModifierRequest)
-	Local $as_Array = StringSplit($sModifierRequest,$s_Modifier_ModifierEscapeChar,2)
+Func __Modifier_ActiveMultiModifier($sVarValue, $sModifierRequest)
+	Local $as_Array = StringSplit($sModifierRequest, $s_Modifier_ModifierEscapeChar,2)
 	For $elem in $as_Array
-		$sVarValue = __Modifier_ActiveModifier($sVarValue,$elem)
+		$sVarValue = __Modifier_ActiveModifier($sVarValue, $elem)
 	Next
 	Return $sVarValue
 EndFunc

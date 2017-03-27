@@ -68,7 +68,7 @@ Func __FTP_ProgressUpload($l_FTPSession, $s_LocalFile, $s_RemoteFile, $l_Progres
 		Description: Uploads A File In Binary Mode And Update Progress Bars.
 		Returns: 1
 	#ce
-	If $__ghWinInet_FTP = -1 Then
+	If $__g_hWinInet_FTP = -1 Then
 		Return SetError(2, 0, 0)
 	EndIf
 
@@ -77,33 +77,31 @@ Func __FTP_ProgressUpload($l_FTPSession, $s_LocalFile, $s_RemoteFile, $l_Progres
 		Return SetError(1, 0, 0)
 	EndIf
 
-	Local $ai_FTPOpenFile = DllCall($__ghWinInet_FTP, 'handle', 'FtpOpenFileW', 'handle', $l_FTPSession, 'wstr', $s_RemoteFile, 'dword', $GENERIC_WRITE, 'dword', $FTP_TRANSFER_TYPE_BINARY, 'dword_ptr', 0)
+	Local $ai_FTPOpenFile = DllCall($__g_hWinInet_FTP, 'handle', 'FtpOpenFileW', 'handle', $l_FTPSession, 'wstr', $s_RemoteFile, 'dword', $GENERIC_WRITE, 'dword', $FTP_TRANSFER_TYPE_BINARY, 'dword_ptr', 0)
 	If @error Or $ai_FTPOpenFile[0] = 0 Then
 		Return SetError(3, 0, 0)
 	EndIf
 
-	Local Const $ChunkSize = 256 * 1024
+	Local $ChunkSize = 256 * 1024
 	Local $fLast = Mod($fSize, $ChunkSize)
 	Local $fParts = Ceiling($fSize / $ChunkSize)
 	Local $fBuffer = DllStructCreate("byte[" & $ChunkSize & "]")
-	Local $ai_InternetCloseHandle, $ai_FTPWrite, $fOut, $fPercent
-	Local $X = $ChunkSize
-	Local $fDone = 0
+	Local $ai_InternetCloseHandle, $ai_FTPWrite, $fOut, $fPercent, $fDone = 0
 
 	For $A = 1 To $fParts
 		If $A = $fParts And $fLast > 0 Then
-			$X = $fLast
+			$ChunkSize = $fLast
 		EndIf
-		DllStructSetData($fBuffer, 1, FileRead($fHandle, $X))
+		DllStructSetData($fBuffer, 1, FileRead($fHandle, $ChunkSize))
 
-		$ai_FTPWrite = DllCall($__ghWinInet_FTP, 'bool', 'InternetWriteFile', 'handle', $ai_FTPOpenFile[0], 'struct*', $fBuffer, 'dword', $X, 'dword*', $fOut)
+		$ai_FTPWrite = DllCall($__g_hWinInet_FTP, 'bool', 'InternetWriteFile', 'handle', $ai_FTPOpenFile[0], 'struct*', $fBuffer, 'dword', $ChunkSize, 'dword*', $fOut)
 		If @error Or $ai_FTPWrite[0] = 0 Then
-			$ai_InternetCloseHandle = DllCall($__ghWinInet_FTP, 'bool', 'InternetCloseHandle', 'handle', $ai_FTPOpenFile[0])
+			$ai_InternetCloseHandle = DllCall($__g_hWinInet_FTP, 'bool', 'InternetCloseHandle', 'handle', $ai_FTPOpenFile[0])
 			FileClose($fHandle)
 			Return SetError(4, 0, 0)
 		EndIf
-		$fDone += $X
 
+		$fDone += $ChunkSize
 		$fPercent = Round($fDone / $fSize * 100)
 		If GUICtrlRead($l_Progress2) <> $fPercent Then
 			GUICtrlSetData($l_Progress2, $fPercent)
@@ -116,8 +114,8 @@ Func __FTP_ProgressUpload($l_FTPSession, $s_LocalFile, $s_RemoteFile, $l_Progres
 		EndIf
 
 		If $G_Global_AbortSorting Then
-			$ai_InternetCloseHandle = DllCall($__ghWinInet_FTP, 'bool', 'InternetCloseHandle', 'handle', $ai_FTPOpenFile[0])
-			DllCall($__ghWinInet_FTP, 'bool', 'FtpDeleteFileW', 'handle', $l_FTPSession, 'wstr', $s_RemoteFile)
+			$ai_InternetCloseHandle = DllCall($__g_hWinInet_FTP, 'bool', 'InternetCloseHandle', 'handle', $ai_FTPOpenFile[0])
+			DllCall($__g_hWinInet_FTP, 'bool', 'FtpDeleteFileW', 'handle', $l_FTPSession, 'wstr', $s_RemoteFile)
 			FileClose($fHandle)
 			Return SetError(6, 0, 0)
 		EndIf
@@ -125,7 +123,7 @@ Func __FTP_ProgressUpload($l_FTPSession, $s_LocalFile, $s_RemoteFile, $l_Progres
 	Next
 	FileClose($fHandle)
 
-	$ai_InternetCloseHandle = DllCall($__ghWinInet_FTP, 'bool', 'InternetCloseHandle', 'handle', $ai_FTPOpenFile[0])
+	$ai_InternetCloseHandle = DllCall($__g_hWinInet_FTP, 'bool', 'InternetCloseHandle', 'handle', $ai_FTPOpenFile[0])
 	If @error Or $ai_InternetCloseHandle[0] = 0 Then
 		Return SetError(5, 0, 0)
 	EndIf

@@ -10,8 +10,10 @@
 #include <WinAPIShPath.au3>
 #include <WinAPITheme.au3>
 
+#include "DropIt_LibFiles.au3"
 #include "DropIt_LibVarious.au3"
-#include "Resources.au3"
+#include "MPDF.au3"
+#include "ResourcesEx.au3"
 
 Func __ImageConvert($sImagePath, $sSaveDirectory, $sFileExtension = "PNG")
 	#cs
@@ -26,10 +28,42 @@ Func __ImageConvert($sImagePath, $sSaveDirectory, $sFileExtension = "PNG")
 	$sFilePath = _WinAPI_PathYetAnotherMakeUniqueName($sSaveDirectory & _WinAPI_PathStripPath(_WinAPI_PathRemoveExtension($sImagePath)) & "." & $sFileExtension)
 	$hImage = _GDIPlus_ImageLoadFromFile($sImagePath)
 	_GDIPlus_ImageSaveToFileEx($hImage, $sFilePath, $sCLSID)
+	If @error Then
+		_GDIPlus_ImageDispose($hImage)
+		Return SetError(1, 0, $sFilePath)
+	EndIf
 	_GDIPlus_ImageDispose($hImage)
 
 	Return $sFilePath
 EndFunc   ;==>__ImageConvert
+
+Func __ImagesToPDF($sImagePaths, $sDestination)
+	#cs
+		Description: Save One Or More Images To PDF.
+		Returns: PDF File [File.pdf]
+	#ce
+	Local $aImages = StringSplit($sImagePaths, "|", 1)
+	_SetTitle(__GetFileNameOnly($sDestination))
+	_OpenAfter(False)
+	_SetUnit($PDF_UNIT_CM)
+	_SetPaperSize("a4")
+	_SetZoomMode($PDF_ZOOM_CUSTOM, 90)
+	_SetOrientation($PDF_ORIENTATION_PORTRAIT)
+	_SetLayoutMode($PDF_LAYOUT_CONTINOUS)
+
+	_InitPDF($sDestination)
+	For $A = 1 To $aImages[0]
+		_LoadResImage("img" & $A, $aImages[$A])
+	Next
+	For $A = 1 To $aImages[0]
+		_BeginPage()
+		_InsertImage("img" & $A, 0, 0, _GetPageWidth() / _GetUnit(), _GetPageHeight() / _GetUnit())
+		_EndPage()
+	Next
+	_ClosePDFFile()
+
+	Return $sDestination
+EndFunc   ;==>__ImageToPDF
 
 Func __ImageResize($sFilePath, $iWidth, $iHeight)
 	#cs
@@ -205,7 +239,7 @@ Func __SetItemImage($gImageFile, $gIndex, $gHandle = 0, $gType = 1, $gResource =
 	EndSwitch
 	Switch $gResource
 		Case 1
-			$gImage = _ResourceGetAsBitmap($gImageFile)
+			$gImage = _Resource_GetAsBitmap($gImageFile)
 			_GUICtrlMenu_SetItemBmp($gHandle, $gIndex, $gImage)
 			Return SetError(0, 0, $gImage)
 		Case Else
@@ -236,7 +270,7 @@ Func __SetItemImage($gImageFile, $gIndex, $gHandle = 0, $gType = 1, $gResource =
 EndFunc   ;==>__SetItemImage
 
 Func __GDIPlus_BitmapCreateFromScan0($iWidth, $iHeight, $iStride = 0, $iPixelFormat = $GDIP_PXF32ARGB, $pScan0 = 0) ; Fixed Support To 64bit OS.
-	Local $aResult = DllCall($ghGDIPDll, "uint", "GdipCreateBitmapFromScan0", "int", $iWidth, "int", $iHeight, "int", $iStride, "int", $iPixelFormat, "ptr", $pScan0, "ptr*", 0)
+	Local $aResult = DllCall($__g_hGDIPDll, "uint", "GdipCreateBitmapFromScan0", "int", $iWidth, "int", $iHeight, "int", $iStride, "int", $iPixelFormat, "ptr", $pScan0, "ptr*", 0)
 	If @error Then Return SetError(@error, @extended, 0)
 	If $aResult[0] Then Return SetError(10, $aResult[0], 0)
 
@@ -255,9 +289,9 @@ Func __SetItemImageEx($gHandle, $gIndex, ByRef $gImageList, $gImageFile, $gType)
 
 	Local $gWidth, $gHeight, $gHeightGraphic, $gHeightPicture, $gHeightImage, $gHeightIcon
 
-	$gHeightPicture = _ResourceGetAsImage($gImageFile)
+	$gHeightPicture = _Resource_GetAsImage($gImageFile)
 	If @error Then
-		$gHeightPicture = _ResourceGetAsImage("FLAG")
+		$gHeightPicture = _Resource_GetAsImage("FLAG")
 		If FileExists($gImageFile) Then
 			$gHeightPicture = _GDIPlus_ImageLoadFromFile($gImageFile)
 		EndIf
@@ -270,11 +304,11 @@ Func __SetItemImageEx($gHandle, $gIndex, ByRef $gImageList, $gImageFile, $gType)
 	If @error Then
 		Return SetError(1, 0, 0)
 	EndIf
-	$gHeightImage = DllCall($ghGDIPDll, 'int', 'GdipGetImageThumbnail', 'ptr', $gHeightPicture, 'int', $gIconSize[0], 'int', $gIconSize[1], 'ptr*', 0, 'ptr', 0, 'ptr', 0)
+	$gHeightImage = DllCall($__g_hGDIPDll, 'int', 'GdipGetImageThumbnail', 'ptr', $gHeightPicture, 'int', $gIconSize[0], 'int', $gIconSize[1], 'ptr*', 0, 'ptr', 0, 'ptr', 0)
 	$gHeightGraphic = _GDIPlus_ImageGetGraphicsContext($gHeightImage[4])
 	_GDIPlus_GraphicsClear($gHeightGraphic, 0)
 	_GDIPlus_GraphicsDrawImageRect($gHeightGraphic, $gHeightPicture, ($gIconSize[0] - $gSize[0]) / 2, ($gIconSize[1] - $gSize[1]) / 2, $gSize[0], $gSize[1])
-	$gHeightIcon = DllCall($ghGDIPDll, 'int', 'GdipCreateHICONFromBitmap', 'ptr', $gHeightImage[4], 'ptr*', 0)
+	$gHeightIcon = DllCall($__g_hGDIPDll, 'int', 'GdipCreateHICONFromBitmap', 'ptr', $gHeightImage[4], 'ptr*', 0)
 	_GDIPlus_GraphicsDispose($gHeightGraphic)
 	_GDIPlus_ImageDispose($gHeightImage[4])
 	_GDIPlus_ImageDispose($gHeightPicture)

@@ -253,14 +253,14 @@ EndFunc   ;==>_BeginPage
 Func _ClosePDFFile()
 	$_iResource = __InitObj(4)
 	__ToBuffer("<<" & _
-			_Iif($_sFONT <> "", "/Font<<" & $_sFONT & ">>", "") & _
-			"/ProcSet [/PDF/Text" & _Iif($_Image <> "", "/ImageB/ImageC/ImageI", "") & "]" & _
-			_Iif(($_Image <> "") Or ($_sObject <> ""), "/XObject <<" & $_Image & $_sObject & ">>", "") & ">>")
+			_Internal_Iif($_sFONT <> "", "/Font<<" & $_sFONT & ">>", "") & _
+			"/ProcSet [/PDF/Text" & _Internal_Iif($_Image <> "", "/ImageB/ImageC/ImageI", "") & "]" & _
+			_Internal_Iif(($_Image <> "") Or ($_sObject <> ""), "/XObject <<" & $_Image & $_sObject & ">>", "") & ">>")
 	__EndObj()
 	$_iPages = __InitObj(3)
 	__ToBuffer("<</Type /Pages /Count " & $_Pages & " /MediaBox [0 0 " & __ToStr($_PageWidth,1) & " " & __ToStr($_PageHeight,1) & "] " & _
 			"/CropBox [" & __ToStr($__SetMargin) & " " & __ToStr($__SetMargin) & " " & __ToStr($_PageWidth - $__SetMargin,1) & " " & __ToStr($_PageHeight - $__SetMargin,1) & "] " & _
-			_Iif($_Orientation = $PDF_ORIENTATION_LANDSCAPE, "/Rotate -90", "") & "/Kids [" & $_sPage & "] " & "/Resources " & $_iResource & " 0 R>>")
+			_Internal_Iif($_Orientation = $PDF_ORIENTATION_LANDSCAPE, "/Rotate -90", "") & "/Kids [" & $_sPage & "] " & "/Resources " & $_iResource & " 0 R>>")
 	__EndObj()
 	Local $position_xref = Stringlen($_Buffer)
 	__ToBuffer("xref")
@@ -846,7 +846,7 @@ Func _GetTextLength($sText, $sFontAlias, $iFontSize)
 		$k += StringLen($sFontAlias) + 2
 		For $i = 1 To $l
 			$C = Asc(StringMid($sText, $i, 1))
-			$k += _Iif(($C >= $FirstChar) And ($C <= $LastChar), $Widths[$C], $MissingWidth)
+			$k += _Internal_Iif(($C >= $FirstChar) And ($C <= $LastChar), $Widths[$C], $MissingWidth)
 			If $C = 32 Then $j += 1
 		Next
 	EndIf
@@ -3655,4 +3655,28 @@ Func __ToUser($sValue)
 	EndSwitch
 	Return $lRet
 EndFunc   ;==>__ToUser
+
+; #INTERNAL_USE_ONLY# ===========================================================================================================
+; Name...........: _Internal_Iif
+; Description ...: Perform a boolean test within an expression.
+; Syntax.........: _Internal_Iif($fTest, $vTrueVal, $vFalseVal)
+; Parameters ....: $fTest     - Boolean test.
+;                  $vTrueVal  - Value to return if $fTest is true.
+;                  $vFalseVal - Value to return if $fTest is false.
+; Return values .: True         - $vTrueVal
+;                  False        - $vFalseVal
+; Author ........: Dale (Klaatu) Thompson
+; Modified.......:
+; Remarks .......:
+; Related .......:
+; Link ..........:
+; Example .......: Yes
+; ===============================================================================================================================
+Func _Internal_Iif($fTest, $vTrueVal, $vFalseVal)
+    If $fTest Then
+        Return $vTrueVal
+    Else
+        Return $vFalseVal
+    EndIf
+EndFunc   ;==>_Internal_Iif
 #endregion #INTERNAL_USE_ONLY#
