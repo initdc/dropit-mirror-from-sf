@@ -256,6 +256,9 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lSettings, $lStrin
 			If $lArray[$B] = "" Then
 				$lArray[$B] = "-"
 			ElseIf StringInStr($lArray[$B], "%") Then
+				$lArray[$B] = StringReplace($lArray[$B], "%Counter%", $A)
+				$lArray[$B] = _ReplaceAbbreviation($lArray[$B], 0, $lSubArray[$A], $lProfile, "$8")
+				;$lArray[$B] = StringRegExpReplace($lArray[$B], '[<>"]', '')
 				If StringInStr($lArray[$B], "%LinkAbsolute%") Then
 					$lArray[$B] = StringReplace($lArray[$B], "%LinkAbsolute%", '<a href="file:///' & $lSubArray[$A] & '" target="_blank">' & __GetLang('LINK', 'Link') & '</a>')
 					$lAlign = ' class="di-center"'
@@ -271,9 +274,6 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lSettings, $lStrin
 				If StringInStr($lArray[$B], "%FileSize%") Then
 					$lAlign = ' class="di-right"'
 				EndIf
-				$lArray[$B] = StringReplace($lArray[$B], "%Counter%", $A)
-				$lArray[$B] = _ReplaceAbbreviation($lArray[$B], 0, $lSubArray[$A], $lProfile, "$8")
-				$lArray[$B] = StringRegExpReplace($lArray[$B], '[<>"]', '')
 			EndIf
 			If StringIsDigit($lArray[$B]) Then
 				$lAlign = ' class="di-right"'

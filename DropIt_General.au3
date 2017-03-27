@@ -110,8 +110,8 @@ Func __IsSettingsFile($iINI = -1)
 			"ScanSubfolders=False" & @LF & "FolderAsFile=False" & @LF & "AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & _
 			"DupMode=Skip" & @LF & "CreateLog=False" & @LF & "AutoBackup=True" & @LF & "AmbiguitiesCheck=False" & @LF & "IgnoreNew=False" & @LF & "IgnoreInUse=False" & @LF & _
 			"IgnoreAttributes=True" & @LF & "AlertSize=True" & @LF & "AlertDelete=False" & @LF & "AlertFailed=True" & @LF & "AlertAmbiguity=False" & @LF & "AlertMail=True" & @LF & _
-			"GroupOrder=Path" & @LF & "GraduallyHide=False" & @LF & "GraduallyHideSpeed=5" & @LF & "GraduallyHideTime=0" & @LF & "GraduallyHideVisPx=8" & @LF & _
-			"Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & "MasterPassword=" & @LF & "EndCommandLine=")
+			"FixOpenWithDestination=True" & @LF & "GroupOrder=Path" & @LF & "GraduallyHide=False" & @LF & "GraduallyHideSpeed=5" & @LF & "GraduallyHideTime=0" & @LF & _
+			"GraduallyHideVisPx=8" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & "MasterPassword=" & @LF & "EndCommandLine=")
 	__IniWriteEx($iINI, "MonitoredFolders", "", "")
 	__IniWriteEx($iINI, "EnvironmentVariables", "", "")
 

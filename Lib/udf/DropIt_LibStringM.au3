@@ -65,7 +65,7 @@ EndFunc
 ; Description ...: Return a string where all word after space have first letter uppercase
 ; Syntax.........: _StringM_FirstLetterUpAllWord($sSource)
 ; Parameters ....: $sSource - the source string
-; Return values .: Return a string where all word after space have first letter uppercase
+; Return values .: Same as Description
 ; GlobalVar .....:
 ; Author ........: Daneel
 ; Modified.......:
@@ -75,14 +75,13 @@ EndFunc
 ; Example .......; Yes
 ; ============================================================================================
 Func _StringM_FirstLetterUpAllWord($sSource, $regExpSetInWord = "")
-	Return __StringM_RegExpOnArray($sSource, '\W+|\d+|[a-zA-Z' & $regExpSetInWord & ']+', '(.)(.*)', 'StringUpper("\1")&"\2"')	
+	Return __StringM_RegExpOnArray($sSource, '\W+|\d+|[a-zA-Z\-_' & $regExpSetInWord & ']+', '(.)(.*)', 'StringUpper("\1")&"\2"')	
 EndFunc
 
 ; #FUNCTION# ===============================================================================================
 ;
 ; Name...........: _StringM_LowerAllExceptFirstLetter
-; Description ...: Return a string where all letters are lower case leaving untouched  all first letter of a word
-; Description ...: Return a string where all letters are lower case leaving untouched  all first letter of a word
+; Description ...: Return a string where all letters are lower case leaving untouched all first letter of a word
 ; Syntax.........: _StringM_LowerAllExceptFirstLetter($sSource)
 ; Parameters ....: $sSource - the source string
 ; Return values .: Same as Description
@@ -95,7 +94,7 @@ EndFunc
 ; Example .......; Yes
 ; ============================================================================================
 Func _StringM_LowerAllExceptFirstLetter($sSource, $regExpSetInWord = "")
-	Return __StringM_RegExpOnArray($sSource, '\W+|\d+|[a-zA-Z' & $regExpSetInWord & ']+', '(.)(.*)', '"\1"&StringLower("\2")')
+	Return __StringM_RegExpOnArray($sSource, '\W+|\d+|[a-zA-Z\-_' & $regExpSetInWord & ']+', '(.)(.*)', '"\1"&StringLower("\2")')
 EndFunc
 
 ; #FUNCTION# ===============================================================================================

@@ -252,8 +252,8 @@ EndFunc   ;==>_ContextMenuAbbreviations
 
 Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDirs = 0)
 	Local $sLoadedProperty
-	Local $aEnvArray[149][3] = [ _
-			[148, 0, 0], _
+	Local $aEnvArray[150][3] = [ _
+			[149, 0, 0], _
 			["FileExt", 0, 1], _
 			["FileName", 0, 2], _
 			["FileNameExt", 0, 3], _
@@ -331,6 +331,7 @@ Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "",
 			["Favorites", 5, 9], _
 			["FavoritesPublic", 5, 10], _
 			["ProgramFiles", 5, 11], _
+			["DropItDir", 5, 27], _
 			["CurrentDate", 5, 12], _
 			["CurrentYear", 5, 13], _
 			["CurrentMonth", 5, 14], _
@@ -683,6 +684,8 @@ Func __GetDefinedMacro($sProfileName, $iMacroCode)
 		Case 26 ; Profile Name.
 			$aProfile = __IsProfile($sProfileName, 0) ; Get Array Of Selected Profile.
 			$sReturn = $aProfile[1]
+		Case 27 ; DropIt Directory.
+			$sReturn = @ScriptDir
 	EndSwitch
 
 	Return $sReturn

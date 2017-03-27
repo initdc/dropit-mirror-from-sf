@@ -63,11 +63,15 @@ Func __FileCompareSize($sSource, $sDestination, $fDestinationIsSize = 0)
 	EndSelect
 EndFunc   ;==>__FileCompareSize
 
-Func __FileInUse($sFilename) ; Taken From: https://www.autoitscript.com/forum/topic/153060-_fileinuse-to-check-if-file-is-in-used-or-not-work-on-both-local-and-network-drive/
+Func __FileInUse($sPath) ; Taken From: https://www.autoitscript.com/forum/topic/153060-_fileinuse-to-check-if-file-is-in-used-or-not-work-on-both-local-and-network-drive/
+	#cs
+		Description: Check If Source File Is In Use By Another Program.
+		Returns: 1 If In Use Or 0 If Not In Use
+	#ce
     Local $aRet, $hFile
-    If StringUpper(DriveGetType($sFilename)) = "NETWORK" Then
+    If StringUpper(DriveGetType($sPath)) = "NETWORK" Then
         $aRet = DllCall("Kernel32.dll", "hwnd", "CreateFile", _
-                                    "str", $sFilename, _ ;lpFileName
+                                    "str", $sPath, _ ;lpFileName
                                     "dword", 0x80000000, _ ;dwDesiredAccess = GENERIC_READ
                                     "dword", 0x00000004, _ ;dwShareMode = DO NOT SHARE
                                     "dword", 0, _ ;lpSecurityAttributes = NULL
@@ -76,7 +80,7 @@ Func __FileInUse($sFilename) ; Taken From: https://www.autoitscript.com/forum/to
                                     "hwnd", 0) ;hTemplateFile = NULL
     Else
             $aRet = DllCall("Kernel32.dll", "hwnd", "CreateFile", _
-                                    "str", $sFilename, _ ;lpFileName
+                                    "str", $sPath, _ ;lpFileName
                                     "dword", 0x40000000, _ ;dwDesiredAccess = GENERIC_WRITE
                                     "dword", 0x00000004, _ ;dwShareMode = DO NOT SHARE
                                     "dword", 0, _ ;lpSecurityAttributes = NULL
@@ -84,7 +88,7 @@ Func __FileInUse($sFilename) ; Taken From: https://www.autoitscript.com/forum/to
                                     "dword", 128, _ ;dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL
                                     "hwnd", 0) ;hTemplateFile = NULL
     EndIf
-    If Not FileExists($sFilename) Then
+    If Not FileExists($sPath) Then
         Return 0
     Else
         $hFile = $aRet[0]
@@ -98,6 +102,27 @@ Func __FileInUse($sFilename) ; Taken From: https://www.autoitscript.com/forum/to
         EndIf
     EndIf
 EndFunc   ;==>__FileInUse
+
+Func __FileOrFolderInUse($sPath)
+	#cs
+		Description: Check If Source File Or Folder Is In Use By Another Program.
+		Returns: 1 If In Use Or 0 If Not In Use
+	#ce
+	If _WinAPI_PathIsDirectory($sPath) Then
+		Local $aFileListToArray = __FileListToArrayEx($sPath, "*")
+		If @error Then
+			Return 0
+		EndIf
+		For $A = 1 To $aFileListToArray[0]
+			If __FileInUse($aFileListToArray[$A]) <> 0 Then
+				Return 1
+			EndIf
+		Next
+		Return 0
+	Else
+		Return __FileInUse($sPath)
+	EndIf
+EndFunc   ;==>__FileOrFolderInUse
 
 Func __FileInUseAlternative($sInput) ; Modified From: http://www.autoitscript.com/forum/topic/123160-how-to-determine-is-a-file-is-open-by-another-program/
 	Local $strComputer = "localhost"

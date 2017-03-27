@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt: Personal Assistant to Automatically Manage Your Files
-#AutoIt3Wrapper_Res_Fileversion=8.1.1.0
-#AutoIt3Wrapper_Res_ProductVersion=8.1.1.0
+#AutoIt3Wrapper_Res_Fileversion=8.1.2.0
+#AutoIt3Wrapper_Res_ProductVersion=8.1.2.0
 #AutoIt3Wrapper_Res_LegalCopyright=Andrea Luparia
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.dropitproject.com
@@ -924,7 +924,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 				$mInput_RulesRead = GUICtrlRead($mInput_Rules)
 				$mCurrentActionString = __GetActionString($mCurrentAction)
 				$mNoOthers = 0
-				If $mInput_RulesRead == "#" Or $mInput_RulesRead == "##" Then
+				If $mInput_RulesRead == "#" Or $mInput_RulesRead == "##" Or $mInput_RulesRead == "#;##" Or $mInput_RulesRead == "##;#" Or $mInput_RulesRead == "#|##" Or $mInput_RulesRead == "##|#" Then
 					$mInput_RulesRead = StringReplace($mInput_RulesRead, "#", "*")
 					$mNoOthers = 1 ; It Is A "No Others" Association.
 				EndIf
@@ -3159,11 +3159,12 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["Favorites", __GetLang('ENV_VAR_24', 'path to Favorites') & ' ["' & @FavoritesDir & '"]'], _
 			["FavoritesPublic", __GetLang('ENV_VAR_27', 'path to Public Favorites') & ' ["' & @FavoritesCommonDir & '"]'], _
 			["ProgramFiles", __GetLang('ENV_VAR_80', 'path to Program Files') & ' ["' & @ProgramFilesDir & '"]']]
-	Local $mGroupOthers[8][3] = [ _
-			[7, 0, 0], _
+	Local $mGroupOthers[9][3] = [ _
+			[8, 0, 0], _
 			["ComputerName", __GetLang('ENV_VAR_78', 'computer name') & ' ["' & @ComputerName & '"]'], _
 			["Counter", __GetLang('ENV_VAR_83', 'counter to enumerate files') & ' ["07"]'], _
 			["DefaultProgram", __GetLang('ENV_VAR_6', 'system default program') & ' [Notepad]'], _ ; Only By Open With.
+			["DropItDir", __GetLang('ENV_VAR_131', 'path to DropIt directory') & ' ["' & @ScriptDir & '"]'], _
 			["PortableDrive", __GetLang('ENV_VAR_14', 'drive letter of DropIt') & ' ["' & StringLeft(@ScriptFullPath, 2) & '"]'], _
 			["ProfileName", __GetLang('ENV_VAR_28', 'current DropIt profile name') & ' ["' & $mProfile & '"]'], _
 			["UserInput", __GetLang('ENV_VAR_82', 'custom input during process') & ' ["My photos"]'], _
@@ -5124,7 +5125,7 @@ Func _Position_Process($pMainArray, $pProfile, $pElementsGUI)
 				__SetProgressStatus($pElementsGUI, 1, $pMainArray[$A][0]) ; Reset Single Progress Bar And Show Second Line.
 			ElseIf _GUICtrlListView_GetItemText($Global_ListViewProcess, $A - 1, 3) <> "" Then ; Item Skipped By The User.
 				$pMainArray[$A][4] = -1
-			ElseIf __Is("IgnoreInUse") And $pMainArray[$A][2] <> "$5" And (__FileCompareSize($pMainArray[$A][0], $pMainArray[$A][1], 1) <> 0 Or __FileInUse($pMainArray[$A][0]) <> 0) Then ; File Size Is Changed Or File Is In Use (Like During Download).
+			ElseIf __Is("IgnoreInUse") And $pMainArray[$A][2] <> "$5" And (__FileCompareSize($pMainArray[$A][0], $pMainArray[$A][1], 1) <> 0 Or __FileOrFolderInUse($pMainArray[$A][0]) <> 0) Then ; File Size Is Changed Or File Is In Use (Like During Download).
 				$pMainArray[$A][4] = -1
 			EndIf
 			If $pMainArray[$A][4] == -1 Then
@@ -5300,13 +5301,10 @@ Func _Destination_Fix($dFilePath, $dDestination, $dAction, $dMainDirs, $dProfile
 		If StringInStr($dStringSplit[1], "%DefaultProgram%") Then
 			$dStringSplit[1] = StringReplace($dStringSplit[1], '"%File%"', '')
 			$dStringSplit[1] = StringReplace($dStringSplit[1], '%File%', '')
-		Else
-			If StringInStr($dStringSplit[1], "%File%") = 0 Then
-				$dStringSplit[1] &= ' "%File%"'
-			EndIf
-			$dStringSplit[1] = StringReplace($dStringSplit[1], '"%File%"', '"' & $dFilePath & '"')
-			$dStringSplit[1] = StringReplace($dStringSplit[1], '%File%', '"' & $dFilePath & '"')
+		ElseIf __Is("FixOpenWithDestination") And StringInStr($dStringSplit[1], "%File%") = 0 Then
+			$dStringSplit[1] &= ' "%File%"'
 		EndIf
+		$dStringSplit[1] = StringReplace($dStringSplit[1], '%File%', $dFilePath)
 	EndIf
 
 	; Fix Relative Destination If Needed:
@@ -9036,8 +9034,8 @@ Func __Upgrade()
 		Return SetError(1, 0, 0) ; Abort Upgrade If INI Version Is The Same Of Current Software Version.
 	EndIf
 
-	Local $uINI_Array[57][2] = [ _
-			[56, 2], _
+	Local $uINI_Array[58][2] = [ _
+			[57, 2], _
 			["Profile", 1], _
 			["Language", 1], _
 			["PosX", 1], _
@@ -9083,6 +9081,7 @@ Func __Upgrade()
 			["AlertFailed", 1], _
 			["AlertAmbiguity", 1], _ ; INI Setting Only (Not In Options).
 			["AlertMail", 1], _ ; INI Setting Only (Not In Options).
+			["FixOpenWithDestination", 1], _ ; INI Setting Only (Not In Options).
 			["GraduallyHide", 1], _
 			["GraduallyHideVisPx", 1], _ ; INI Setting Only (Not In Options).
 			["GraduallyHideSpeed", 1], _ ; INI Setting Only (Not In Options).

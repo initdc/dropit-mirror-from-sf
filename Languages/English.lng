@@ -2,7 +2,7 @@
 ;TranslatorName=Lupo73
 ;TranslatorContact=http://www.lupopensuite.com/contact.htm
 ;TranslatorURL=http://www.lupopensuite.com/
-;LastUpdated=31/08/2014
+;LastUpdated=26/07/2015
 
 [English]
 ABOUT=About
@@ -262,6 +262,7 @@ ENV_VAR_127=dropped directory of loaded file
 ENV_VAR_128=dropped directory name of loaded file
 ENV_VAR_129=file rating
 ENV_VAR_130=file product name
+ENV_VAR_131=path to DropIt directory
 ENV_VAR_MSGBOX_4=Abbreviation Error
 ENV_VAR_MSGBOX_5=This variable already exists and cannot be replaced.
 ENV_VAR_MSGBOX_6=Replace Abbreviation
