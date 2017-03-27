@@ -20,9 +20,9 @@ html { background-color: #F5F5F5; }
 #dropitList #header { text-align: center; }
 
 #dropitList h1:after {
-	border-top: 25px solid transparent;
-	border-right: 105px solid transparent;
-	border-left: 105px solid transparent;
+	border-top: 25px inset transparent;
+	border-right: 105px inset transparent;
+	border-left: 105px inset transparent;
 	border-top: 25px solid #8D3527;
 	display: block;
 	padding: 0;

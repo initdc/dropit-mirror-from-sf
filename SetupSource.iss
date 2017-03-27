@@ -1,4 +1,4 @@
-#define MyAppVer "4.0.1"
+#define MyAppVer "4.1"
 
 [Setup]
 AppName=DropIt
@@ -46,5 +46,5 @@ Filename: "{app}\DropIt.exe"; Description: "{cm:LaunchProgram,DropIt}"; Flags: n
 Filename: "{app}\DropIt.exe"; Parameters: "/Uninstall"
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{userappdata}\DropIt"
+; Type: filesandordirs; Name: "{userappdata}\DropIt"
 Type: filesandordirs; Name: "{app}\Profiles"

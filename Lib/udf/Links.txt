@@ -1,9 +1,21 @@
+7Zip Library (7ZipRead.au3)
+http://www.autoitscript.com/forum/topic/91283-7zread-udf/
+
+
 Copy Library (Copy.au3)
 http://www.autoitscript.com/forum/topic/121833-copy-udf/
 
 
 Embedding Library (Resources.au3)
 http://www.autoitscript.com/forum/topic/51103-resources-udf/
+
+
+Hash For File Library (HashForFile.au3)
+http://www.autoitscript.com/forum/topic/95558-crc32-md4-md5-sha1-for-files/
+
+
+SFTP Library (SFTPEx.au3)
+http://www.autoitscript.com/forum/topic/138095-udf-to-support-sftp-protocol-using-psftp/
 
 
 Startup Library (Startup.au3)
