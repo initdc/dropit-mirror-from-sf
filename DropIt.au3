@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt - Process your files with a drop
-#AutoIt3Wrapper_Res_Fileversion=5.3.2.0
-#AutoIt3Wrapper_Res_ProductVersion=5.3.2.0
+#AutoIt3Wrapper_Res_Fileversion=5.3.3.0
+#AutoIt3Wrapper_Res_ProductVersion=5.3.3.0
 #AutoIt3Wrapper_Res_LegalCopyright=Andrea Luparia
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.dropitproject.com
@@ -2205,7 +2205,7 @@ Func _Manage_Properties(ByRef $mProperties, $mHandle = -1)
 EndFunc   ;==>_Manage_Properties
 
 Func _Manage_Site(ByRef $mSettings, $mHandle = -1)
-	Local $mGUI, $mSave, $mCancel, $mStringSplit, $mCheckbox_Remove, $mRemove, $mPassword, $mPassword_Code = $G_Global_PasswordKey
+	Local $mGUI, $mSave, $mCancel, $mStringSplit, $mCheckbox_Remove, $mRemove, $mHost, $mPassword, $mPassword_Code = $G_Global_PasswordKey
 	Local $mInput_Host, $mInput_Port, $mInput_User, $mInput_Password, $mCombo_Protocol, $mCurrentProtocol
 	Local $mString_FTP = "FTP - File Transfer Protocol", $mString_SFTP = "SFTP - SSH File Transfer Protocol"
 
@@ -2285,14 +2285,17 @@ Func _Manage_Site(ByRef $mSettings, $mHandle = -1)
 				ExitLoop
 
 			Case $mSave
-				If StringRight(GUICtrlRead($mInput_Host), 1) = "/" Then
-					GUICtrlSetData($mInput_Host, StringTrimRight(GUICtrlRead($mInput_Host), 1))
+				$mHost = StringReplace(GUICtrlRead($mInput_Host), "ftp:\\", "ftp.") ; To Fix A Possible User Wrong Setting.
+				If StringRight($mHost, 1) = "/" Then
+					$mHost = StringTrimRight($mHost, 1)
 				EndIf
-				$mPassword = ""
-				If StringIsSpace(GUICtrlRead($mInput_Password)) = 0 And GUICtrlRead($mInput_Password) <> "" Then
-					$mPassword = _StringEncrypt(1, GUICtrlRead($mInput_Password), $mPassword_Code)
+				$mPassword = GUICtrlRead($mInput_Password)
+				If StringIsSpace($mPassword) = 0 And $mPassword <> "" Then
+					$mPassword = _StringEncrypt(1, $mPassword, $mPassword_Code)
+				Else
+					$mPassword = ""
 				EndIf
-				$mSettings = GUICtrlRead($mInput_Host) & ";" & GUICtrlRead($mInput_Port) & ";" & GUICtrlRead($mInput_User) & ";" & $mPassword & ";"
+				$mSettings = $mHost & ";" & GUICtrlRead($mInput_Port) & ";" & GUICtrlRead($mInput_User) & ";" & $mPassword & ";"
 				If GUICtrlRead($mCombo_Protocol) = $mString_SFTP Then
 					$mSettings &= "SFTP;"
 				Else
@@ -4054,34 +4057,33 @@ Func _Position_MainArray($pMainArray, $pFiles, $pElementsGUI, $pScanLevel = 0)
 			$pSearchPath = $pFiles[$A]
 			While $pFolderList[0] > 0
 				$pSearch = FileFindFirstFile($pSearchPath)
-				If $pSearch = -1 Then
-					ExitLoop
-				EndIf
-				While 1
-					_Sorting_CheckButtons($pMainArray)
-					If @error Then
-						FileClose($pSearch)
-						Return SetError(1, 0, $pMainArray) ; Process Aborted.
-					EndIf
-
-					$pFileName = FileFindNextFile($pSearch)
-					If @error Then
-						ExitLoop
-					EndIf
-					If @extended And $pScanLevel = 2 Then
-						If __Is("ScanSubfolders") Then
-							$pFolderList[0] += 1
-							If UBound($pFolderList) <= $pFolderList[0] Then
-								ReDim $pFolderList[UBound($pFolderList) * 2]
-							EndIf
-							$pFolderList[$pFolderList[0]] = __GetParentFolder($pSearchPath) & '\' & $pFileName
+				If $pSearch <> -1 Then
+					While 1
+						_Sorting_CheckButtons($pMainArray)
+						If @error Then
+							FileClose($pSearch)
+							Return SetError(1, 0, $pMainArray) ; Process Aborted.
 						EndIf
-					Else
-						$pFilePath = __GetParentFolder($pSearchPath) & '\' & $pFileName
-						$pMainArray = _Position_MainArrayAdd($pMainArray, $pFilePath, $pElementsGUI, $pMainDir)
-					EndIf
-				WEnd
-				FileClose($pSearch)
+
+						$pFileName = FileFindNextFile($pSearch)
+						If @error Then
+							ExitLoop
+						EndIf
+						If @extended And $pScanLevel = 2 Then
+							If __Is("ScanSubfolders") Then
+								$pFolderList[0] += 1
+								If UBound($pFolderList) <= $pFolderList[0] Then
+									ReDim $pFolderList[UBound($pFolderList) * 2]
+								EndIf
+								$pFolderList[$pFolderList[0]] = __GetParentFolder($pSearchPath) & '\' & $pFileName
+							EndIf
+						Else
+							$pFilePath = __GetParentFolder($pSearchPath) & '\' & $pFileName
+							$pMainArray = _Position_MainArrayAdd($pMainArray, $pFilePath, $pElementsGUI, $pMainDir)
+						EndIf
+					WEnd
+					FileClose($pSearch)
+				EndIf
 				$pSearchPath = $pFolderList[$pFolderList[0]] & "\*.*"
 				$pFolderList[0] -= 1
 			WEnd
@@ -5771,7 +5773,7 @@ Func _Sorting_RunDelete($sSource, $sMode = 1)
 	Return 1
 EndFunc   ;==>_Sorting_RunDelete
 
-Func _Sorting_StartProgressCopy($sSource, $sDestination, $sAction) ; <<<<<<<<<<<<<<<<<<<<<<< http://www.autoitscript.com/forum/topic/121833-copy-udf/page-4
+Func _Sorting_StartProgressCopy($sSource, $sDestination, $sAction)
 	Local $sError
 
 	If $sAction == "$0" Then ; Move.
