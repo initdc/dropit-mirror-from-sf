@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Comment=DropIt - To place your files with a drop
 #AutoIt3Wrapper_Res_Description=DropIt
-#AutoIt3Wrapper_Res_Fileversion=0.6.1.0
+#AutoIt3Wrapper_Res_Fileversion=0.7.0.0
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_LegalCopyright=by Lupo PenSuite Team
 #AutoIt3Wrapper_Run_Obfuscator=y
@@ -22,9 +22,9 @@ Opt("TrayIconHide", 1)
 Opt("TrayOnEventMode", 1)
 Opt("TrayMenuMode", 1)
 
-Global $sName = "DropIt", $sVer = "(v0.6.1)"
+Global $sName = "DropIt", $sVer = " (v0.7)"
 Global $sIni = @ScriptDir & "\settings.ini", $sIm = @ScriptDir & "\img\image.gif", $sPic = @ScriptDir & "\img\ps.gif"
-Global $hGUI1, $hGUI2, $sData, $temp, $i, $top, $Show, $Exit, $list, $gaDropFiles[1], $RelPos[2]
+Global $hGUI1, $hGUI2, $sData, $temp, $i, $top, $Show, $Separ, $Exit, $list, $gaDropFiles[1], $RelPos[2]
 Global Const $WM_DROPFILES = 0x233, $SC_MOVE = 0xF010, $WM_ENTERSIZEMOVE = 0x231, $WM_EXITSIZEMOVE = 0x232
 Global $xD = IniRead($sIni, "General", "SizeX", "64"), $yD = IniRead($sIni, "General", "SizeY", "64")
 Global $ii = $sName & " - To place your files with a drop"
@@ -330,18 +330,19 @@ EndFunc
 Func MoreMatches($matches, $item, $j)		; OK
 	Local $asso, $sel, $ok, $canc, $ma, $rad[4]
 	Local $mess = "You have to select the pattern to use."
-	$asso = GUICreate("Select pattern", 260, 160, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI2)
+	$asso = GUICreate("Pattern ambiguity", 280, 180, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI2)
 	
-	GUICtrlCreateGroup("", 8, 4, 244, 115)
-	GUICtrlCreateLabel('Pattern to use for "' & $item & '":', 19, 4+17, 200, 20)
+	GUICtrlCreateGroup("", 8, 4, 264, 135)
+	GUICtrlCreateLabel('Select pattern to use for this item:', 19, 4+17, 240, 20)
+	GUICtrlCreateLabel('"' & $item & '"', 19, 4+37, 240, 40)
 	For $i = 1 To $j
 		If $i = 4 Then ExitLoop
-		$rad[$i] = GUICtrlCreateRadio(" " & $matches[$i][0], 34, 4+17+($i*21))
+		$rad[$i] = GUICtrlCreateRadio(" " & $matches[$i][0], 36, 4+37+($i*21))
 	Next
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	
-	$ok = GUICtrlCreateButton("OK", 130-20-66, 127, 66, 24)
-	$canc = GUICtrlCreateButton("Cancel", 130+20, 127, 66, 24)
+	$ok = GUICtrlCreateButton("OK", 140-20-66, 147, 66, 24)
+	$canc = GUICtrlCreateButton("Cancel", 140+20, 147, 66, 24)
 	GUISetState()
 	
 	While 1
@@ -433,8 +434,8 @@ Func Associate($item, $ff)		; OK
 	$bot2 = GUICtrlCreateButton("Apply", 150+54, 4+79, 64, 24)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 	
-	GUICtrlCreateLabel('Item: "' & $item & '"', 20, 133, 170, 20)
-	$canc = GUICtrlCreateButton("Cancel", 186, 127, 86, 24)
+	GUICtrlCreateLabel('Item: "' & $item & '"', 18, 133, 170, 20)
+	$canc = GUICtrlCreateButton("Cancel", 190, 127, 86, 24)
 	GUISetState()
 	
 	While 1
@@ -597,6 +598,25 @@ Func Position($temp)		; OK
 EndFunc
 
 
+Func DropEvent()		; OK
+	Local $decision
+	GUISetState(@SW_SHOW, $hGUI2)
+	If IniRead($sIni, "General", "AskMode", "False") = "True" Then
+		$decision = MsgBox(0x40004, "Choose positioning mode", "Do you want to 'move' these files in destination folders?" & @LF & "(otherwise they will be 'copied' in destination folders)")
+		If $decision = 6 Then
+			IniWrite($sIni, "General", "Mode", "Move")
+		Else
+			IniWrite($sIni, "General", "Mode", "Copy")
+		EndIf
+	EndIf
+	For $i = 0 To UBound($gaDropFiles) - 1
+		$temp = $gaDropFiles[$i]
+		Position($temp)
+	Next
+	GUISetState(@SW_HIDE, $hGUI2)
+EndFunc
+
+
 Func WM_DROPFILES_UNICODE_FUNC($hWnd, $msgID, $wParam, $lParam)		; OK
     Local $nSize, $pFileName
     Local $nAmt = DllCall("shell32.dll", "int", "DragQueryFileW", "hwnd", $wParam, "int", 0xFFFFFFFF, "ptr", 0, "int", 255)
@@ -616,21 +636,37 @@ Func WM_SYSCOMMAND($hWnd, $Msg, $wParam, $lParam)		; OK
 	If IniRead($sIni, "General", "LockPos", "True") = "True" Then
 		If BitAND($wParam, 0x0000FFF0) = $SC_MOVE Then Return False
 	EndIf
-    Return $GUI_RUNDEFMSG
+    Return 'GUI_RUNDEFMSG'
 EndFunc
 
 
-Func _Show()		; OK
+Func ShowEvent()		; OK
 	TrayItemDelete($Show)
+	TrayItemDelete($Separ)
 	TrayItemDelete($Exit)
 	GUISetState(@SW_SHOW, $hGUI1)
 	Opt("TrayIconHide", 1)
 EndFunc
 
 
-Func _Exit()		; OK
+Func ExitEvent()		; OK
 	_Pos()
     Exit
+EndFunc
+
+
+Func MyTrayMenu()		; OK
+	GUISetState(@SW_HIDE, $hGUI1)
+	Opt("TrayIconHide", 0)
+	TraySetToolTip($ii)
+	$Show = TrayCreateItem("Show")
+	$Separ = TrayCreateItem("")
+	$Exit = TrayCreateItem("Exit")
+	TrayItemSetOnEvent($Show, 'ShowEvent')
+	TrayItemSetOnEvent($Exit, 'ExitEvent')
+	TraySetOnEvent(-13, 'ShowEvent')
+	TraySetState()
+	TraySetClick(16)
 EndFunc
 
 
@@ -658,7 +694,7 @@ EndFunc
 
 
 Func _Main()
-	Local $icon, $menu, $nMsg, $x, $y, $dim, $gif, $decision, $pos
+	Local $icon, $menu, $nMsg, $x, $y, $dim, $gif, $pos, $j
 	Local $func1, $func2, $func3, $func4, $func5
 	$x = IniRead($sIni, "General", "PosX", "-1")
 	$y = IniRead($sIni, "General", "PosY", "-1")
@@ -699,7 +735,15 @@ Func _Main()
 	Else
 		WinSetOnTop($hGUI1, "", 0)
 	EndIf
-
+	
+	; Normal or Background mode
+	If $CmdLine[0] > 0 Then
+		For $j = 1 To $CmdLine[0]
+			$gaDropFiles[$j - 1] = $CmdLine[$j]
+		Next
+		DropEvent()
+	EndIf
+	
 	While 1
 		$nMsg = GUIGetMsg()
 		Switch $nMsg
@@ -707,21 +751,8 @@ Func _Main()
 				ExitLoop
 				
 			Case $GUI_EVENT_DROPPED
-				GUISetState(@SW_SHOW, $hGUI2)
-				If IniRead($sIni, "General", "AskMode", "False") = "True" Then
-					$decision = MsgBox(0x40004, "Choose positioning mode", "Do you want to 'move' these files in destination folders?" & @LF & "(otherwise they will be 'copied' in destination folders)")
-					If $decision = 6 Then
-						IniWrite($sIni, "General", "Mode", "Move")
-					Else
-						IniWrite($sIni, "General", "Mode", "Copy")
-					EndIf
-				EndIf
-				For $i = 0 To UBound($gaDropFiles) - 1
-					$temp = $gaDropFiles[$i]
-					Position($temp)
-	            Next
-				GUISetState(@SW_HIDE, $hGUI2)
-					
+				DropEvent()
+				
 			Case $func1
 				GUICtrlSetState($icon, $GUI_DISABLE)
 				Manage()
@@ -733,15 +764,7 @@ Func _Main()
 				GUICtrlSetState($icon, $GUI_ENABLE)
 				
 			Case $func3
-				GUISetState(@SW_HIDE, $hGUI1)
-				Opt("TrayIconHide", 0)
-				TraySetToolTip($ii)
-				$Show = TrayCreateItem("Show")
-				TrayItemSetOnEvent(-1, '_Show')
-				TrayCreateItem("")
-				$Exit = TrayCreateItem("Exit")
-				TrayItemSetOnEvent(-1, '_Exit')
-				TraySetState()
+				MyTrayMenu()
 				
 			Case $func4
 				MsgBox(0x40040, "About", "      " & $sName & $sVer & @LF & @LF & "Software developed by Lupo PenSuite Team." & @LF & "Released under Open Source GPL.")
@@ -751,5 +774,5 @@ Func _Main()
 				
 		EndSwitch
 	WEnd
-	_Exit()
+	ExitEvent()
 EndFunc
