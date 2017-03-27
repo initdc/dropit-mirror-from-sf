@@ -373,6 +373,40 @@ Func __IsWindowsVersion()
 	Return RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\", "CurrentVersion") >= 6.0
 EndFunc   ;==>__IsWindowsVersion
 
+Func __Locale_DayName($WDay, $Abbrev = False, $LCID = "")
+	; ==========================================================================================
+	; Autor:        Großvater (www.autoit.de) http://www.autoitscript.com/forum/topic/136945-the-name-of-any-day-by-date-multilingual/#entry958589
+	; Parameter:
+	; $WDay     -   Nummer des Wochentages (1 - 7) (!!! 1 ist Montag (s.u.) !!!)
+	; $Abbrev   -   abgekürzten Namen liefern:
+	;               |0 : nein
+	;               |1 : ja
+	; $LCID     -   Sprachbezeichner gem. Abschnitt "@OSLang values" im Anhang der Hilfedatei
+	;               als 16-bittiger Hexwert: 0xnnnn (z.b. 0x0407 für Deutschland).
+	;               Bei fehlender Angabe wird die Defaulteinstellung  des Benutzers verwendet.
+	; Anmerkungen:
+	; Zu meinem Erstaunen hat MS in WinNLS.h folgende Konstanten definiert:
+	;   #define LOCALE_SDAYNAME1              0x0000002A   // long name for Monday
+	;   ...
+	;   #define LOCALE_SDAYNAME7              0x00000030   // long name for Sunday
+	; Anders als beim Macro @WDAY gilt deshalb der Montag als Tag 1 und der Sonntag
+	; als Tag 7. Der passende Wert lässt sich per Aufruf der UDF-Funktion
+	;       _DateToDayOfWeekISO()
+	; ermitteln.
+	; ==========================================================================================
+	Local Const $LOCALE_USER_DEFAULT = 0x0400
+	Local Const $LOCALE_SDAYNAME = 0x29
+	Local Const $LOCALE_SABBREVDAYNAME = 0x30
+	If $LCID = "" Then $LCID = $LOCALE_USER_DEFAULT
+	Local $LCType = $LOCALE_SDAYNAME
+	If $Abbrev Then $LCType = $LOCALE_SABBREVDAYNAME
+	If $LCID = "" Then $LCID = $LOCALE_USER_DEFAULT
+	If Not StringIsInt($WDay) Or $WDay < 1 Or $WDay > 7 Then Return False
+	Local $aResult = DllCall("Kernel32.dll", "Int", "GetLocaleInfoW", "UInt", $LCID, "UInt", $LCType + $WDay, "WStr", "", "Int", 80)
+	If @error Or $aResult[0] = 0 Then Return False
+	Return $aResult[3]
+EndFunc   ;==>__Locale_DayName
+
 Func __Locale_MonthName($Month, $Abbrev = False, $LCID = "")
 	; ==========================================================================================
 	; Author:        Großvater (www.autoit.de) http://www.autoitscript.com/forum/topic/136945-the-name-of-any-day-by-date-multilingual/#entry958589
@@ -395,7 +429,7 @@ Func __Locale_MonthName($Month, $Abbrev = False, $LCID = "")
 	Local $aResult = DllCall("Kernel32.dll", "Int", "GetLocaleInfoW", "UInt", $LCID, "UInt", $LCType + $Month, "WStr", "", "Int", 80)
 	If @error Or $aResult[0] = 0 Then Return False
 	Return _StringProper($aResult[3])
-EndFunc
+EndFunc   ;==>__Locale_MonthName
 
 Func __SetHandle($sID, $sGUI)
 	#cs

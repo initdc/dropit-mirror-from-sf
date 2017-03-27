@@ -26,6 +26,10 @@ RecFileListToArray Library (RecFileListToArray.au3)
 http://www.autoitscript.com/forum/topic/126198-recfilelisttoarray-new-version-2-dec-12/
 
 
+Secure Delete Library (SecureDelete.au3)
+http://www.autoitscript.com/forum/topic/82954-securely-overwrite-files-and-free-space/
+
+
 SFTP Library (SFTPEx.au3)
 http://www.autoitscript.com/forum/topic/138095-udf-to-support-sftp-protocol-using-psftp/
 

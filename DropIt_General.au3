@@ -344,8 +344,8 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 		Return: Profile Name
 	#ce
 	Local $sProfilePath, $sAssociationField
-	Local $sFields[9] = [8, "State", "Rules", "Action", "Destination", "Filters", "ListProperties", "HTMLTheme", "SiteSettings"]
-	ReDim $aArray[$aArray[0][0] + 1][10]
+	Local $sFields[10] = [9, "State", "Rules", "Action", "Destination", "Filters", "ListProperties", "HTMLTheme", "SiteSettings", "CryptSettings"]
+	ReDim $aArray[$aArray[0][0] + 1][$sFields[0] + 1]
 
 	If $sProfileDirectory = -1 Then
 		$sProfileDirectory = __GetDefault(2) ; Get Default Profile Directory.
@@ -445,7 +445,7 @@ Func __ArrayToCSV($aArray, $sDestination)
 		Description: Write An Array Of Associations To CSV File.
 		Returns: 1
 	#ce
-	Local $hFileOpen, $sString = "NAME, STATE, RULES, ACTION, DESTINATION, FILTERS, LIST PROPERTIES, HTML THEME, SITE SETTINGS" & @CRLF
+	Local $hFileOpen, $sString = "NAME, STATE, RULES, ACTION, DESTINATION, FILTERS, LIST PROPERTIES, HTML THEME, SITE SETTINGS, CRYPT SETTINGS" & @CRLF
 
 	For $A = 1 To $aArray[0][0]
 		For $B = 1 To $aArray[0][1]
@@ -457,6 +457,7 @@ Func __ArrayToCSV($aArray, $sDestination)
 		$sString &= @CRLF
 	Next
 
+	DirCreate(__GetParentFolder($sDestination))
 	$hFileOpen = FileOpen($sDestination, 2 + 8 + 128)
 	FileWrite($hFileOpen, $sString)
 	FileClose($hFileOpen)
@@ -813,12 +814,15 @@ Func __ByteSuffix($iBytes)
 		Description: Round A Value Of Bytes To Highest Value.
 		Returns: [1024 Bytes = 1 KB]
 	#ce
-	Local $A, $iPlaces = 1, $aArray[9] = [__GetLang('SIZE_B', 'bytes'), __GetLang('SIZE_KB', 'KB'), __GetLang('SIZE_MB', 'MB'), __GetLang('SIZE_GB', 'GB'), __GetLang('SIZE_TB', 'TB'), "PB", "EB", "ZB", "YB"]
+	Local $A, $iPlaces = 0, $aArray[9] = [__GetLang('SIZE_B', 'bytes'), __GetLang('SIZE_KB', 'KB'), __GetLang('SIZE_MB', 'MB'), __GetLang('SIZE_GB', 'GB'), __GetLang('SIZE_TB', 'TB'), "PB", "EB", "ZB", "YB"]
 	While $iBytes > 1023
 		$A += 1
 		$iBytes /= 1024
 	WEnd
 	If $iBytes < 100 Then
+		$iPlaces += 1
+	EndIf
+	If $iBytes < 10 Then
 		$iPlaces += 1
 	EndIf
 	Return Round($iBytes, $iPlaces) & " " & $aArray[$A]
@@ -847,6 +851,25 @@ Func __Column_Width($sColumn, $aString = -1)
 	EndSwitch
 	Return $aReturn
 EndFunc   ;==>__Column_Width
+
+Func __ConvertMailText($sText, $sVisible = 0)
+	#cs
+		Description: Convert Mail Text.
+		Returns: Text
+	#ce
+	If $sText <> "" Then
+		If $sVisible Then
+			$sText = StringReplace($sText, "/n>>", @CRLF)
+			$sText = StringReplace($sText, "/d>>", ";")
+			$sText = StringReplace($sText, "/b>>", "|")
+		Else
+			$sText = StringReplace($sText, @CRLF, "/n>>")
+			$sText = StringReplace($sText, ";", "/d>>")
+			$sText = StringReplace($sText, "|", "/b>>")
+		EndIf
+	EndIf
+	Return $sText
+EndFunc   ;==>__ConvertMailText
 
 Func __EnvironmentVariables()
 	#cs

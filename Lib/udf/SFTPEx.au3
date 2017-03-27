@@ -1,5 +1,5 @@
 
-; !!! VERSION 1.0 BETA 8 - NOT COMPLETE !!!
+; !!! VERSION 1.0 BETA 9 - NOT COMPLETE !!!
 
 #include-once
 #include <Constants.au3>
@@ -93,7 +93,7 @@ EndFunc   ; ==>_SFTP_Close
 ;                  |1 - The session is closed
 ;                  |2 - Access denied
 ;                  |3 - Other error
-; Author ........: Lupo73
+; Author ........: Lupo73, trainer
 ; Modified.......:
 ; Remarks .......:
 ; Related .......: _SFTP_Open
@@ -109,9 +109,14 @@ Func _SFTP_Connect($hSession, $sServerName, $sUsername = "", $sPassword = "", $i
 		$iServerPort = ""
 	EndIf
 
-	Local $sLine, $sStringSplit
+	Local $sLine, $sStringSplit, $iWaitKeySaving = 0, $bSaveKey = True
 	StdinWrite($hSession, 'open ' & $sServerName & ' ' & $iServerPort & @CRLF)
 	While 1
+		$iWaitKeySaving += 1
+		If $iWaitKeySaving >= 500 And $bSaveKey Then
+			StdinWrite($hSession, 'y' & @CRLF)
+			$bSaveKey = False
+		EndIf
 		$sLine = StdoutRead($hSession)
 		If ProcessExists($hSession) = 0 Then
 			Return SetError(1, 0, 0)
@@ -1076,7 +1081,7 @@ EndFunc   ; ==>_SFTP_ListToArrayEx
 ;                  Failure - 0, sets @error
 ;                  |1 - The connection is closed
 ;                  |2 - Other error
-; Author ........: Lupo73
+; Author ........: Lupo73, trainer
 ; Modified.......:
 ; Remarks .......:
 ; Related .......: _SFTP_Connect, _SFTP_Close
@@ -1084,7 +1089,7 @@ EndFunc   ; ==>_SFTP_ListToArrayEx
 ; Example .......: No
 ; ===============================================================================================================================
 Func _SFTP_Open($sPath = 'psftp.exe')
-	Local $hSession = Run($sPath, "", @SW_HIDE, $STDIN_CHILD + $STDOUT_CHILD)
+	Local $hSession = Run($sPath & " -load null", "", @SW_HIDE, $STDIN_CHILD + $STDOUT_CHILD)
 	If @error Then
 		Return SetError(1, 0, 0)
 	EndIf

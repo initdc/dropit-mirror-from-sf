@@ -305,14 +305,14 @@ Func __InsertPassword_GUI($iFileName)
 	GUICtrlSetBkColor(-1, 0xffffff)
 	GUICtrlSetColor(-1, 0xffffff)
 
-	GUICtrlCreateLabel(__GetLang('PASSWORD_MSGBOX_4', 'Loaded archive:'), 14, 12, 292, 18)
+	GUICtrlCreateLabel(__GetLang('MOREMATCHES_LABEL_0', 'Loaded item:'), 10, 12, 300, 18)
 	GUICtrlSetBkColor(-1, 0xffffff)
-	GUICtrlCreateLabel($iFileName, 16, 12 + 18, 288, 30)
+	GUICtrlCreateLabel($iFileName, 10, 12 + 18, 300, 30)
 	GUICtrlSetBkColor(-1, 0xffffff)
 	GUICtrlSetFont(-1, -1, 800)
 
-	GUICtrlCreateLabel(__GetLang('PASSWORD_MSGBOX_5', 'Password for decryption:'), 14, 66, 292, 18)
-	$iInput = GUICtrlCreateInput("", 14, 83, 292, 20)
+	GUICtrlCreateLabel(__GetLang('PASSWORD_MSGBOX_5', 'Password for decryption:'), 10, 66, 300, 18)
+	$iInput = GUICtrlCreateInput("", 10, 83, 300, 20, 0x0020)
 
 	$iOK = GUICtrlCreateButton(__GetLang('OK', 'OK'), 160 - 80 - 30, 116, 80, 24)
 	$iCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 160 + 30, 116, 80, 24)

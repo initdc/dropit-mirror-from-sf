@@ -2,6 +2,8 @@
 ; Association funtions of DropIt
 
 #include-once
+#include <Crypt.au3>
+
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
@@ -88,6 +90,10 @@ Func __GetActionResult($gAction)
 			$gReturn = __GetLang('POSITIONPROCESS_LOG_15', 'Changed Properties')
 		Case "$E"
 			$gReturn = __GetLang('POSITIONPROCESS_LOG_16', 'Sent by Mail')
+		Case "$F"
+			$gReturn = __GetLang('POSITIONPROCESS_LOG_17', 'Encrypted')
+		Case "$G"
+			$gReturn = __GetLang('POSITIONPROCESS_LOG_18', 'Decrypted')
 		Case Else
 			$gReturn = __GetLang('POSITIONPROCESS_LOG_5', 'Moved')
 	EndSwitch
@@ -131,6 +137,10 @@ Func __GetActionString($gAction)
 				$gReturn = __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties')
 			Case "$E"
 				$gReturn = __GetLang('ACTION_SEND_MAIL', 'Send by Mail')
+			Case "$F"
+				$gReturn = __GetLang('ACTION_ENCRYPT', 'Encrypt')
+			Case "$G"
+				$gReturn = __GetLang('ACTION_DECRYPT', 'Decrypt')
 			Case Else ; Move.
 				$gReturn = __GetLang('ACTION_MOVE', 'Move')
 		EndSwitch
@@ -164,6 +174,10 @@ Func __GetActionString($gAction)
 				$gReturn = "$D"
 			Case __GetLang('ACTION_SEND_MAIL', 'Send by Mail'), 'Send by Mail'
 				$gReturn = "$E"
+			Case __GetLang('ACTION_ENCRYPT', 'Encrypt'), 'Encrypt'
+				$gReturn = "$F"
+			Case __GetLang('ACTION_DECRYPT', 'Decrypt'), 'Decrypt'
+				$gReturn = "$G"
 			Case Else ; __GetLang('ACTION_MOVE', 'Move').
 				$gReturn = "$0"
 		EndSwitch
@@ -171,6 +185,51 @@ Func __GetActionString($gAction)
 
 	Return $gReturn
 EndFunc   ;==>__GetActionString
+
+Func __GetAlgorithmString($gString, $gGetCode = 0)
+	#cs
+		Description: Get Encryption Algorithm Mode [3DES] Or Encryption Algorithm Code [$CALG_3DES].
+	#ce
+	Local $gReturn
+
+	If $gGetCode Then
+		Switch $gString
+			Case "AES (128bit)"
+				$gReturn = $CALG_AES_128
+			Case "AES (192bit)"
+				$gReturn = $CALG_AES_192
+			Case "AES (256bit)"
+				$gReturn = $CALG_AES_256
+			Case "DES"
+				$gReturn = $CALG_DES
+			Case "RC2"
+				$gReturn = $CALG_RC2
+			Case "RC4"
+				$gReturn = $CALG_RC4
+			Case Else ; "3DES".
+				$gReturn = $CALG_3DES
+		EndSwitch
+	Else
+		Switch $gString
+			Case $CALG_AES_128
+				$gReturn = "AES (128bit)"
+			Case $CALG_AES_192
+				$gReturn = "AES (192bit)"
+			Case $CALG_AES_256
+				$gReturn = "AES (256bit)"
+			Case $CALG_DES
+				$gReturn = "DES"
+			Case $CALG_RC2
+				$gReturn = "RC2"
+			Case $CALG_RC4
+				$gReturn = "RC4"
+			Case Else ; $CALG_3DES.
+				$gReturn = "3DES"
+		EndSwitch
+	EndIf
+
+	Return $gReturn
+EndFunc   ;==>__GetAlgorithmString
 
 Func __GetDeleteString($gString)
 	#cs
@@ -210,13 +269,13 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 	Switch $gAction
 		Case "$6"
 			$gDestination = __GetDeleteString($gDestination)
-		Case "$8"
+		Case "$8", "$F", "$G"
 			$gStringSplit = StringSplit($gDestination, "|")
 			$gDestination = $gStringSplit[1]
 		Case "$C"
 			$gStringSplit = StringSplit($gDestination, "|")
 			$gDestination = $gStringSplit[1]
-			ReDim $gStringSplit[3]
+			ReDim $gStringSplit[3] ; Only One More Than Needed.
 			If $gSiteSettings == -1 Then
 				$gSiteSettings = $gStringSplit[2]
 			EndIf
@@ -226,7 +285,7 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 			$gDestination = __GetLang('CHANGE_PROPERTIES_DEFINED', 'Defined Properties')
 		Case "$E"
 			$gStringSplit = StringSplit($gDestination, ";")
-			ReDim $gStringSplit[13]
+			ReDim $gStringSplit[9] ; Only One More Than Needed.
 			If $gStringSplit[8] <> "" Then
 				$gDestination = $gStringSplit[8] ; To Email Address.
 			Else
@@ -421,7 +480,7 @@ Func __GetAssociations($gProfile = -1)
 	#cs
 		Description: Get Associations Of The Current Profile [-1] Or Specified Profile Name [Valid Profile Name].
 		Returns: Array[0][0] - Number Of Items [?]
-		[0][1] - Number Of Fields [9]
+		[0][1] - Number Of Fields [10]
 		[0][2] - Profile Name [Profile]
 
 		Array[A][0] - Association Name [Example]
@@ -433,10 +492,11 @@ Func __GetAssociations($gProfile = -1)
 		[A][6] - List Properties [0;1;2;3;9;13]
 		[A][7] - HTML Theme [Default]
 		[A][8] - Site Settings [Host;Port;User;Password]
+		[A][9] - Crypt Settings [Algorithm|Password]
 	#ce
 	$gProfile = __IsProfile($gProfile, 0) ; Get Array Of Selected Profile.
 
-	Local $gNumberFields = 9
+	Local $gNumberFields = 10
 	Local $gAssociationNames = __IniReadSectionNamesEx($gProfile[0])
 	If @error Then
 		Local $gReturn[1][$gNumberFields + 1] = [[0, $gNumberFields, $gProfile[1]]]
@@ -474,6 +534,8 @@ Func __GetAssociations($gProfile = -1)
 					$gIndex = 7
 				Case "SiteSettings"
 					$gIndex = 8
+				Case "CryptSettings"
+					$gIndex = 9
 				Case Else
 					ContinueLoop
 			EndSwitch

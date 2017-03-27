@@ -3,7 +3,7 @@
 
 #include-once
 
-Global $G_Global_CurrentVersion = "5.1"
+Global $G_Global_CurrentVersion = "5.2"
 
 Global $G_Global_EncryptionKey = "profiles-password-fake" ; Key For Profiles Encryption.
 Global $G_Global_PasswordKey = "archives-password-fake" ; Key For Archives Encryption.
@@ -21,7 +21,10 @@ Global $G_Global_7ZipPath = @ScriptDir & "\Lib\7z\7z.exe"
 Global $G_Global_GuidePath = @ScriptDir & "\Guide.pdf"
 Global $G_Global_LicensePath = @ScriptDir & "\License.txt"
 Global $G_Global_ReadmePath = @ScriptDir & "\Readme.txt"
+Global $G_Global_TempDir = @TempDir & "\DropIt"
 
+Global Const $STATIC_CRYPT_FILE_EXT = ".fcrt"
+Global Const $STATIC_CRYPT_FOLDER_EXT = ".zcrt"
 Global Const $STATIC_MODIFIER_ESCAPE_CHAR = "#"
 Global Const $STATIC_ABBREVIATION_ESCAPE_CHAR = "%"
 Global Const $STATIC_FILTERS_DIVIDER = "|"
