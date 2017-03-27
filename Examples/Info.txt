@@ -1,9 +1,0 @@
-
-	DropIt Examples
-
-
-These are some examples of profiles created for you.
-You can modify them as you like, to fit your needs.
-
-For more examples read the Help file:
-Configurations >> Manage Patterns >> Patterns Examples

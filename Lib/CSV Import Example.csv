@@ -1,0 +1,2 @@
+NAME,RULES,ACTION,DESTINATION
+"Example","*.txt","Copy","My Folder"

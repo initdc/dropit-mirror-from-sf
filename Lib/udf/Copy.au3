@@ -418,7 +418,7 @@ Func _Copy_CallbackDlg($aState, $iID, $hParent)
 		Return SetError(0xDEAD, 0xBEEF, $COPY_OVERWRITE_ERROR)
 	EndIf
 
-	Local $hDlg, $hBtn, $Button[4]
+	Local $hDlg, $hBtn, $Button[4], $Icon[2]
 	Local $hWnd, $hDC, $hFile, $hFont, $hPrev, $Data, $Date, $Ret, $Time, $Title
 	Local $hIcon[2] = [0, 0], $hDefault = 0, $Result = 0
 	Local $Opt1 = Opt('GUIOnEventMode', 0)
@@ -477,7 +477,7 @@ Func _Copy_CallbackDlg($aState, $iID, $hParent)
 				$hIcon[$i] = $hDefault
 			EndIf
 		Until 1
-		GUICtrlCreateIcon('', 0, 35, 64 + 113 * $i, 32, 32)
+		$Icon[$i] = GUICtrlCreateIcon('', 0, 35, 64 + 113 * $i, 32, 32)
 		GUICtrlSendMsg(-1, 0x0170, $hIcon[$i], 0)
 		GUICtrlSetState(-1, 128)
 		GUICtrlCreateLabel(StringRegExpReplace($aState[7 - $i], '^.*\\', ''), 76, 61 + 113 * $i, 351, 14)
@@ -598,12 +598,18 @@ EndFunc   ;==>_Copy_CallbackDlg
 ; ===============================================================================================================================
 
 Func _Copy_CloseDll()
+
+	Local $aResult
+
 	If $cpDLL = -1 Then
 		Return SetError(1, 0, 0)
 	EndIf
-	DllCall($cpDLL, 'int', 'GetThreadCountInfo', 'ptr', 0, 'dword*', 0)
+	$aResult = DllCall($cpDLL, 'int', 'GetThreadCountInfo', 'ptr', 0, 'dword*', 0)
 	If @error Then
 		Return SetError(5, 0, 0)
+	EndIf
+	If $aResult[2] Then
+		Return SetError(4, 0, 0)
 	EndIf
 	OnAutoItExitUnRegister('__CP_AutoItExit')
 	DllClose($cpDLL)
@@ -823,7 +829,7 @@ EndFunc   ;==>_Copy_GetAction
 
 Func _Copy_GetState($iID = 0, $iIndex = -1)
 
-	Local $State[8]
+	Local $State[8], $Result
 
 	If $cpDLL = -1 Then
 		Return SetError(1, 0, 0)
