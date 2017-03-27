@@ -5,7 +5,7 @@
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Comment=DropIt - To place your files with a drop
 #AutoIt3Wrapper_Res_Description=DropIt
-#AutoIt3Wrapper_Res_Fileversion=0.8.2.0
+#AutoIt3Wrapper_Res_Fileversion=0.9.0.0
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_LegalCopyright=by Lupo PenSuite Team
 #AutoIt3Wrapper_Run_Obfuscator=y
@@ -16,35 +16,31 @@
 #include <WindowsConstants.au3>
 #include <StaticConstants.au3>
 #Include <GUIListBox.au3>
+#include <GUIListView.au3>
+#include <GUIMenu.au3>
 
 Opt("MustDeclareVars", 1)
 Opt("TrayIconHide", 1)
 Opt("TrayOnEventMode", 1)
 Opt("TrayMenuMode", 1)
 
-Global $sName = "DropIt", $sVer = " (v0.8.2)", $ii = $sName & " - To place your files with a drop"
-Global $sIni = @ScriptDir & "\settings.ini", $PrDir = @ScriptDir & "\profiles", $sIniPr, $sIm = @ScriptDir & "\img\image.gif", $sPic = @ScriptDir & "\img\ps.gif"
-Global $hGUI1, $hGUI2, $sData, $temp, $i, $top, $Show, $Separ, $Exit, $list, $gaDropFiles[1], $RelPos[2]
-Global Const $WM_DROPFILES = 0x233, $SC_MOVE = 0xF010, $WM_ENTERSIZEMOVE = 0x231, $WM_EXITSIZEMOVE = 0x232
-Global $xD = IniRead($sIni, "General", "SizeX", "64"), $yD = IniRead($sIni, "General", "SizeY", "64")
-Global $EP = "Exclusion-Pattern"
+Global $sName = "DropIt", $sVer = " (v0.9)", $ii = $sName & " - To place your files with a drop"
+Global $sIni = @ScriptDir & "\settings.ini", $sIniPr, $PrDir = @ScriptDir & "\profiles", $ImDir = @ScriptDir & "\img", $ImDef = "default.gif", $sIm, $sPic = $ImDir & "\ps.gif"
+Global $hGUI, $hGUI2, $sIcon, $sIcon2, $sData, $Dummy, $hListView, $temp, $i, $top, $Show, $Separ, $Exit, $menu, $func1, $func3, $func2, $func4, $func5, $func6, $custom, $specialClick
+Global Const $WM_DROPFILES = 0x233, $WM_ENTERSIZEMOVE = 0x231, $WM_EXITSIZEMOVE = 0x232
+Global $gaDropFiles[1], $RelPos[2], $EP = "Exclusion-Pattern"
 Global $tips = '- As destination folders are supported both absolute ("C:\Lupo\My Images") and relative ("..\My Images") paths.' & @LF & @LF & '- If you want to use different pattern groups, for example on different computers, you can click "Profiles" -> "Customize" to create and manage them.' & @LF & @LF & '- If you want to exclude files that match with a specified pattern, you can add "$" at the end of the pattern itself (for example:  *.exe$ ).' & @LF & @LF & '- If you need more info about supported pattern rules, you can click the "Rules" button and see a list of possible patterns.'
 Global $prs = 'Supported pattern rules for files:' & @LF & '*.zip   = all files with "zip" extension' & @LF & 'penguin.*   = all files named "penguin"' & @LF & 'penguin*.*   = all files that begins with "penguin"' & @LF & '*penguin.*   = all files that ends with "penguin"' & @LF & '*penguin*   = all files that contains "penguin"' & @LF & @LF & 'Supported pattern rules for folders:' & @LF & 'robot**   = all folders that begins with "robot"' & @LF & '**robot   = all folders that ends with "robot"' & @LF & '**robot**   = all folders that contains "robot"' & @LF & @LF & 'Add "$" at the end of a pattern to skip files that' & @LF & 'match with it during the dropping (eg:  sky*.jpg$ ).'
-Global $er1 = "You have to select a destination folder to associate it.", $er2 = "You have to insert a correct pattern to add the association.", $er3 = "Destination folder already associated for this pattern.", $me1 = "Insert the desired destination folder and write a pattern, to place there files that match with it:", $me2 = "Change the destination folder for files that match with the selected pattern or delete this association:"
+Global $er1 = "You have to select a destination folder to associate it.", $er2 = "You have to insert a correct pattern to add the association.", $er3 = "This pattern rule already exists.", $me1 = "Insert the desired destination folder and write a pattern, to place there files that match with it:", $me2 = "Change the destination folder for files that match with the selected pattern or delete this association:"
 
 
-If FileExists($sIm) Then
-	$list = ProcessList(@ScriptName)
-	If $list[0][0] = 0 Or $list[0][0] = 1 Then _Main()
-Else
-	MsgBox(0, "Image not found", 'Software image not found. You need to have a "img\image.gif" file, to popup it as drop target.')
-EndIf
+_Main()
 
 
-Func Manage()		; OK
+Func Manage()
 	Local $DFA, $sel, $close, $help, $tem, $var, $ff, $decision
 	Local $hListBox, $Dir1, $Dir2, $fo1, $fo2, $se1, $se2, $bot1, $bot2, $bot3, $bot4
-	$DFA = GUICreate("Destination Folders Association [" & IniRead($sIni, "General", "Profile", "Default") & "]", 410, 280, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI1)
+	$DFA = GUICreate("Destination Folders Association [" & IniRead($sIni, "General", "Profile", "Default") & "]", 410, 280, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI)
 	
 	GUICtrlCreateGroup("Add Association", 10, 6, 280, 115)
 	GUICtrlCreateLabel($me1, 21, 6+17, 260, 40)
@@ -96,14 +92,14 @@ Func Manage()		; OK
 		Switch $sel
 			Case $se1
 				If $top = "True" Then WinSetOnTop($DFA, "", 0)
-				$tem = FileSelectFolder("Select a destination folder:", "", 1)
-				If Not($tem = "") Then GUICtrlSetData($Dir1, $tem)
+				$tem = FileSelectFolder("Select a destination folder:", "", 3)
+				If $tem <> "" Then GUICtrlSetData($Dir1, $tem)
 				If $top = "True" Then WinSetOnTop($DFA, "", 1)
 				
 			Case $se2
 				If $top = "True" Then WinSetOnTop($DFA, "", 0)
-				$tem = FileSelectFolder("Select a destination folder:", "", 1)
-				If Not($tem = "") Then GUICtrlSetData($Dir2, $tem)
+				$tem = FileSelectFolder("Select a destination folder:", "", 3)
+				If $tem <> "" Then GUICtrlSetData($Dir2, $tem)
 				If $top = "True" Then WinSetOnTop($DFA, "", 1)
 				
 			Case $bot1
@@ -152,7 +148,7 @@ Func Manage()		; OK
 			Case $hListBox
 				$ff = GUICtrlRead($hListBox)
 				$tem = IniRead($sIniPr, "Patterns", $ff, "")
-				If Not($tem = "") Then
+				If $tem <> "" Then
 					GUICtrlSetState($bot3, $GUI_ENABLE)
 					If StringRight($ff, 1) = '$' Then
 						GUICtrlSetState($Dir2, $GUI_DISABLE)
@@ -176,34 +172,35 @@ Func Manage()		; OK
 		EndSwitch
 	WEnd
 	GUIDelete($DFA)
-	If $top = "True" Then WinSetOnTop($hGUI1, "", 1)
+	If $top = "True" Then WinSetOnTop($hGUI, "", 1)
 EndFunc
 
 
-Func Options()		; OK
-	Local $opz, $sel, $check1, $check2, $check3, $check4, $mod1, $mod2, $modA, $do1, $do2, $do3, $ok, $canc, $tp
-	$opz = GUICreate("Options", 260, 236, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI1)
+Func Options()
+	Local $opz, $sel, $check1, $check2, $check3, $check4, $check5, $mod1, $mod2, $modA, $do1, $do2, $do3, $ok, $canc, $tp
+	$opz = GUICreate("Options", 256, 256, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI)
 	
 	; group of general options
-	GUICtrlCreateGroup("General",10, 6, 240, 104)
+	GUICtrlCreateGroup("General",10, 6, 236, 124)
 	$check1 = GUICtrlCreateCheckbox("Show target image always on top", 24, 6+16)
 	$check2 = GUICtrlCreateCheckbox("Lock target image position", 24, 6+16+20)
-	$check3 = GUICtrlCreateCheckbox("Active association also for folders", 24, 6+16+40)
-	$check4 = GUICtrlCreateCheckbox("Set automatic choice for duplicates", 24, 6+16+60)
+	$check3 = GUICtrlCreateCheckbox("Enable association also for folders", 24, 6+16+40)
+	$check4 = GUICtrlCreateCheckbox("Enable multiple instances", 24, 6+16+60)
+	$check5 = GUICtrlCreateCheckbox("Set automatic choice for duplicates", 24, 6+16+80)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)  ;close group
 	
 	; group of update procedure options
-	GUICtrlCreateGroup("Positioning mode", 10, 114, 110, 84)
-	$mod1 = GUICtrlCreateRadio("Move files", 24, 114+16, 90, 20)
-	$mod2 = GUICtrlCreateRadio("Copy files", 24, 114+16+20, 90, 20)
-	$modA = GUICtrlCreateCheckbox("Ask each drop", 24, 114+16+40)
+	GUICtrlCreateGroup("Positioning mode", 10, 134, 110, 84)
+	$mod1 = GUICtrlCreateRadio("Move files", 24, 134+16, 90, 20)
+	$mod2 = GUICtrlCreateRadio("Copy files", 24, 134+16+20, 90, 20)
+	$modA = GUICtrlCreateCheckbox("Ask each drop", 24, 134+16+40)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)  ;close group
 	
 	; group of update procedure options
-	GUICtrlCreateGroup("Manage duplicates", 130, 114, 120, 84)
-	$do1 = GUICtrlCreateRadio("Overwrite files", 144, 114+16, 90, 20)
-	$do2 = GUICtrlCreateRadio("Skip files", 144, 114+16+20, 90, 20)
-	$do3 = GUICtrlCreateRadio("Rename files", 144, 114+16+40, 90, 20)
+	GUICtrlCreateGroup("Manage duplicates", 130, 134, 116, 84)
+	$do1 = GUICtrlCreateRadio("Overwrite files", 144, 134+16, 90, 20)
+	$do2 = GUICtrlCreateRadio("Skip files", 144, 134+16+20, 90, 20)
+	$do3 = GUICtrlCreateRadio("Rename files", 144, 134+16+40, 90, 20)
 	GUICtrlCreateGroup("", -99, -99, 1, 1)  ;close group
 	
 	If IniRead($sIni, "General", "Mode", "Move") = "Move" Then
@@ -234,24 +231,25 @@ Func Options()		; OK
 	If IniRead($sIni, "General", "OnTop", "True") = "True" Then GUICtrlSetState($check1, $GUI_CHECKED)
 	If IniRead($sIni, "General", "LockPos", "True") = "True" Then GUICtrlSetState($check2, $GUI_CHECKED)
 	If IniRead($sIni, "General", "DirForFolders", "False") = "True" Then GUICtrlSetState($check3, $GUI_CHECKED)
+	If IniRead($sIni, "General", "MultipleInst", "False") = "True" Then GUICtrlSetState($check4, $GUI_CHECKED)
 	If IniRead($sIni, "General", "AutoForDup", "False") = "True" Then
-		GUICtrlSetState($check4, $GUI_CHECKED)
+		GUICtrlSetState($check5, $GUI_CHECKED)
 	Else
 		GUICtrlSetState($do1, $GUI_DISABLE)
 		GUICtrlSetState($do2, $GUI_DISABLE)
 		GUICtrlSetState($do3, $GUI_DISABLE)
 	EndIf
 	
-	$ok = GUICtrlCreateButton("OK", 130-20-66, 206, 66, 24)
-	$canc = GUICtrlCreateButton("Cancel", 130+20, 206, 66, 24)
+	$ok = GUICtrlCreateButton("OK", 128-20-66, 226, 66, 24)
+	$canc = GUICtrlCreateButton("Cancel", 128+20, 226, 66, 24)
 	GUICtrlSetState($ok, $GUI_FOCUS)
 	GUISetState()
 	
 	While 1
 		$sel = GUIGetMsg()
 		Switch $sel
-			Case $check4
-				If GUICtrlRead($check4) = 1 Then
+			Case $check5
+				If GUICtrlRead($check5) = 1 Then
 					GUICtrlSetState($do1, $GUI_ENABLE)
 					GUICtrlSetState($do2, $GUI_ENABLE)
 					GUICtrlSetState($do3, $GUI_ENABLE)
@@ -274,9 +272,9 @@ Func Options()		; OK
 				$top = "False"
 				If GUICtrlRead($check1) = 1 Then
 					$top = "True"
-					WinSetOnTop($hGUI1, "", 1)
+					WinSetOnTop($hGUI, "", 1)
 				Else
-					WinSetOnTop($hGUI1, "", 0)
+					WinSetOnTop($hGUI, "", 0)
 				EndIf
 				IniWrite($sIni, "General", "OnTop", $top)
 				
@@ -290,6 +288,10 @@ Func Options()		; OK
 				
 				$tp = "False"
 				If GUICtrlRead($check4) = 1 Then $tp = "True"
+				IniWrite($sIni, "General", "MultipleInst", $tp)
+				
+				$tp = "False"
+				If GUICtrlRead($check5) = 1 Then $tp = "True"
 				IniWrite($sIni, "General", "AutoForDup", $tp)
 				
 				If GUICtrlRead($do1) = 1 Then
@@ -316,11 +318,11 @@ Func Options()		; OK
 		EndSwitch
 	WEnd
 	GUIDelete($opz)
-	If $top = "True" Then WinSetOnTop($hGUI1, "", 1)
+	If $top = "True" Then WinSetOnTop($hGUI, "", 1)
 EndFunc
 
 
-Func MoreMatches($matches, $item, $j)		; OK
+Func MoreMatches($matches, $item, $j)
 	Local $asso, $sel, $ok, $canc, $ma, $rad[$j+1]
 	Local $mess = "You have to select the pattern to use."
 	$asso = GUICreate("Pattern ambiguity", 280, 115+21*$j, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI2)
@@ -358,13 +360,13 @@ Func MoreMatches($matches, $item, $j)		; OK
 		EndSwitch
 	WEnd
 	GUIDelete($asso)
-	If $top = "True" Then WinSetOnTop($hGUI1, "", 1)
+	If $top = "True" Then WinSetOnTop($hGUI, "", 1)
 	If $ma = $EP Then $ma = "-1"
 	Return $ma
 EndFunc
 
 
-Func Checking($item, $ff)			; OK
+Func Checking($item, $ff)
 	Local $str, $match, $pattern, $j = 0, $matches[8][2], $var = IniReadSection($sIniPr, "Patterns")
 	If Not(@error) Then
 		For $i = 1 To $var[0][0]
@@ -376,7 +378,7 @@ Func Checking($item, $ff)			; OK
 				If $ff = "0" Then $match = StringRegExp(StringLower($item), "^" & $pattern & "$")
 			Else
 				$pattern = StringReplace($str, "*", "(.*?)")
-				If Not($ff = "0") Then $match = StringRegExp(StringLower($item), "^" & $pattern & "$")
+				If $ff <> "0" Then $match = StringRegExp(StringLower($item), "^" & $pattern & "$")
 			EndIf
 			If $match = 1 And $j < 7 Then
 				$j = $j + 1
@@ -399,7 +401,7 @@ Func Checking($item, $ff)			; OK
 EndFunc
 
 
-Func Associate($item, $ff)		; OK
+Func Associate($item, $ff)
 	Local $asso, $sel, $Dir1, $se1, $bot1, $fo1, $bot2, $canc, $tem, $tx = ""
 	$asso = GUICreate("Add Association", 296, 160, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI2)
 	If $ff = "0" Then
@@ -407,7 +409,6 @@ Func Associate($item, $ff)		; OK
 	Else
 		$tx = "*." & $ff
 	EndIf
-	
 	GUICtrlCreateGroup("", 8, 4, 280, 115)
 	GUICtrlCreateLabel($me1, 19, 4+17, 260, 40)
 	$Dir1 = GUICtrlCreateInput("", 16, 4+50, 207, 20)
@@ -429,8 +430,8 @@ Func Associate($item, $ff)		; OK
 		Switch $sel
 			Case $se1
 				If $top = "True" Then WinSetOnTop($asso, "", 0)
-				$tem = FileSelectFolder("Select a destination folder:", "", 1)
-				If Not($tem = "") Then GUICtrlSetData($Dir1, $tem)
+				$tem = FileSelectFolder("Select a destination folder:", "", 3)
+				If $tem <> "" Then GUICtrlSetData($Dir1, $tem)
 				If $top = "True" Then WinSetOnTop($asso, "", 1)
 				
 			Case $bot1
@@ -461,11 +462,11 @@ Func Associate($item, $ff)		; OK
 		EndSwitch
 	WEnd
 	GUIDelete($asso)
-	If $top = "True" Then WinSetOnTop($hGUI1, "", 1)
+	If $top = "True" Then WinSetOnTop($hGUI, "", 1)
 EndFunc
 
 
-Func PosFile($temp)			; OK
+Func PosFile($temp)
 	Local $Place, $item, $name, $tut, $decision, $cont, $tx, $j = 1, $f = 0, $DD = 0, $ff = "0"
 	If StringInStr(FileGetAttrib($temp), "D") Then $DD = 1
 	; Rules extrapolation
@@ -496,7 +497,7 @@ Func PosFile($temp)			; OK
 		EndIf
 	EndIf
 	; File positioning
-	If Not($Place = "0") And Not($Place = "-1") Then
+	If $Place <> "0" And $Place <> "-1" Then
 		$decision = 6
 		If Not FileExists($Place) Then DirCreate($Place)
 		If FileExists($Place & "\" & $item) Then
@@ -550,7 +551,7 @@ Func PosFile($temp)			; OK
 EndFunc
 
 
-Func Position($temp)		; OK
+Func Position($temp)
 	Local $search, $file, $attrib
 	If StringInStr(FileGetAttrib($temp), "D") Then
 		If IniRead($sIni, "General", "DirForFolders", "False") = "True" Then
@@ -581,7 +582,7 @@ Func Position($temp)		; OK
 EndFunc
 
 
-Func DropEvent()		; OK
+Func DropEvent()
 	Local $decision
 	If IniRead($sIni, "General", "AskMode", "False") = "True" Then
 		$decision = MsgBox(0x40004, "Choose positioning mode", "Do you want to 'move' these files in destination folders?" & @LF & "(otherwise they will be 'copied' in destination folders)")
@@ -598,7 +599,7 @@ Func DropEvent()		; OK
 EndFunc
 
 
-Func WM_DROPFILES_UNICODE_FUNC($hWnd, $msgID, $wParam, $lParam)		; OK
+Func WM_DROPFILES_UNICODE_FUNC($hWnd, $msgID, $wParam, $lParam)
     Local $nSize, $pFileName
     Local $nAmt = DllCall("shell32.dll", "int", "DragQueryFileW", "hwnd", $wParam, "int", 0xFFFFFFFF, "ptr", 0, "int", 255)
     For $i = 0 To $nAmt[0] - 1
@@ -613,7 +614,7 @@ Func WM_DROPFILES_UNICODE_FUNC($hWnd, $msgID, $wParam, $lParam)		; OK
 EndFunc
 
 
-Func WM_SYSCOMMAND($hWnd, $Msg, $wParam, $lParam)		; OK
+Func WM_SYSCOMMAND($hWnd, $Msg, $wParam, $lParam)
 	If IniRead($sIni, "General", "LockPos", "True") = "True" Then
 		If BitAND($wParam, 0x0000FFF0) = $SC_MOVE Then Return False
 	EndIf
@@ -621,23 +622,23 @@ Func WM_SYSCOMMAND($hWnd, $Msg, $wParam, $lParam)		; OK
 EndFunc
 
 
-Func ShowEvent()		; OK
+Func ShowEvent()
 	TrayItemDelete($Show)
 	TrayItemDelete($Separ)
 	TrayItemDelete($Exit)
-	GUISetState(@SW_SHOW, $hGUI1)
+	GUISetState(@SW_SHOW, $hGUI)
 	Opt("TrayIconHide", 1)
 EndFunc
 
 
-Func ExitEvent()		; OK
+Func ExitEvent()
 	_Pos()
     Exit
 EndFunc
 
 
-Func MyTrayMenu()		; OK
-	GUISetState(@SW_HIDE, $hGUI1)
+Func MyTrayMenu()
+	GUISetState(@SW_HIDE, $hGUI)
 	Opt("TrayIconHide", 0)
 	TraySetToolTip($ii)
 	$Show = TrayCreateItem("Show")
@@ -651,30 +652,61 @@ Func MyTrayMenu()		; OK
 EndFunc
 
 
-Func _Pos()		; OK
-	Local $pos = WinGetPos($hGUI1)
+Func _Pos()
+	Local $pos = WinGetPos($hGUI)
 	IniWrite($sIni, "General", "PosX", $pos[0])
 	IniWrite($sIni, "General", "PosY", $pos[1])
 EndFunc
 
 
-Func FollowMe($hW, $iM, $wp, $lp)		; OK
-    If $hW <> $hGUI1 Then Return
-    Local $xypos = WinGetPos($hGUI1)
+Func FollowMe($hW, $iM, $wp, $lp)
+    If $hW <> $hGUI Then Return
+    Local $xypos = WinGetPos($hGUI)
     WinMove($hGUI2, "", $xypos[0] - $RelPos[0], $xypos[1] - $RelPos[1])
 EndFunc
 
 
-Func SetRelPos($hW, $iM, $wp, $lp)		; OK
-    If $hW <> $hGUI1 Then Return
-    Local $hGUI1p = WinGetPos($hGUI1)
+Func SetRelPos($hW, $iM, $wp, $lp)
+    If $hW <> $hGUI Then Return
+    Local $hGUIp = WinGetPos($hGUI)
     Local $hGUI2p = WinGetPos($hGUI2)
-    $RelPos[0] = $hGUI1p[0] - $hGUI2p[0]
-    $RelPos[1] = $hGUI1p[1] - $hGUI2p[1]
+    $RelPos[0] = $hGUIp[0] - $hGUI2p[0]
+    $RelPos[1] = $hGUIp[1] - $hGUI2p[1]
 EndFunc
 
 
-Func ListProfiles()		; OK
+Func WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
+	#forceref $hWnd, $iMsg, $iwParam
+    Local $tNMITEMACTIVATE = DllStructCreate($tagNMITEMACTIVATE, $ilParam)
+    Local $hWndFrom = HWnd(DllStructGetData($tNMITEMACTIVATE, 'hWndFrom'))
+    Local $Index = DllStructGetData($tNMITEMACTIVATE, 'Index')
+    Local $Code = DllStructGetData($tNMITEMACTIVATE, 'Code')
+    Switch $hWndFrom
+        Case $hListView
+            Switch $Code
+				Case $LVN_BEGINLABELEDITA, $LVN_BEGINLABELEDITW
+                    Local $tInfo = DllStructCreate($tagNMLVDISPINFO, $ilParam)
+                    Return False
+					
+                Case $LVN_ENDLABELEDITA, $LVN_ENDLABELEDITW
+					Local $tInfo = DllStructCreate($tagNMLVDISPINFO, $ilParam)
+                    Local $tBuffer = DllStructCreate("char Text[" & DllStructGetData($tInfo, "TextMax") & "]", DllStructGetData($tInfo, "Text"))
+                    If StringLen(DllStructGetData($tBuffer, "Text")) Then
+						$specialClick = 1
+						Return True
+					EndIf
+					
+                Case $NM_RCLICK
+                    GUICtrlSendToDummy($Dummy, $Index)
+					Return 0
+					
+            EndSwitch
+    EndSwitch
+    Return $GUI_RUNDEFMSG
+EndFunc
+
+
+Func ListProfiles()
     Local $search, $file, $profiles[16]
 	$profiles[0] = 0
 	$search = FileFindFirstFile($PrDir & "\*.ini")
@@ -691,138 +723,311 @@ Func ListProfiles()		; OK
 EndFunc
 
 
-Func Customize($profiles)			; OK
-	Local $cust, $sel, $bt1, $bt2, $bt3, $bt4, $new, $edit, $del, $tem, $tem2, $hListBox, $decision
-	$cust = GUICreate("Customize Profiles", 200, 222, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI1)
-	
-	$new = GUICtrlCreateInput("", 10, 10, 80, 20)
-	$bt1 = GUICtrlCreateButton("Create", 50-32, 32, 64, 24)
-	GUICtrlSetTip($bt1, "Create a new profile")
-	$edit = GUICtrlCreateInput("", 10, 10+60, 80, 20)
-	$bt2 = GUICtrlCreateButton("Rename", 50-32, 32+60, 64, 24)
-	GUICtrlSetTip($bt2, "Rename selected profile")
-	$del = GUICtrlCreateInput("", 10, 10+120, 80, 20)
-	$bt3 = GUICtrlCreateButton("Remove", 50-32, 32+120, 64, 24)
-	GUICtrlSetTip($bt3, "Remove selected profile")
-	$hListBox = GUICtrlCreateList("", 100, 10, 90, 180, BitOr($LBS_DISABLENOSCROLL, $LBS_STANDARD))
-	$bt4 = GUICtrlCreateButton("Close", 100-35, 190, 70, 24)
-	GUICtrlSetState($edit, $GUI_DISABLE)
-	GUICtrlSetState($del, $GUI_DISABLE)
-	
-	_GUICtrlListBox_BeginUpdate($hListBox)
-	For $i = 1 To $profiles[0]
-		_GUICtrlListBox_AddString($hListBox, $profiles[$i])
-	Next
-    _GUICtrlListBox_UpdateHScroll($hListBox)
-    _GUICtrlListBox_EndUpdate($hListBox)
-	
+Func ImProf($cust, $nProf)
+    Local $tp, $none = "0"
+	WinSetOnTop($cust, "", 0)
+	$tp = FileOpenDialog('Select target image for "' & $nProf & '" profile', $ImDir & "\", "Image (*.gif)", 1)
+	If Not @error Then
+		If StringInStr($tp, $ImDir) Then
+			$tp = StringTrimLeft($tp, StringLen($ImDir) + 1)
+			IniWrite($PrDir & "\" & $nProf & ".ini", "Target", "Image", $tp)
+			$none = $tp
+		Else
+			MsgBox(0x40000, "Image not correct", "The target image must be placed in this directory:" & @LF & $ImDir)
+		EndIf
+	EndIf
+	If $top = "True" Then WinSetOnTop($cust, "", 1)
+	Return $none
+EndFunc
+
+
+Func ImSizeProf($cust, $nProf, $tp)
+    Local $create, $sel, $ok, $cancel, $sX, $sY, $temX, $temY, $size = "0"
+	WinSetOnTop($cust, "", 0)
+	$create = GUICreate("Target Size", 200, 69, -1, -1, -1, $WS_EX_TOOLWINDOW, $cust)
+	$tp = StringSplit($tp, "x")
+	GUICtrlCreateLabel("Width:", 10, 12, 34, 20)
+	$sX = GUICtrlCreateInput($tp[1], 48, 10, 40, 20)
+	GUICtrlCreateLabel("Height:", 106, 12, 34, 20)
+	$sY = GUICtrlCreateInput($tp[2], 146, 10, 40, 20)
+	$ok = GUICtrlCreateButton("OK", 100-60-12, 39, 60, 22)
+	$cancel = GUICtrlCreateButton("Cancel", 100+12, 39, 60, 22)
 	GUISetState()
+	If $top = "True" Then WinSetOnTop($create, "", 1)
 	While 1
 		$sel = GUIGetMsg()
 		Switch $sel
-			Case $hListBox
-				$tem = GUICtrlRead($hListBox)
-				If Not($tem = "") Then
-					GUICtrlSetState($edit, $GUI_ENABLE)
-					GUICtrlSetData($edit, $tem)
-					GUICtrlSetData($del, $tem)
+			Case $ok
+				$temX = GUICtrlRead($sX)
+				$temY = GUICtrlRead($sY)
+				If StringIsDigit($temX) And StringIsDigit($temY) And $temX > 10 And $temY > 10 Then
+					$tp = $PrDir & "\" & $nProf & ".ini"
+					IniWrite($tp, "Target", "SizeX", $temX)
+					IniWrite($tp, "Target", "SizeY", $temY)
+					$size = $temX & "x" & $temY
+					ExitLoop
+				Else
+					MsgBox(0x40000, "Size Not Correct", "You have to insert correct sizes for target image." & @LF & "(both width and height must be more than 10 pixels)")
 				EndIf
+	
+			Case $cancel, $GUI_EVENT_CLOSE
+				ExitLoop
+			
+		EndSwitch
+	WEnd
+	GUIDelete($create)
+	If $top = "True" Then WinSetOnTop($cust, "", 1)
+	Return $size
+EndFunc
+
+
+Func Customize($profiles)
+	Local $cust, $sel, $bt1, $bt2, $bt3, $bt4, $bt5, $close, $ListView, $item, $cMenu, $hMenu, $tp, $profSel, $nProf, $decision
+	$cust = GUICreate("Customize Profiles", 296, 202, -1, -1, -1, $WS_EX_TOOLWINDOW, $hGUI)
+	
+	$Dummy = GUICtrlCreateDummy()
+	$cMenu = GUICtrlCreateContextMenu($Dummy)
+	$bt2 = GUICtrlCreateMenuItem("Rename", $cMenu)
+	$bt3 = GUICtrlCreateMenuItem("Set image", $cMenu)
+	$bt4 = GUICtrlCreateMenuItem("Set size", $cMenu)
+	GUICtrlCreateMenuItem("", $cMenu)
+	$bt5 = GUICtrlCreateMenuItem("Remove", $cMenu)
+	
+	$ListView = GUICtrlCreateListView("Profile|Image|Size", 8, 8, 280, 155, BitOr($LVS_NOSORTHEADER, $LVS_EDITLABELS, $LVS_REPORT, $LVS_SINGLESEL))
+    $hListView = GUICtrlGetHandle($ListView)
+	_GUICtrlListView_SetExtendedListViewStyle($hListView, BitOr($LVS_EX_DOUBLEBUFFER, $LVS_EX_FULLROWSELECT, $LVS_EX_GRIDLINES, $LVS_EX_INFOTIP))
+	_GUICtrlListView_SetColumnWidth($hListView, 0, 100)
+	_GUICtrlListView_SetColumnWidth($hListView, 1, 110)
+	_GUICtrlListView_SetColumnWidth($hListView, 2, 60)
+	
+	$bt1 = GUICtrlCreateButton("New", 148-70-25, 170, 70, 24)
+	$close = GUICtrlCreateButton("Close", 148+25, 170, 70, 24)
+	
+	For $i = 1 To $profiles[0]
+		$item = _GUICtrlListView_AddItem($hListView, $profiles[$i])
+		$tp = IniRead($PrDir & "\" & $profiles[$i] & ".ini", "Target", "Image", "")
+		If $tp = "" Then $tp = $ImDef
+		_GUICtrlListView_AddSubItem($hListView, $item, $tp, 1)
+		$tp = IniRead($PrDir & "\" & $profiles[$i] & ".ini", "Target", "SizeX", "")
+		If $tp = "" Then $tp = "64"
+		$temp = $tp
+		$tp = IniRead($PrDir & "\" & $profiles[$i] & ".ini", "Target", "SizeY", "")
+		If $tp = "" Then $tp = "64"
+		_GUICtrlListView_AddSubItem($hListView, $item, $temp & "x" & $tp, 2)
+	Next
+	
+	GUIRegisterMsg($WM_NOTIFY, "WM_NOTIFY")
+	GUISetState()
+	If $top = "True" Then WinSetOnTop($cust, "", 1)
+	$hMenu = GUICtrlGetHandle($cMenu)
+	
+	While 1
+		$sel = GUIGetMsg()
+		Switch $sel
+			Case $Dummy
+				$profSel = GUICtrlRead($Dummy)
+				If $profSel >= 0 Then
+					GUICtrlSetState($bt2, $GUI_ENABLE)
+					GUICtrlSetState($bt3, $GUI_ENABLE)
+					GUICtrlSetState($bt4, $GUI_ENABLE)
+					GUICtrlSetState($bt5, $GUI_ENABLE)
+					$temp = _GUICtrlListView_GetItemText($hListView, $profSel, 0)
+				Else
+					GUICtrlSetState($bt2, $GUI_DISABLE)
+					GUICtrlSetState($bt3, $GUI_DISABLE)
+					GUICtrlSetState($bt4, $GUI_DISABLE)
+					GUICtrlSetState($bt5, $GUI_DISABLE)
+				EndIf
+				_GUICtrlMenu_TrackPopupMenu($hMenu, $cust)
 				
 			Case $bt1
-				$tem = GUICtrlRead($new)
-				If Not($tem = "") Then
-					If FileExists($PrDir & "\" & $tem & ".ini") Then
-						MsgBox(0x40000, "Name Not Available", "This profile name already exists.")
-					Else
-						_GUICtrlListBox_AddString($hListBox, $tem)
-						IniWriteSection($PrDir & "\" & $tem & ".ini", "Patterns", "")
-						GUICtrlSetData($new, "")
-					EndIf
-				EndIf
+				$profSel = _GUICtrlListView_AddItem($hListView, "")
+				_GUICtrlListView_EditLabel($hListView, $profSel)
 				
 			Case $bt2
-				$tem = GUICtrlRead($edit)
-				If Not($tem = "") Then
-					If FileExists($PrDir & "\" & $tem & ".ini") Then
-						MsgBox(0x40000, "Name Not Available", "This profile name already exists.")
-					Else
-						$decision = MsgBox(0x40004, "Rename Selected Profile", 'Are you sure to rename this profile?')
-						If $decision = 6 Then
-							$tem2 = GUICtrlRead($hListBox)
-							_GUICtrlListBox_ReplaceString($hListBox, _GUICtrlListBox_FindString($hListBox, $tem2), $tem)
-							FileMove($PrDir & "\" & $tem2 & ".ini", $PrDir & "\" & $tem & ".ini", 8)
-							If $tem2 = IniRead($sIni, "General", "Profile", "Default") Then
-								IniWrite($sIni, "General", "Profile", $tem)
-								$sIniPr = $PrDir & "\" & $tem & ".ini"
-							EndIf
-							GUICtrlSetData($edit, "")
-							GUICtrlSetData($del, "")
-						EndIf
-					EndIf
-				EndIf
+				_GUICtrlListView_EditLabel($hListView, $profSel)
 				
 			Case $bt3
-				$decision = MsgBox(0x40004, "Remove Selected Profile", 'Are you sure to remove this profile?')
+				$tp = ImProf($cust, $temp)
+				If $tp <> "0" Then _GUICtrlListView_SetItemText($hListView, $profSel, $tp, 1)
+				
+			Case $bt4
+				$tp = ImSizeProf($cust, $temp, _GUICtrlListView_GetItemText($hListView, $profSel, 2))
+				If $tp <> "0" Then _GUICtrlListView_SetItemText($hListView, $profSel, $tp, 2)
+				
+			Case $bt5
+				$decision = MsgBox(0x40004, "Remove Selected Profile", 'Are you sure to remove selected profile?')
 				If $decision = 6 Then
-					$tem = GUICtrlRead($hListBox)
-					_GUICtrlListBox_DeleteString($hListBox, _GUICtrlListBox_FindString($hListBox, $tem))
-					FileDelete($PrDir & "\" & $tem & ".ini")
-					If $tem = IniRead($sIni, "General", "Profile", "Default") Then
-						IniWrite($sIni, "General", "Profile", "Default")
-						$sIniPr = $PrDir & "\Default.ini"
-						If Not FileExists($PrDir) Then DirCreate($PrDir)
-						If Not FileExists($sIniPr) Then IniWriteSection($sIniPr, "Patterns", "")
+					FileDelete($PrDir & "\" & $temp & ".ini")
+					_GUICtrlListView_DeleteItem($hListView, $profSel)
+					$tp = $profiles[$profSel + 1]
+					$profiles[0] = $profiles[0] - 1
+					For $i = 1 To $profiles[0]
+						If $i > $profSel Then $profiles[$i] = $profiles[$i + 1]
+					Next
+					If $tp = IniRead($sIni, "General", "Profile", "Default") Then
+						$tp = _GUICtrlListView_GetItemText($hListView, 0, 0)
+						If $tp = "" Then $tp = "Default"
+						IniWrite($sIni, "General", "Profile", $tp)
+						$sIniPr = $PrDir & "\" & $tp & ".ini"
 					EndIf
-					GUICtrlSetData($edit, "")
-					GUICtrlSetData($del, "")
 				EndIf
 				
-			Case $bt4, $GUI_EVENT_CLOSE
+			Case $close, $GUI_EVENT_CLOSE
 				ExitLoop
 			
 			EndSwitch
+			If $specialClick = 1 Then
+				$specialClick = 0
+				$nProf = _GUICtrlListView_GetItemText($hListView, $profSel, 0)
+				For $i = 1 To $profiles[0]
+					; check if the profile name already exists
+					$tp = _GUICtrlListView_GetItemText($hListView, $i - 1, 0)
+					If $nProf = $tp And $profSel <> $i - 1 Then
+						MsgBox(0x40000, "Name Not Available", "This profile name already exists.")
+						_GUICtrlListView_SetItemText($hListView, $profSel, $temp, 0)
+						$nProf = ""
+					EndIf
+				Next
+				If $profSel = $profiles[0] Then
+					; new profile creation
+					If $nProf = "" Then
+						_GUICtrlListView_DeleteItem($hListView, $profSel)
+					Else
+						$profiles[0] = $profSel + 1
+						$profiles[$profSel + 1] = $nProf
+						$tp = $PrDir & "\" & $nProf & ".ini"
+						IniWriteSection($tp, "Target", "Image=" & $ImDef & @LF & "SizeX=64" & @LF & "SizeY=64")
+						IniWriteSection($tp, "Patterns", "")
+						$tp = ImProf($cust, $nProf)
+						If $tp = "0" Then
+							_GUICtrlListView_AddSubItem($hListView, $profSel, $ImDef, 1)
+							$tp = "64x64"
+						Else
+							_GUICtrlListView_AddSubItem($hListView, $profSel, $tp, 1)
+							$tp = ImSizeProf($cust, $nProf, "64x64")
+							If $tp = "0" Then $tp = "64x64"
+						EndIf
+						_GUICtrlListView_AddSubItem($hListView, $profSel, $tp, 2)
+					EndIf
+				ElseIf $nProf <> "" Then
+					; profile renomination
+					$profiles[$profSel + 1] = $nProf
+					FileMove($PrDir & "\" & $temp & ".ini", $PrDir & "\" & $nProf & ".ini")
+					If $temp = IniRead($sIni, "General", "Profile", "Default") Then
+						IniWrite($sIni, "General", "Profile", $nProf)
+						$sIniPr = $PrDir & "\" & $nProf & ".ini"
+					EndIf
+				EndIf
+			EndIf
 	WEnd
+	If _GUICtrlListView_GetItemCount($hListView) = 0 Then
+		; create default profile if no other profiles exist
+		IniWrite($sIni, "General", "Profile", "Default")
+		$sIniPr = $PrDir & "\Default.ini"
+		If Not FileExists($PrDir) Then DirCreate($PrDir)
+		If Not FileExists($sIniPr) Then
+			IniWriteSection($sIniPr, "Target", "Image=" & $ImDef & @LF & "SizeX=64" & @LF & "SizeY=64")
+			IniWriteSection($sIniPr, "Patterns", "")
+		EndIf
+	EndIf
 	GUIDelete($cust)
-	If $top = "True" Then WinSetOnTop($hGUI1, "", 1)
+	If $top = "True" Then WinSetOnTop($hGUI, "", 1)
 	Return ListProfiles()
 EndFunc
 
 
+Func Refresh($sIniPr, $profiles)
+	Local $prof[16], $xD = IniRead($sIniPr, "Target", "SizeX", "64"), $yD = IniRead($sIniPr, "Target", "SizeY", "64")
+	
+	GUIDelete($hGUI2)
+	GUIDelete($hGUI)
+	$hGUI = GUICreate($sName, $xD, $yD, IniRead($sIni, "General", "PosX", "-1"), IniRead($sIni, "General", "PosY", "-1"), $WS_POPUP, BitOR($WS_EX_ACCEPTFILES, $WS_EX_LAYERED, $WS_EX_TOOLWINDOW, $WS_EX_TOPMOST))
+	$sIcon = GUICtrlCreatePic($sIm, 0, 0, $xD, $yD, $SS_NOTIFY, $GUI_WS_EX_PARENTDRAG)
+	GUICtrlSetState($sIcon, $GUI_DROPACCEPTED)
+	GUICtrlSetTip($sIcon, $ii)
+	
+	; Context menu
+	$menu = GUICtrlCreateContextMenu($sIcon)
+	$func1 = GUICtrlCreateMenuItem("Manage", $menu, 0)
+	GUICtrlCreateMenuItem("", $menu, 1)
+	$func2 = GUICtrlCreateMenu("Profiles", $menu, 2)
+	$func3 = GUICtrlCreateMenuItem("Options", $menu, 3)
+	$func4 = GUICtrlCreateMenuItem("Hide", $menu, 4)
+	$func5 = GUICtrlCreateMenuItem("About...", $menu, 5)
+	GUICtrlCreateMenuItem("", $menu, 6)
+	$func6 = GUICtrlCreateMenuItem("Exit", $menu, 7)
+	$custom = GUICtrlCreateMenuItem("Customize", $func2)
+	GUICtrlCreateMenuItem("", $func2)
+	For $i = 1 To $profiles[0]
+		$prof[$i] = GUICtrlCreateMenuItem($profiles[$i], $func2, $i+1, 1)
+		If $profiles[$i] = IniRead($sIni, "General", "Profile", "Default") Then GUICtrlSetState($prof[$i], $GUI_CHECKED)
+    Next
+	GUISetState(@SW_SHOW, $hGUI)
+	
+	Local $pos = WinGetPos($hGUI)
+	$hGUI2 = GUICreate("Positioning", 16, 16, $pos[0]+($xD/9), $pos[1]+($yD/9), $WS_POPUP, BitOR($WS_EX_LAYERED, $WS_EX_TOPMOST), $hGUI)
+	$sIcon2 = GUICtrlCreatePic($sPic, 0, 0, 16, 16, $SS_NOTIFY, $GUI_WS_EX_PARENTDRAG)
+	GUIRegisterMsg($WM_ENTERSIZEMOVE, "SetRelPos")
+	GUIRegisterMsg($WM_MOVE, "FollowMe")
+	GUISetState(@SW_HIDE, $hGUI2)
+	
+	$top = IniRead($sIni, "General", "OnTop", "True")
+	If $top = "True" Then
+		WinSetOnTop($hGUI, "", 1)
+	Else
+		WinSetOnTop($hGUI, "", 0)
+	EndIf
+	Return $prof
+EndFunc
+
+
 Func _Main()
-	Local $icon, $menu, $nMsg, $x, $y, $dim, $gif, $pos, $j, $tem
-	Local $func1, $func3, $func2, $func4, $func5, $func6, $custom, $prof[16], $profiles[16]
-	$x = IniRead($sIni, "General", "PosX", "-1")
-	$y = IniRead($sIni, "General", "PosY", "-1")
-	$hGUI1 = GUICreate($sName, $xD, $yD, $x, $y, $WS_POPUP, BitOR($WS_EX_ACCEPTFILES, $WS_EX_LAYERED, $WS_EX_TOOLWINDOW, $WS_EX_TOPMOST))
-	$icon = GUICtrlCreatePic($sIm, 0, 0, $xD, $yD, $SS_NOTIFY, $GUI_WS_EX_PARENTDRAG)
-	GUICtrlSetState($icon, $GUI_DROPACCEPTED)
-	GUICtrlSetTip($icon, $ii)
+	Local $nMsg, $j, $list, $prof[16], $profiles[16]
+	If Not FileExists($ImDir) Then DirCreate($ImDir)
+	If Not FileExists("img\default.gif") Then FileInstall("img\default.gif", "img\default.gif")
+	If Not FileExists("img\ps.gif") Then FileInstall("img\ps.gif", "img\ps.gif")
 	
 	; Creation of INI files
 	If Not FileExists($sIni) Then
-		$sData = "Profile=Default" & @LF & "PosX=-1" & @LF & "PosY=-1" & @LF & "LockPos=False" & @LF & "OnTop=True" & @LF & "SizeX=64" & @LF & "SizeY=64" & @LF & "NoAsk=False" & @LF & "Duplicates=Overwrite" & @LF & "Mode=Move" & @LF & "AskMode=False" & @LF & "AskForFolders=False"
+		$sData = "Profile=Default" & @LF & "PosX=-1" & @LF & "PosY=-1" & @LF & "OnTop=True" & @LF & "LockPos=False" & @LF & "DirForFolders=False" & @LF & "MultipleInst=False" & @LF & "AutoForDup=False" & @LF & "Duplicates=Overwrite" & @LF & "Mode=Move" & @LF & "AskMode=False"
 		IniWriteSection($sIni, "General", $sData)
 	EndIf
-	$sData = IniRead($sIni, "General", "Profile", "Default")
+	$sData = IniRead($sIni, "General", "Profile", "")
 	If $sData = "" Then
 		$sData = "Default"
 		IniWrite($sIni, "General", "Profile", $sData)
 	EndIf
 	$sIniPr = $PrDir & "\" & $sData & ".ini"
 	If Not FileExists($PrDir) Then DirCreate($PrDir)
-	$tem = IniReadSection($sIni, "Patterns")
+	$temp = IniReadSection($sIni, "Patterns")
 	If @error Then
-		If Not FileExists($sIniPr) Then IniWriteSection($sIniPr, "Patterns", "")
+		If Not FileExists($sIniPr) Then
+			IniWriteSection($sIniPr, "Target", "Image=" & $ImDef & @LF & "SizeX=64" & @LF & "SizeY=64")
+			IniWriteSection($sIniPr, "Patterns", "")
+		EndIf
 	Else
-		IniWriteSection($sIniPr, "Patterns", $tem)
+		; restore patterns from an old DropIt version
+		IniWriteSection($sIniPr, "Patterns", $temp)
 		IniDelete($sIni, "Patterns")
+	EndIf
+	$sIm = IniRead($sIniPr, "Target", "Image", "")
+	If $sIm = "" Or Not FileExists($ImDir & "\" & $sIm) Then $sIm = $ImDef
+	$sIm = $ImDir & "\" & $sIm
+	If FileExists($sIm) Then
+		If IniRead($sIni, "General", "MultipleInst", "False") = "False" Then
+			$list = ProcessList(@ScriptName)
+			If $list[0][0] > 1 Then Exit
+		EndIf
+	Else
+		MsgBox(0, "Image not found", 'Software image not found. Verify to have the selected target image in "img" folder.')
+		Exit
 	EndIf
 	$profiles = ListProfiles()
 	
 	; Background mode
 	If $CmdLine[0] > 0 Then
 		If FileExists($CmdLine[1]) Then
-			GUISetState(@SW_HIDE, $hGUI1)
 			ReDim $gaDropFiles[$CmdLine[0]]
 			For $j = 1 To $CmdLine[0]
 				$gaDropFiles[$j - 1] = $CmdLine[$j]
@@ -835,47 +1040,14 @@ Func _Main()
 				IniWrite($sIni, "General", "Profile", $sData)
 				$sIniPr = $PrDir & "\" & $sData & ".ini"
 			Else
-				MsgBox(0, "Invalid Command", "You are running " & $sName & " with an invalid command." & @LF & "It will be normally started.")
+				MsgBox(0, "Invalid Command", "You have run " & $sName & " with an invalid command." & @LF & "It will be normally started.")
 			EndIf
 		EndIf
 	EndIf
 	
-	; Context menu
-	$menu = GUICtrlCreateContextMenu($icon)
-	$func1 = GUICtrlCreateMenuItem("Manage", $menu, 0)
-	GUICtrlCreateMenuItem("", $menu, 1)
-	$func2 = GUICtrlCreateMenu("Profiles", $menu, 2)
-	$func3 = GUICtrlCreateMenuItem("Options", $menu, 3)
-	$func4 = GUICtrlCreateMenuItem("Hide", $menu, 4)
-	$func5 = GUICtrlCreateMenuItem("About...", $menu, 5)
-	GUICtrlCreateMenuItem("", $menu, 6)
-	$func6 = GUICtrlCreateMenuItem("Exit", $menu, 7)
-	
-	; Context submenu
-	$custom = GUICtrlCreateMenuItem("Customize", $func2)
-	GUICtrlCreateMenuItem("", $func2)
-	For $i = 1 To $profiles[0]
-		$prof[$i] = GUICtrlCreateMenuItem($profiles[$i], $func2, $i+1, 1)
-		If $profiles[$i] = IniRead($sIni, "General", "Profile", "Default") Then GUICtrlSetState($prof[$i], $GUI_CHECKED)
-    Next
-	
 	GUIRegisterMsg($WM_DROPFILES, "WM_DROPFILES_UNICODE_FUNC")
 	GUIRegisterMsg($WM_SYSCOMMAND, "WM_SYSCOMMAND")
-	GUISetState(@SW_SHOW, $hGUI1)
-	
-	$pos = WinGetPos($hGUI1)
-	$hGUI2 = GUICreate("Positioning", 16, 16, $pos[0]+7, $pos[1]+7, $WS_POPUP, BitOR($WS_EX_LAYERED, $WS_EX_TOPMOST), $hGUI1)
-	$gif = GUICtrlCreatePic($sPic, 0, 0, 16, 16, $SS_NOTIFY, $GUI_WS_EX_PARENTDRAG)
-	GUIRegisterMsg($WM_ENTERSIZEMOVE, "SetRelPos")
-	GUIRegisterMsg($WM_MOVE, "FollowMe")
-	GUISetState(@SW_HIDE, $hGUI2)
-	
-	$top = IniRead($sIni, "General", "OnTop", "True")
-	If $top = "True" Then
-		WinSetOnTop($hGUI1, "", 1)
-	Else
-		WinSetOnTop($hGUI1, "", 0)
-	EndIf
+	$prof = Refresh($sIniPr, $profiles)
 	
 	While 1
 		$nMsg = GUIGetMsg()
@@ -886,23 +1058,19 @@ Func _Main()
 				GUISetState(@SW_HIDE, $hGUI2)
 				
 			Case $nMsg = $func1
-				GUICtrlSetState($icon, $GUI_DISABLE)
+				GUICtrlSetState($sIcon, $GUI_DISABLE)
 				Manage()
-				GUICtrlSetState($icon, $GUI_ENABLE)
+				GUICtrlSetState($sIcon, $GUI_ENABLE)
 			
 			Case $nMsg = $custom
-				GUICtrlSetState($icon, $GUI_DISABLE)
+				GUICtrlSetState($sIcon, $GUI_DISABLE)
 				$profiles = Customize($profiles)
-				GUICtrlSetState($icon, $GUI_ENABLE)
-				GUICtrlDelete($func2)
-				; Recreate submenu
-				$func2 = GUICtrlCreateMenu("Profiles", $menu, 2)
-				$custom = GUICtrlCreateMenuItem("Customize", $func2)
-				GUICtrlCreateMenuItem("", $func2)
-				For $i = 1 To $profiles[0]
-					$prof[$i] = GUICtrlCreateMenuItem($profiles[$i], $func2, $i+1, 1)
-					If $profiles[$i] = IniRead($sIni, "General", "Profile", "Default") Then GUICtrlSetState($prof[$i], $GUI_CHECKED)
-				Next
+				$sIniPr = $PrDir & "\" & IniRead($sIni, "General", "Profile", "Default") & ".ini"
+				_Pos()
+				$sIm = IniRead($sIniPr, "Target", "Image", "")
+				If $sIm = "" Then $sIm = $ImDef
+				$sIm = $ImDir & "\" & $sIm
+				$prof = Refresh($sIniPr, $profiles)
 				
 			Case $nMsg >= $prof[1] And $nMsg <= $prof[$profiles[0]]
 				For $i = 1 To $profiles[0]
@@ -911,11 +1079,16 @@ Func _Main()
 						$sIniPr = $PrDir & "\" & $profiles[$i] & ".ini"
 					EndIf
 				Next
+				_Pos()
+				$sIm = IniRead($sIniPr, "Target", "Image", "")
+				If $sIm = "" Then $sIm = $ImDef
+				$sIm = $ImDir & "\" & $sIm
+				$prof = Refresh($sIniPr, $profiles)
 				
 			Case $nMsg = $func3
-				GUICtrlSetState($icon, $GUI_DISABLE)
+				GUICtrlSetState($sIcon, $GUI_DISABLE)
 				Options()
-				GUICtrlSetState($icon, $GUI_ENABLE)
+				GUICtrlSetState($sIcon, $GUI_ENABLE)
 				
 			Case $nMsg = $func4
 				MyTrayMenu()
