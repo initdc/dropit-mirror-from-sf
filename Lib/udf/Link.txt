@@ -1,3 +1,4 @@
+Copy.au3: http://www.autoitscript.com/forum/topic/121833-copy-udf/
 ExtMsgBox.au3: http://www.autoitscript.com/forum/topic/109096-extended-message-box/
 GIFAnimation.au3: http://www.autoitscript.com/forum/topic/96132-gif-animation/page__view__findpost__p__691115
 Resources.au3: http://www.autoitscript.com/forum/topic/51103-resources-udf/page__view__findpost__p__386541
