@@ -295,6 +295,8 @@ Func _IconImage_FromIcoData($IconData, $Width, $Height = Default, $Index = Defau
 	If DllStructGetData($IconDir, "Identify") <> 0x10000 Then Return SetError(1, 0, Binary(""))
 	Local $Count = DllStructGetData($IconDir, "Count")
 
+	Local $IconDirEntry
+
 	If Not IsKeyword($Index) Then
 		; $Index = 0 ~ $Count - 1, negative value means count from last icon
 		; if $Index is invaild value (for exampel, very big value), return $Count in @Extended
@@ -303,7 +305,7 @@ Func _IconImage_FromIcoData($IconData, $Width, $Height = Default, $Index = Defau
 		If $Index < 0 Or $Index >= $Count Then Return SetError(1, $Count, Binary(""))
 
 		$EntryPtr += 16 * $Index
-		Local $IconDirEntry = DllStructCreate("dword[2];dword size;dword offset", $EntryPtr)
+		$IconDirEntry = DllStructCreate("dword[2];dword size;dword offset", $EntryPtr)
 		Local $Size = DllStructGetData($IconDirEntry, "size")
 		Local $Offset = DllStructGetData($IconDirEntry, "offset")
 
@@ -315,10 +317,11 @@ Func _IconImage_FromIcoData($IconData, $Width, $Height = Default, $Index = Defau
 		Local $IconGroup = _BinaryFromDLLStruct($IconDir)
 		Local $Size[$Count]
 		Local $Offset[$Count]
+		Local $IconDirEntryHead
 
 		For $i = 0 To $Count - 1
-			Local $IconDirEntry = DllStructCreate("dword[2];dword size;dword offset", $EntryPtr)
-			Local $IconDirEntryHead = DllStructCreate("byte[12]", $EntryPtr)
+			$IconDirEntry = DllStructCreate("dword[2];dword size;dword offset", $EntryPtr)
+			$IconDirEntryHead = DllStructCreate("byte[12]", $EntryPtr)
 
 			; convert offset (dword) to index (word)
 			$IconGroup &= DllStructGetData($IconDirEntryHead, 1) & _BinaryFromInt16($i + 1)
@@ -386,7 +389,8 @@ EndFunc
 
 ; Modified from Yashied's code
 Func _IconImage_FromGdipBitmap($Gdibmp)
-	Local $BitmapData, $ColorBmp, $MaskBmp, $Error = 1, $IconImage = Binary("")
+	Local $Width, $Height, $Header, $Scan0Ptr, $BitmapData, $ColorBmp, $MaskBmp, $Bytes, $DIBSection, $Ptr, $Size
+	Local $MaskBitsPtr, $MaskSizeImage, $ColorBitsPtr, $ColorSizeImage, $Error = 1, $IconImage = Binary("")
 	Do
 		If Not $Gdibmp Then ExitLoop
 
@@ -394,38 +398,38 @@ Func _IconImage_FromGdipBitmap($Gdibmp)
 		;local $ColorBmp = _GDIPlus_BitmapCreateHBITMAPFromBitmap($Gdibmp, 0xFFFFFFFF)
 		;If Not $ColorBmp Then ExitLoop
 
-		Local $Width = _GDIPlus_ImageGetWidth($Gdibmp)
-		Local $Height = _GDIPlus_ImageGetHeight($Gdibmp)
+		$Width = _GDIPlus_ImageGetWidth($Gdibmp)
+		$Height = _GDIPlus_ImageGetHeight($Gdibmp)
 
 		$BitmapData = _GDIPlus_BitmapLockBits($Gdibmp, 0, 0, $Width, $Height, $GDIP_ILMREAD, $GDIP_PXF32ARGB)
 		If @Error Then ExitLoop
 
-		Local $Scan0Ptr = DllStructGetData($BitmapData, "Scan0")
-		Local $ColorBmp = _WinAPI_CreateDIB($Width, $Height)
+		$Scan0Ptr = DllStructGetData($BitmapData, "Scan0")
+		$ColorBmp = _WinAPI_CreateDIB($Width, $Height)
 		If @Error Or Not $Scan0Ptr Then ExitLoop
 
-        Local $Bytes = _WinAPI_SetBitmapBits($ColorBmp, $Width * $Height * 4, $Scan0Ptr)
+        $Bytes = _WinAPI_SetBitmapBits($ColorBmp, $Width * $Height * 4, $Scan0Ptr)
 		If @Error Or $Bytes = 0 Then ExitLoop
 
 		$MaskBmp = _IconImage_CreateMaskBmp($ColorBmp)
 		If @Error Or $MaskBmp = 0 Then ExitLoop
 
-		Local $DIBSection = DllStructCreate($tagDIBSECTION)
-		Local $Ptr = DllStructGetPtr($DIBSection)
-		Local $Size = DllStructGetSize($DIBSection)
+		$DIBSection = DllStructCreate($tagDIBSECTION)
+		$Ptr = DllStructGetPtr($DIBSection)
+		$Size = DllStructGetSize($DIBSection)
 
 		If Not _WinAPI_GetObject($MaskBmp, $Size, $Ptr) Then ExitLoop
-		Local $MaskBitsPtr = DllStructGetData($DIBSection, "bmBits")
-		Local $MaskSizeImage = DllStructGetData($DIBSection, "biSizeImage")
+		$MaskBitsPtr = DllStructGetData($DIBSection, "bmBits")
+		$MaskSizeImage = DllStructGetData($DIBSection, "biSizeImage")
 
 		If Not _WinAPI_GetObject($ColorBmp, $Size, $Ptr) Then ExitLoop
-		Local $ColorBitsPtr = DllStructGetData($DIBSection, "bmBits")
-		Local $ColorSizeImage = DllStructGetData($DIBSection, "biSizeImage")
+		$ColorBitsPtr = DllStructGetData($DIBSection, "bmBits")
+		$ColorSizeImage = DllStructGetData($DIBSection, "biSizeImage")
 
-		Local $Width = DllStructGetData($DIBSection, "bmWidth")
-		Local $Height = DllStructGetData($DIBSection, "bmHeight")
+		$Width = DllStructGetData($DIBSection, "bmWidth")
+		$Height = DllStructGetData($DIBSection, "bmHeight")
 
-		Local $Header = DllStructCreate(StringReplace($tagBITMAPINFO, "dword RGBQuad", ""))
+		$Header = DllStructCreate(StringReplace($tagBITMAPINFO, "dword RGBQuad", ""))
 		DllStructSetData($Header, "biSize", 40)
 		DllStructSetData($Header, "biPlanes", 1)
 		DllStructSetData($Header, "biBitCount", 32)
@@ -813,13 +817,13 @@ EndFunc
 ; Deprecated, ImageList_SetOverlayImage can only handle images in the same size
 ; Use _IconImage_Merge instead
 Func _IconImage_Overlay($IconImage1, $IconImage2)
-	Local $ImageList, $hIcon1, $hIcon2, $hIcon3, $Error = 1, $IconImage = Binary("")
+	Local $hIcon1, $hIcon2, $hIcon3, $Error = 1, $IconImage = Binary("")
 	Local $Size = _IconImage_GetSize($IconImage1)
 	Do
-		Local $hIcon1 = _IconImage_ToHandle($IconImage1, $Size[0], $Size[1])
+		$hIcon1 = _IconImage_ToHandle($IconImage1, $Size[0], $Size[1])
 		If @Error Then ExitLoop
 
-		Local $hIcon2 = _IconImage_ToHandle($IconImage2, $Size[0], $Size[1])
+		$hIcon2 = _IconImage_ToHandle($IconImage2, $Size[0], $Size[1])
 		If @Error Then ExitLoop
 
 		$hIcon3 = _WinAPI_AddIconOverlay($hIcon1, $hIcon2)

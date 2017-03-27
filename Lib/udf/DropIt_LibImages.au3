@@ -15,7 +15,7 @@
 #include "MPDF.au3"
 #include "ResourcesEx.au3"
 
-Func __ImageConvert($sImagePath, $sSaveDirectory, $sFileExtension = "PNG")
+Func __ImageConvert($sImagePath, $sDestination, $sFileExtension = "PNG")
 	#cs
 		Description: Convert The Image File To Another Valid Format.
 		Returns: New Image [New Image.png]
@@ -24,8 +24,12 @@ Func __ImageConvert($sImagePath, $sSaveDirectory, $sFileExtension = "PNG")
 
 	$sCLSID = _GDIPlus_EncodersGetCLSID($sFileExtension)
 	$sFileExtension = StringLower($sFileExtension)
-	$sSaveDirectory = _WinAPI_PathAddBackslash($sSaveDirectory)
-	$sFilePath = _WinAPI_PathYetAnotherMakeUniqueName($sSaveDirectory & _WinAPI_PathStripPath(_WinAPI_PathRemoveExtension($sImagePath)) & "." & $sFileExtension)
+	If _WinAPI_PathIsDirectory($sDestination) Then
+		$sDestination = _WinAPI_PathAddBackslash($sDestination) & _WinAPI_PathStripPath(_WinAPI_PathRemoveExtension($sImagePath)) & "." & $sFileExtension
+	Else
+		$sDestination = _WinAPI_PathRemoveExtension($sDestination) & "." & $sFileExtension
+	EndIf
+	$sFilePath = _WinAPI_PathYetAnotherMakeUniqueName($sDestination)
 	$hImage = _GDIPlus_ImageLoadFromFile($sImagePath)
 	_GDIPlus_ImageSaveToFileEx($hImage, $sFilePath, $sCLSID)
 	If @error Then

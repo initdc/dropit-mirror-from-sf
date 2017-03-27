@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt: Personal Assistant to Automatically Manage Your Files
-#AutoIt3Wrapper_Res_Fileversion=8.0.0.0
-#AutoIt3Wrapper_Res_ProductVersion=8.0.0.0
+#AutoIt3Wrapper_Res_Fileversion=8.1.0.0
+#AutoIt3Wrapper_Res_ProductVersion=8.1.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Andrea Luparia
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.dropitproject.com
@@ -70,9 +70,7 @@
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Show.png, 10, SHOW
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Skip.png, 10, SKIP
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Open.png, 10, OPEN
-#AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6 -w 7
-#AutoIt3Wrapper_Run_Obfuscator=N
-#Obfuscator_Parameters=/SF /SV /OM /CF=0 /CN=0 /CS=0 /CV=0
+#AutoIt3Wrapper_Run_Au3Stripper=n
 #AutoIt3Wrapper_res_requestedExecutionLevel=asInvoker
 #EndRegion ; **** Directives Created By AutoIt3Wrapper_GUI ****
 
@@ -117,6 +115,7 @@
 #include "DropIt_Upload.au3"
 #include "Lib\udf\7ZipRead.au3"
 #include "Lib\udf\Copy.au3"
+#Include "Lib\udf\DragDropEvent.au3"
 #include "Lib\udf\DropIt_LibBounds.au3"
 #include "Lib\udf\DropIt_LibCSV.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
@@ -146,7 +145,7 @@ Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0,
 Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
 Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
 Global $Global_Clipboard, $Global_Wheel, $Global_ScriptRefresh, $Global_ScriptRestart, $Global_ListViewCreateGallery, $Global_ListViewCreateList ; Misc.
-Global $Global_DroppedFiles[1], $Global_PriorityActions[1], $Global_SendTo_ControlID ; Misc.
+Global $Global_NewDroppedFiles, $Global_DroppedFiles[1], $Global_PriorityActions[1], $Global_SendTo_ControlID ; Misc.
 Global $Global_AbortButton, $Global_PauseButton ; Process GUI.
 Global $Global_ResizeMinWidth, $Global_ResizeMinHeight, $Global_ResizeMaxWidth, $Global_ResizeMaxHeight ; Windows Size For Resizing.
 Global $Global_Slider, $Global_SliderLabel ; _Customize_GUI_Edit.
@@ -946,6 +945,12 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 							MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_4', 'Association Error'), __GetLang('MANAGE_EDIT_MSGBOX_11', 'You cannot use this action for folders.'), 0, __OnTop($mGUI))
 							ContinueLoop
 						EndIf
+					;Case "$K" ; Convert Image.
+					;	$mInput_DestinationRead = GUICtrlRead($mInput_Convert) ;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+					;	If StringInStr($mInput_RulesRead, "**") And $mUseRegEx <> "True" Then
+					;		MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_4', 'Association Error'), __GetLang('MANAGE_EDIT_MSGBOX_11', 'You cannot use this action for folders.'), 0, __OnTop($mGUI))
+					;		ContinueLoop
+					;	EndIf
 					Case "$8" ; List.
 						$mInput_DestinationRead = GUICtrlRead($mInput_List)
 						If __IsValidFileType($mInput_DestinationRead, "html;htm;pdf;xls;csv;txt;xml") = 0 Then
@@ -4446,7 +4451,7 @@ Func _DropEvent($dFiles, $dProfile, $dMonitored = 0)
 			WinMove($G_Global_SortingGUI, "", $dPos[0], $dPos[1], $dPos[2], 320)
 		EndIf
 		_Sorting_Pause($dMainArray, 2)
-	ElseIf __Is("AutoClose") = 0 And ($dMonitored = 0 Or (__Is("ShowMonitored") And $dMonitored)) Then
+	ElseIf __Is("AutoClose") = 0 And __Is("ShowSorting", -1, "True", $dProfile) And ($dMonitored = 0 Or (__Is("ShowMonitored") And $dMonitored)) Then
 		_Sorting_Pause($dMainArray, 2)
 	EndIf
 	_DropStop()
@@ -5233,6 +5238,9 @@ Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
 					Case "$I" ; Split Action.
 						$pMainArray = _Sorting_SplitFile($pMainArray, $A, $pElementsGUI, $pProfile)
 
+					Case "$K" ; Convert Image Action.
+						$pMainArray = _Sorting_ConvertFile($pMainArray, $A, $pElementsGUI, $pProfile)
+
 					Case Else ; Move Or Copy Action.
 						$pMainArray = _Sorting_CopyFile($pMainArray, $A, $pElementsGUI, $pProfile)
 
@@ -5274,7 +5282,7 @@ Func _Destination_Fix($dFilePath, $dDestination, $dAction, $dMainDirs, $dProfile
 	Local $dStringSplit = StringSplit($dDestination, "|")
 
 	; Substitute Abbreviations In Destination Only:
-	If StringInStr($dStringSplit[1], "%") And StringInStr("$C" & "$D" & "$E", $dAction) = 0 Then
+	If StringInStr($dStringSplit[1], "%") And StringInStr("$D" & "$E", $dAction) = 0 Then
 		$dStringSplit[1] = _ReplaceAbbreviation($dStringSplit[1], 1, $dFilePath, $dProfile, $dAction, $dMainDirs)
 		If @error Then
 			Return SetError(1, 0, $dDestination) ; Skip Item If %UserInput% Value Is Not Defined.
@@ -5635,8 +5643,12 @@ Func _Sorting_ChangeFile($sMainArray, $sIndex, $sElementsGUI)
 	__SetProgressStatus($sElementsGUI, 1, $sSource) ; Reset Single Progress Bar And Show Second Line.
 
 	If __IsReadOnly($sSource) Then
-		FileSetAttrib($sSource, '-R')
-		$sReadOnly = 1
+		If __Is("IgnoreAttributes") Then
+			FileSetAttrib($sSource, '-R')
+			$sReadOnly = 1
+		Else
+			Return SetError(2, 0, $sMainArray) ; Failed.
+		EndIf
 	EndIf
 
 	For $A = 0 To 2 ; Modified, Created, Opened.
@@ -5811,7 +5823,13 @@ Func _Sorting_ConvertFile($sMainArray, $sIndex, $sElementsGUI, $sProfile) ; <<<<
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
 		$sMainArray[$sIndex][3] = $sDestination
-		FileSetAttrib($sDestination, '-RH') ; Needed To Overwrite Hidden And Read-Only Files/Folders.
+		If __IsReadOnly($sDestination) Then
+			If __Is("IgnoreAttributes") Then
+				FileSetAttrib($sDestination, '-RH') ; Needed To Overwrite Hidden And Read-Only Files/Folders.
+			Else
+				Return SetError(2, 0, $sMainArray) ; Failed.
+			EndIf
+		EndIf
 	EndIf
 
 	__EnsureDirExists(__GetParentFolder($sDestination))
@@ -5823,19 +5841,19 @@ Func _Sorting_ConvertFile($sMainArray, $sIndex, $sElementsGUI, $sProfile) ; <<<<
 
 	Switch __GetFileExtension($sDestination)
 		Case 'bmp'
-			__ImageConvert($sSource, __GetParentFolder($sDestination), "BMP")
+			__ImageConvert($sSource, $sDestination, "BMP")
 		Case 'gif'
-			__ImageConvert($sSource, __GetParentFolder($sDestination), "GIF")
+			__ImageConvert($sSource, $sDestination, "GIF")
 		Case 'jpg', 'jpeg'
-			__ImageConvert($sSource, __GetParentFolder($sDestination), "JPG")
+			__ImageConvert($sSource, $sDestination, "JPG")
 		Case 'ico'
 			_IconImage_ToIcoFile(_IconImage_FromImageFile($sSource), $sDestination)
 		Case 'pdf'
 			__ImagesToPDF($sSource, $sDestination)
 		Case 'png'
-			__ImageConvert($sSource, __GetParentFolder($sDestination), "PNG")
+			__ImageConvert($sSource, $sDestination, "PNG")
 		Case 'tif', 'tiff'
-			__ImageConvert($sSource, __GetParentFolder($sDestination), "TIF")
+			__ImageConvert($sSource, $sDestination, "TIF")
 		Case Else
 			Return SetError(2, 0, $sMainArray) ; Failed.
 	EndSwitch
@@ -5859,7 +5877,13 @@ Func _Sorting_CopyFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 			Return SetError(1, 0, $sMainArray) ; Skipped.
 		EndIf
 		$sMainArray[$sIndex][3] = $sDestination
-		FileSetAttrib($sDestination, '-RH') ; Needed To Overwrite Hidden And Read-Only Files/Folders.
+		If __IsReadOnly($sDestination) Then
+			If __Is("IgnoreAttributes") Then
+				FileSetAttrib($sDestination, '-RH') ; Needed To Overwrite Hidden And Read-Only Files/Folders.
+			Else
+				Return SetError(2, 0, $sMainArray) ; Failed.
+			EndIf
+		EndIf
 	EndIf
 
 	__EnsureDirExists(__GetParentFolder($sDestination))
@@ -6436,9 +6460,11 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 	If $sFileNames = "" Then
 		Return SetError(1, 0, $sMainArray) ; All Skipped.
 	EndIf
-	$sStringSplit = _Destination_MailMessage($sFileNames, $sStringSplit)
-	If @error Then
-		Return SetError(1, 0, $sMainArray) ; All Skipped.
+	If $sStringSplit[8] = "" Or __Is("AlertMail") Then
+		$sStringSplit = _Destination_MailMessage($sFileNames, $sStringSplit)
+		If @error Then
+			Return SetError(1, 0, $sMainArray) ; All Skipped.
+		EndIf
 	EndIf
 
 	For $A = $sFrom To $sTo + 1
@@ -6622,7 +6648,16 @@ Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 				ContinueLoop ; Skipped.
 			EndIf
 			$sMainArray[$A][3] = $sDestination
-			FileSetAttrib($sDestination, '-RH') ; Needed To Overwrite Hidden And Read-Only Files/Folders.
+			If __IsReadOnly($sDestination) Then
+				If __Is("IgnoreAttributes") Then
+					FileSetAttrib($sDestination, '-RH') ; Needed To Overwrite Hidden And Read-Only Files/Folders.
+				Else
+					__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
+					$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+					$sFailed = 1 ; At Least One Item Failed.
+					ContinueLoop ; Skipped.
+				EndIf
+			EndIf
 		Else
 			$sSource &= $sTempName
 		EndIf
@@ -7021,7 +7056,10 @@ EndFunc   ;==>_Sorting_StartProgressCopy
 
 Func _Sorting_RunDelete($sSource, $sMode = 1)
 	If _WinAPI_PathIsDirectory($sSource) Then
-		FileSetAttrib($sSource, '-R', 1)
+		If __Is("IgnoreAttributes") Then
+			FileSetAttrib($sSource, '-R', 1)
+			Return SetError(2, 0, 0) ; Failed.
+		EndIf
 		Switch $sMode
 			Case 2
 				_SecureDirectoryDelete($sSource)
@@ -7031,7 +7069,10 @@ Func _Sorting_RunDelete($sSource, $sMode = 1)
 				DirRemove($sSource, 1)
 		EndSwitch
 	Else
-		FileSetAttrib($sSource, '-R')
+		If __Is("IgnoreAttributes") Then
+			FileSetAttrib($sSource, '-R')
+			Return SetError(2, 0, 0) ; Failed.
+		EndIf
 		Switch $sMode
 			Case 2
 				_SecureFileDelete($sSource)
@@ -7056,16 +7097,20 @@ Func _Main()
 	Local $mMonitoringTime_Now = TimerInit()
 	Local $mHidingTime_Now = $mMonitoringTime_Now
 
+	DragDropEvent_Startup() ; Enable Drag & Drop.
 	_SetFeaturesWithTimer($mINI) ; Load Global Monitoring Configuration.
 	__InstalledCheck() ; Check To See If DropIt Is Installed.
 	__IsProfile() ; Check If A Default Profile Is Available.
 	_Main_Create() ; Create The Main GUI, ContextMenu & TrayMenu.
 
 	GUIRegisterMsg($WM_CONTEXTMENU, "_WM_CONTEXTMENU")
-	GUIRegisterMsg($WM_DROPFILES, "_WM_DROPFILES")
 	GUIRegisterMsg($WM_MOUSEWHEEL, "_WM_MOUSEWHEEL")
 	GUIRegisterMsg($WM_SYSCOMMAND, "_WM_SYSCOMMAND")
 	GUIRegisterMsg($WM_POWERBROADCAST, "_WM_SLEEPMODE")
+
+	GUIRegisterMsg($WM_DRAGENTER, "_WM_ONDRAGDROP")
+	GUIRegisterMsg($WM_DRAGOVER, "_WM_ONDRAGDROP")
+	GUIRegisterMsg($WM_DROP, "_WM_ONDRAGDROP")
 
 	__Log_Write(@LF & "===== " & __GetLang('DROPIT_STARTED', 'DropIt Started') & " =====")
 
@@ -7089,27 +7134,28 @@ Func _Main()
 			$G_Global_WM_COPY = 0 ; Used To Work With Both Visible And Minimized Interface (Dummy Does Not Work With Minimized Interface).
 			__CMDLine(__CmdLineRaw(_WM_COPYDATA_GetData())) ; __CmdLineRaw() Convert $CmdLineRaw To $CmdLine.
 		EndIf
+		If $Global_NewDroppedFiles <> 0 Then
+			$Global_NewDroppedFiles = 0
+			If __Is("MonitoredFolderHotkeys") Then
+				If _IsPressed("11") Then ; Add Monitored Folder.
+					_Monitored_AddRemoveDropped($Global_DroppedFiles, $mINI)
+					ContinueLoop
+				ElseIf _IsPressed("12") Then ; Remove Monitored Folder.
+					_Monitored_AddRemoveDropped($Global_DroppedFiles, $mINI, 1)
+					ContinueLoop
+				EndIf
+			EndIf
+			If $Global_GUI_State = 1 Then ; GUI Is Visible.
+				GUISetState(@SW_SHOW, $Global_GUI_2) ; Show Small Working Icon.
+			EndIf
+			_DropEvent($Global_DroppedFiles, -1) ; Send Dropped Files To Be Processed.
+			GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
+		EndIf
 
 		$mMsg = GUIGetMsg()
 		Switch $mMsg
 			Case $GUI_EVENT_CLOSE, $Global_ContextMenu[11][0] ; Exit DropIt If An Exit Event Is Called.
 				ExitLoop
-
-			Case $GUI_EVENT_DROPPED
-				If __Is("MonitoredFolderHotkeys") Then
-					If _IsPressed("11") Then ; Add Monitored Folder.
-						_Monitored_AddRemoveDropped($Global_DroppedFiles, $mINI)
-						ContinueLoop
-					ElseIf _IsPressed("12") Then ; Remove Monitored Folder.
-						_Monitored_AddRemoveDropped($Global_DroppedFiles, $mINI, 1)
-						ContinueLoop
-					EndIf
-				EndIf
-				If $Global_GUI_State = 1 Then ; GUI Is Visible.
-					GUISetState(@SW_SHOW, $Global_GUI_2) ; Show Small Working Icon.
-				EndIf
-				_DropEvent($Global_DroppedFiles, -1) ; Send Dropped Files To Be Processed.
-				GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
 
 			Case $Global_ContextMenu[2][0]
 				GUICtrlSetState($Global_Icon_1, $GUI_DISABLE) ; Disable Main Icon.
@@ -7173,15 +7219,10 @@ Func _Main_Create()
 	Local $rProfile = __IsProfile(-1, 0) ; Get Array Of Current Profile.
 	Local $rPosition = __GetCurrentPosition() ; Get Current Coordinates/Position Of DropIt.
 
-	$rGUI_1 = GUICreate("DropIt", $rProfile[5], $rProfile[6] + 100, $rPosition[0], $rPosition[1], $WS_POPUP, BitOR($WS_EX_ACCEPTFILES, $WS_EX_LAYERED, $WS_EX_TOOLWINDOW))
+	$rGUI_1 = GUICreate("DropIt", $rProfile[5], $rProfile[6] + 100, $rPosition[0], $rPosition[1], $WS_POPUP, BitOR($WS_EX_LAYERED, $WS_EX_TOOLWINDOW))
 	$Global_GUI_1 = $rGUI_1
 	__OnTop($Global_GUI_1) ; Set GUI "OnTop" If True.
 	__SingletonEx() ; _WM_COPYDATA.
-	If IsAdmin() Then
-		_WinAPI_ChangeWindowMessageFilterEx($rGUI_1, $WM_DROPFILES, $MSGFLT_ALLOW)
-		_WinAPI_ChangeWindowMessageFilterEx($rGUI_1, $WM_COPYDATA, $MSGFLT_ALLOW)
-		_WinAPI_ChangeWindowMessageFilterEx($rGUI_1, $WM_COPYGLOBALDATA, $MSGFLT_ALLOW)
-	EndIf
 
 	If $rProfile[7] < 10 Then
 		$rProfile[7] = 100
@@ -7193,6 +7234,7 @@ Func _Main_Create()
 		__SetCurrentPosition($rGUI_1)
 	EndIf
 
+	DragDropEvent_Register($rGUI_1) ; Activate Drag & Drop.
 	_ContextMenu_Create($rIcon_1) ; Create The ContextMenu.
 
 	$rGUI_2 = GUICreate("", 16, 16, $rProfile[5] / 5, $rProfile[6] / 5, $WS_POPUP, BitOR($WS_EX_MDICHILD, $WS_EX_LAYERED, $WS_EX_TOPMOST), $rGUI_1)
@@ -8497,21 +8539,6 @@ Func _WM_CONTEXTMENU($hWnd, $iMsg, $iwParam, $ilParam)
 	Return $GUI_RUNDEFMSG
 EndFunc   ;==>_WM_CONTEXTMENU
 
-Func _WM_DROPFILES($hWnd, $iMsg, $iwParam, $ilParam)
-	#forceref $hWnd, $iMsg, $ilParam
-	Switch $iMsg
-		Case $WM_DROPFILES
-			Local Const $aReturn = _WinAPI_DragQueryFileEx($iwParam)
-			If IsArray($aReturn) Then
-				$Global_DroppedFiles = $aReturn
-			Else
-				Local Const $aError[1] = [0]
-				$Global_DroppedFiles = $aError
-			EndIf
-	EndSwitch
-	Return $GUI_RUNDEFMSG
-EndFunc   ;==>_WM_DROPFILES
-
 Func _WM_GETMINMAXINFO($hWnd, $iMsg, $iwParam, $ilParam) ; Enable The GUI From Being Dragged To A Certain Size.
 	#forceref $hWnd, $iMsg, $iwParam
 	Local $gStructure = DllStructCreate("int;int;int;int;int;int;int;int;int;int", $ilParam)
@@ -8684,6 +8711,38 @@ Func _WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 	EndSwitch
 	Return $GUI_RUNDEFMSG
 EndFunc   ;==>_WM_NOTIFY
+
+Func _WM_ONDRAGDROP($hWnd, $Msg, $wParam, $lParam)
+	Static $DropAccept
+	Switch $Msg
+		Case $WM_DRAGENTER, $WM_DROP
+			Select
+				Case DragDropEvent_IsFile($wParam)
+					If $Msg = $WM_DROP Then
+						Local $FileList = StringSplit(DragDropEvent_GetFile($wParam), "|")
+						If IsArray($FileList) Then
+							$Global_DroppedFiles = $FileList
+							$Global_NewDroppedFiles = 1
+						Else
+							Local Const $aError[1] = [0]
+							$Global_DroppedFiles = $aError
+						EndIf
+					EndIf
+					$DropAccept = $DROPEFFECT_COPY
+				Case DragDropEvent_IsText($wParam)
+					If $Msg = $WM_DROP Then
+						Local $FileList = DragDropEvent_GetText($wParam)
+						;<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< add support to receive text
+					EndIf
+					$DropAccept = $DROPEFFECT_COPY
+				Case Else
+					$DropAccept = $DROPEFFECT_NONE
+			EndSelect
+			Return $DropAccept
+		Case $WM_DRAGOVER
+			Return $DropAccept
+	EndSwitch
+EndFunc   ;==>_WM_ONDRAGDROP
 
 Func _WM_SLEEPMODE($hWnd, $iMsg, $iwParam, $ilParam) ; Taken From: http://www.autoitscript.com/forum/topic/147311-get-notification-when-going-into-hibernatesleep-mode/
 	#forceref $hWnd, $iMsg, $ilParam
@@ -8971,8 +9030,8 @@ Func __Upgrade()
 		Return SetError(1, 0, 0) ; Abort Upgrade If INI Version Is The Same Of Current Software Version.
 	EndIf
 
-	Local $uINI_Array[55][2] = [ _
-			[54, 2], _
+	Local $uINI_Array[57][2] = [ _
+			[56, 2], _
 			["Profile", 1], _
 			["Language", 1], _
 			["PosX", 1], _
@@ -9006,6 +9065,7 @@ Func __Upgrade()
 			["IgnoreNew", 1], _
 			["ChangedSize", "IgnoreInUse"], _
 			["IgnoreInUse", 1], _
+			["IgnoreAttributes", 1], _ ; INI Setting Only (Not In Options).
 			["AutoBackup", 1], _
 			["AutoDup", 1], _
 			["DupMode", 1], _
@@ -9016,6 +9076,7 @@ Func __Upgrade()
 			["AlertDelete", 1], _
 			["AlertFailed", 1], _
 			["AlertAmbiguity", 1], _ ; INI Setting Only (Not In Options).
+			["AlertMail", 1], _ ; INI Setting Only (Not In Options).
 			["GraduallyHide", 1], _
 			["GraduallyHideVisPx", 1], _ ; INI Setting Only (Not In Options).
 			["GraduallyHideSpeed", 1], _ ; INI Setting Only (Not In Options).

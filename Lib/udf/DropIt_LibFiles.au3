@@ -63,7 +63,43 @@ Func __FileCompareSize($sSource, $sDestination, $fDestinationIsSize = 0)
 	EndSelect
 EndFunc   ;==>__FileCompareSize
 
-Func __FileInUse($sInput) ; Modified From: http://www.autoitscript.com/forum/topic/123160-how-to-determine-is-a-file-is-open-by-another-program/
+Func __FileInUse($sFilename) ; Taken From: https://www.autoitscript.com/forum/topic/153060-_fileinuse-to-check-if-file-is-in-used-or-not-work-on-both-local-and-network-drive/
+    Local $aRet, $hFile
+    If StringUpper(DriveGetType($sFilename)) = "NETWORK" Then
+        $aRet = DllCall("Kernel32.dll", "hwnd", "CreateFile", _
+                                    "str", $sFilename, _ ;lpFileName
+                                    "dword", 0x80000000, _ ;dwDesiredAccess = GENERIC_READ
+                                    "dword", 0x00000004, _ ;dwShareMode = DO NOT SHARE
+                                    "dword", 0, _ ;lpSecurityAttributes = NULL
+                                    "dword", 3, _ ;dwCreationDisposition = OPEN_EXISTING
+                                    "dword", 128, _ ;dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL
+                                    "hwnd", 0) ;hTemplateFile = NULL
+    Else
+            $aRet = DllCall("Kernel32.dll", "hwnd", "CreateFile", _
+                                    "str", $sFilename, _ ;lpFileName
+                                    "dword", 0x40000000, _ ;dwDesiredAccess = GENERIC_WRITE
+                                    "dword", 0x00000004, _ ;dwShareMode = DO NOT SHARE
+                                    "dword", 0, _ ;lpSecurityAttributes = NULL
+                                    "dword", 3, _ ;dwCreationDisposition = OPEN_EXISTING
+                                    "dword", 128, _ ;dwFlagsAndAttributes = FILE_ATTRIBUTE_NORMAL
+                                    "hwnd", 0) ;hTemplateFile = NULL
+    EndIf
+    If Not FileExists($sFilename) Then
+        Return 0
+    Else
+        $hFile = $aRet[0]
+        If $hFile = -1 Then ;INVALID_HANDLE_VALUE = -1
+            $aRet = DllCall("Kernel32.dll", "int", "GetLastError")
+            SetError($aRet[0])
+            Return 1
+        Else
+            DllCall("Kernel32.dll", "int", "CloseHandle", "hwnd", $hFile)
+            Return 0
+        EndIf
+    EndIf
+EndFunc   ;==>__FileInUse
+
+Func __FileInUseAlternative($sInput) ; Modified From: http://www.autoitscript.com/forum/topic/123160-how-to-determine-is-a-file-is-open-by-another-program/
 	Local $strComputer = "localhost"
 	If StringInStr($sInput, "\\") Then
 		Local $aHost = _StringBetween($sInput, "\\", "\")
@@ -88,7 +124,7 @@ Func __FileInUse($sInput) ; Modified From: http://www.autoitscript.com/forum/top
 		EndIf
 	Next
 	Return 0
-EndFunc   ;==>__FileInUse
+EndFunc   ;==>__FileInUseAlternative
 
 Func __FileListToArrayEx($sFilePath, $sFilter = "*") ; Taken From: _FileListToArray() & Optimised By guinness For Increase In Speed (Reduction Of 0.50ms.)
 	Local $aError[1] = [0], $hSearch, $sFile, $sReturn = ""

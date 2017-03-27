@@ -1207,6 +1207,16 @@ Func _LoadFontTT($sAlias, $BaseFont, $sOptions = $PDF_FONT_NORMAL)
 	Local $i = __InitObj()
 	__ToBuffer("<< /Type/Font/Subtype/TrueType/Name/" & $sAlias & "/BaseFont/" & $BaseFont & $sOptions & "/FirstChar " & $FirstChar & "/LastChar " & $LastChar & "/FontDescriptor " & $i + 1 & " 0 R/Encoding/WinAnsiEncoding/Widths [")
 	For $j = $FirstChar To $LastChar
+        ; VMA, para que acepte cualquier caracter
+		If $Widths[$j] <> 0 Then
+			$sTemp &= __ToStr($Widths[$j]) & " "
+			If Mod($j - $FirstChar + 1, 16) = 0 Or $j = $LastChar Then
+				__ToBuffer($sTemp)
+				$sTemp = ""
+			EndIf
+
+		EndIf
+		#cs
 		If $Widths[$j - $FirstChar] <> 0 Then
 			$sTemp &= __ToStr($Widths[$j - $FirstChar]) & " "
 			If Mod($j - $FirstChar + 1, 16) = 0 Or $j = $LastChar Then
@@ -1214,10 +1224,11 @@ Func _LoadFontTT($sAlias, $BaseFont, $sOptions = $PDF_FONT_NORMAL)
 				$sTemp = ""
 			EndIf
 		EndIf
+		#ce
 	Next
 	__ToBuffer("] >>")
 	__EndObj()
-	$_sFONT = $_sFONT & "/" & $sAlias & " " & $i & " 0 R " & chr(10)
+	$_sFONT = $_sFONT & "/" & $sAlias & " " & $i & " 0 R " & @CRLF
 	$_sFONTNAME = $_sFONTNAME & "<" & $sAlias & ">" & StringRight("0000" & $_Font, 4) & ";"
 	;$i =
 	__InitObj()

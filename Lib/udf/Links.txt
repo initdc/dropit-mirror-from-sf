@@ -14,6 +14,10 @@ Create PDF Library (MPDF.au3)
 http://www.autoitscript.com/forum/topic/118827-create-pdf-from-your-application/
 
 
+DragDropEvent Library (DragDropEvent.au3)
+https://www.autoitscript.com/forum/topic/138372-dragdropevent-udf-handle-ole-dragdrop-event/
+
+
 Embedding Library (ResourcesEx.au3)
 http://www.autoitscript.com/forum/topic/162499-resourcesex-udf/
 

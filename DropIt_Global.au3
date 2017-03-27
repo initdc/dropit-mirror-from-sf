@@ -3,7 +3,7 @@
 
 #include-once
 
-Global $G_Global_CurrentVersion = "8.0"
+Global $G_Global_CurrentVersion = "8.1"
 
 Global $G_Global_EncryptionKey = "profiles-password-fake" ; Key For Profiles Encryption.
 Global $G_Global_PasswordKey = "archives-password-fake" ; Key For Archives Encryption.
