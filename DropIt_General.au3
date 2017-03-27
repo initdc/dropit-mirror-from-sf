@@ -110,13 +110,10 @@ Func __IsSettingsFile($iINI = -1)
 				"SizeCustom=320;200" & @LF & "SizeManage=460;260" & @LF & "ColumnCustom=100;100;60;50" & @LF & "ColumnManage=130;100;90;115" & @LF & _
 				"OnTop=True" & @LF & "LockPosition=False" & @LF & "CustomTrayIcon=True" & @LF & "MultipleInstances=False" & @LF & "CheckUpdates=False" & @LF & _
 				"StartAtStartup=False" & @LF & "Minimized=False" & @LF & "ShowSorting=True" & @LF & "ShowMonitored=False" & @LF & "UseSendTo=False" & @LF & _
-				"SendToMode=Permanent" & @LF & "ProfileEncryption=False" & @LF & "WaitOpened=False" & @LF & "ScanSubfolders=True" & @LF & "FolderAsFile=False" & @LF & _
-				"IgnoreNew=False" & @LF & "AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & "DupMode=Skip" & @LF & _
-				"UseRegEx=False" & @LF & "CreateLog=False" & @LF & "ShowListView=False" & @LF & "AmbiguitiesCheck=False" & @LF & "GroupOrder=Path" & @LF & _
-				"AlertSize=True" & @LF & "AlertDelete=False" & @LF & "AlertFailed=True" & @LF & "ListHeader=True" & @LF & "ListSortable=True" & @LF & "ListFilter=True" & @LF & _
-				"ListLightbox=True" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & "ZIPLevel=5" & @LF & "ZIPMethod=Deflate" & @LF & _
-				"ZIPEncryption=None" & @LF & "ZIPPassword=" & @LF & "7ZLevel=5" & @LF & "7ZMethod=LZMA" & @LF & "7ZEncryption=None" & @LF & "7ZPassword=" & @LF & _
-				"MasterPassword="
+				"SendToMode=Permanent" & @LF & "ProfileEncryption=False" & @LF & "ScanSubfolders=False" & @LF & "FolderAsFile=False" & @LF & "IgnoreNew=False" & @LF & _
+				"AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & "DupMode=Skip" & @LF & "CreateLog=False" & @LF & _
+				"ShowListView=False" & @LF & "AmbiguitiesCheck=False" & @LF & "GroupOrder=Path" & @LF & "AlertSize=True" & @LF & "AlertDelete=False" & @LF & _
+				"AlertFailed=True" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & "MasterPassword="
 
 		__IniWriteEx($iINI, $G_Global_GeneralSection, "", $iINIData)
 		__IniWriteEx($iINI, "MonitoredFolders", "", "")
@@ -345,7 +342,7 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 		Return: Profile Name
 	#ce
 	Local $sProfilePath, $sAssociationField
-	Local $sFields[13] = [12, "State", "Rules", "Action", "Destination", "Filters", "ListProperties", "HTMLTheme", "SiteSettings", "CryptSettings", "GalleryProperties", "GalleryTheme", "GallerySettings"]
+	Local $sFields[19] = [18, "State", "Rules", "Action", "Destination", "Filters", "ListProperties", "HTMLTheme", "SiteSettings", "CryptSettings", "GalleryProperties", "GalleryTheme", "GallerySettings", "CompressSettings", "ExtractSettings", "OpenWithSettings", "ListSettings", "FavouriteAssociation", "UseRegEx"]
 	ReDim $aArray[$aArray[0][0] + 1][$sFields[0] + 2]
 
 	If $sProfileDirectory = -1 Then
@@ -370,9 +367,6 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 		EndIf
 		If $aArray[$A][2] = "" Then
 			$aArray[$A][2] = $G_Global_StateEnabled
-		EndIf
-		If StringInStr($aArray[$A][3], "*") = 0 And __Is("UseRegEx") = 0 Then ; Fix Rules Without * Characters.
-			$aArray[$A][3] = "*" & $aArray[$A][3]
 		EndIf
 		Switch $aArray[$A][4]
 			Case __GetLang('ACTION_EXTRACT', 'Extract'), 'Extract'
@@ -407,9 +401,11 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 
 		$sAssociationField = ""
 		For $B = 1 To $sFields[0]
-			$sAssociationField &= $sFields[$B] & "=" & $aArray[$A][$B + 1]
-			If $B < $sFields[0] Then
-				$sAssociationField &= @LF
+			If $aArray[$A][$B + 1] <> "" Then ; To Write Only Needed Fields.
+				If $B > 1 Then
+					$sAssociationField &= @LF
+				EndIf
+				$sAssociationField &= $sFields[$B] & "=" & $aArray[$A][$B + 1]
 			EndIf
 		Next
 		__IniWriteEx($sProfilePath, $aArray[$A][1], "", $sAssociationField)
@@ -446,7 +442,7 @@ Func __ArrayToCSV($aArray, $sDestination)
 		Description: Write An Array Of Associations To CSV File.
 		Returns: 1
 	#ce
-	Local $hFileOpen, $sString = "NAME, STATE, RULES, ACTION, DESTINATION, FILTERS, LIST PROPERTIES, HTML THEME, SITE SETTINGS, CRYPT SETTINGS, GALLERY PROPERTIES, GALLERY THEME, GALLERY SETTINGS" & @CRLF
+	Local $hFileOpen, $sString = '"NAME", "STATE", "RULES", "ACTION", "DESTINATION", "FILTERS", "LIST PROPERTIES", "HTML THEME", "SITE SETTINGS", "CRYPT SETTINGS", "GALLERY PROPERTIES", "GALLERY THEME", "GALLERY SETTINGS", "COMPRESS SETTINGS", "EXTRACT SETTINGS", "OPEN WITH SETTINGS", "LIST SETTINGS", "FAVOURITE ASSOCIATION", "USE REGULAR EXPRESSION"' & @CRLF
 
 	For $A = 1 To $aArray[0][0]
 		For $B = 1 To $aArray[0][1]
@@ -852,6 +848,19 @@ Func __Column_Width($sColumn, $aString = -1)
 	EndSwitch
 	Return $aReturn
 EndFunc   ;==>__Column_Width
+
+Func __ComposeLineINI($sKey, $sValue)
+	#cs
+		Description: Add Key Part Only If Needed.
+		Returns: INI Line
+	#ce
+	Local $sReturn = ""
+
+	If $sValue <> "" Then
+		$sReturn = @LF & $sKey & "=" & $sValue
+	EndIf
+	Return $sReturn
+EndFunc   ;==>__ComposeLineINI
 
 Func __ConvertMailText($sText, $sVisible = 0)
 	#cs

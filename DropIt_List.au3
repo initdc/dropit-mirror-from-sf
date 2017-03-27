@@ -154,6 +154,11 @@ Func __DefaultListProperties()
 	Return $dListProperties
 EndFunc   ;==>__DefaultListProperties
 
+Func __GetDefaultListSettings()
+	Local $sDefaultSettings = "True;True;True;True"
+	Return $sDefaultSettings
+EndFunc   ;==>__GetDefaultListSettings
+
 Func __List_GetProperties($lStringProperties, $lGetValues = 0)
 	Local $lStringSplit = StringSplit($lStringProperties, ";")
 	Local $B = 0, $lArray[Int($lStringSplit[0] / 2) + 1] = [Int($lStringSplit[0] / 2)]
@@ -189,7 +194,7 @@ Func __List_ReplaceAbbreviations($lString, $lFilePath, $lListPath, $lProfile, $l
 	Return $lString
 EndFunc   ;==>__List_ReplaceAbbreviations
 
-Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, $lProfile, $lRules, $lListName, $lTheme) ; Inspired By: http://www.autoitscript.com/forum/topic/124516-guictrllistview-savehtml-exports-the-details-of-a-listview-to-a-html-file/
+Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lSettings, $lStringProperties, $lProfile, $lRules, $lListName, $lTheme) ; Inspired By: http://www.autoitscript.com/forum/topic/124516-guictrllistview-savehtml-exports-the-details-of-a-listview-to-a-html-file/
 	#cs
 		Description: Write An Array To HTML File.
 		Returns: 1
@@ -202,8 +207,8 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 	If FileExists($lThemeFolder & "\" & $lTheme & ".css") = 0 Then
 		$lTheme = "Default"
 	EndIf
-	Local $lLoadedCSS = __LoadList_CSS($lTheme)
-	Local $lLoadedJS = __LoadList_JS()
+	Local $lLoadedCSS = __LoadList_CSS($lSettings, $lTheme)
+	Local $lLoadedJS = __LoadList_JS($lSettings)
 
 	Local $lHeader = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">' & @CRLF & _
 			'<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"><head>' & @CRLF & _
@@ -229,7 +234,7 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 			'</div><!-- #di-header-wrap -->' & @CRLF & @CRLF
 
 	Local $lColumns = '<div id="di-table">' & @CRLF & '<table id="di-mainTable" cellpadding="0" cellspacing="0">' & @CRLF
-	If __Is("ListHeader") Then
+	If $lSettings[4] == "True" Then ; List Header.
 		$lColumns &= '<thead>' & @CRLF & '<tr>' & @CRLF
 		$lArray = $lTitleArray
 		For $B = 1 To $lArray[0]
@@ -302,7 +307,7 @@ Func __List_WriteHTML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 	Return 1
 EndFunc   ;==>__List_WriteHTML
 
-Func __List_WritePDF($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, $lProfile, $lListName)
+Func __List_WritePDF($lSubArray, $lListPath, $lElementsGUI, $lSettings, $lStringProperties, $lProfile, $lListName)
 	#cs
 		Description: Write An Array To PDF File.
 		Returns: 1
@@ -311,7 +316,7 @@ Func __List_WritePDF($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	Local $lTitleArray = __List_GetProperties($lStringProperties)
 	Local $lValueArray = __List_GetProperties($lStringProperties, 1)
 
-	If __Is("ListHeader") Then
+	If $lSettings[4] == "True" Then ; List Header.
 		$lArray = $lTitleArray
 		For $B = 1 To $lArray[0]
 			$lText &= $lArray[$B] & @CRLF
@@ -353,7 +358,7 @@ Func __List_WritePDF($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	Return 1
 EndFunc   ;==>__List_WritePDF
 
-Func __List_WriteTEXT($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, $lProfile, $lDelimiter = ',', $lQuote = '"') ; Inspired By: http://www.autoitscript.com/forum/topic/129250-guictrllistview-savecsv-exports-the-details-of-a-listview-to-a-csv-file/
+Func __List_WriteTEXT($lSubArray, $lListPath, $lElementsGUI, $lSettings, $lStringProperties, $lProfile, $lDelimiter = ',', $lQuote = '"') ; Inspired By: http://www.autoitscript.com/forum/topic/129250-guictrllistview-savecsv-exports-the-details-of-a-listview-to-a-csv-file/
 	#cs
 		Description: Write An Array To TXT Or CSV File.
 		Returns: 1
@@ -362,7 +367,7 @@ Func __List_WriteTEXT($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 	Local $lTitleArray = __List_GetProperties($lStringProperties)
 	Local $lValueArray = __List_GetProperties($lStringProperties, 1)
 
-	If __Is("ListHeader") Then
+	If $lSettings[4] == "True" Then ; List Header.
 		$lArray = $lTitleArray
 		For $B = 1 To $lArray[0]
 			If $lQuote <> '' Then
@@ -405,7 +410,7 @@ Func __List_WriteTEXT($lSubArray, $lListPath, $lElementsGUI, $lStringProperties,
 	Return 1
 EndFunc   ;==>__List_WriteTEXT
 
-Func __List_WriteXML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, $lProfile) ; Inspired By: http://www.autoitscript.com/forum/topic/129432-guictrllistview-savexml-exports-the-details-of-a-listview-to-a-xml-file/
+Func __List_WriteXML($lSubArray, $lListPath, $lElementsGUI, $lSettings, $lStringProperties, $lProfile) ; Inspired By: http://www.autoitscript.com/forum/topic/129432-guictrllistview-savexml-exports-the-details-of-a-listview-to-a-xml-file/
 	#cs
 		Description: Write An Array To XML File.
 		Returns: 1
@@ -414,7 +419,7 @@ Func __List_WriteXML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	Local $lTitleArray = __List_GetProperties($lStringProperties)
 	Local $lValueArray = __List_GetProperties($lStringProperties, 1)
 
-	If __Is("ListHeader") Then
+	If $lSettings[4] == "True" Then ; List Header.
 		$lArray = $lTitleArray
 		$lString &= @TAB & '<header>' & @CRLF
 		For $B = 1 To $lArray[0]
@@ -449,7 +454,7 @@ Func __List_WriteXML($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	Return 1
 EndFunc   ;==>__List_WriteXML
 
-Func __List_WriteXLS($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, $lProfile) ; Inspired By: http://www.autoitscript.com/forum/topic/131866-arraytoxls-save-1d2d-array-to-excel-file-xls/
+Func __List_WriteXLS($lSubArray, $lListPath, $lElementsGUI, $lSettings, $lStringProperties, $lProfile) ; Inspired By: http://www.autoitscript.com/forum/topic/131866-arraytoxls-save-1d2d-array-to-excel-file-xls/
 	#cs
 		Description: Write An Array To XLS File.
 		Returns: 1
@@ -471,7 +476,7 @@ Func __List_WriteXLS($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	DllStructSetData($str_bof, 6, 0x0)
 	_WinAPI_WriteFile($hFile, DLLStructGetPtr($str_bof), DllStructGetSize($str_bof), $nBytes)
 
-	If __Is("ListHeader") Then
+	If $lSettings[4] == "True" Then ; List Header.
 		$lArray = $lTitleArray
 		For $B = 1 To $lArray[0]
 			__XLSWriteCell($hFile, 0, $B - 1, $lArray[$B])
@@ -504,10 +509,10 @@ Func __List_WriteXLS($lSubArray, $lListPath, $lElementsGUI, $lStringProperties, 
 	Return 1
 EndFunc   ;==>__List_WriteXLS
 
-Func __LoadList_CSS($lTheme) ; Internal Function For __List_WriteHTML()
+Func __LoadList_CSS($lSettings, $lTheme) ; Internal Function For __List_WriteHTML()
 	Local $lLoadedCSS, $lStyle, $lArrayCSS[4] = [3, "base.css", "lighterbox2.css", "themes\" & $lTheme & ".css"]
 	For $A = 1 To $lArrayCSS[0]
-		If $A = 2 And __Is("ListLightbox") = 0 Then ; Lightbox Disabled.
+		If $A = 2 And $lSettings[3] <> "True" Then ; Lightbox Disabled.
 			ContinueLoop
 		EndIf
 		$lStyle = FileRead(@ScriptDir & "\Lib\list\" & $lArrayCSS[$A])
@@ -519,19 +524,19 @@ Func __LoadList_CSS($lTheme) ; Internal Function For __List_WriteHTML()
 	Return $lLoadedCSS
 EndFunc   ;==>__LoadList_CSS
 
-Func __LoadList_JS() ; Internal Function For __List_WriteHTML()
-	Local $lLoadedJS, $lJavaScript, $lArrayJS[4][2] = [[3, 3],["ListSortable", "sortable.js"],["ListFilter", "filter.js"],["ListLightbox", "lighterbox2.js"]]
-	For $A = 1 To $lArrayJS[0][0]
-		If __Is($lArrayJS[$A][0]) Then
+Func __LoadList_JS($lSettings) ; Internal Function For __List_WriteHTML()
+	Local $lLoadedJS, $lJavaScript, $lArrayJS[4] = [3, "sortable.js", "filter.js", "lighterbox2.js"]
+	For $A = 1 To $lArrayJS[0]
+		If $lSettings[$A] == "True" Then ; 1 = HTML Sortable, 2 = HTML Filter, 3 = HTML Lightbox.
 			Switch $A
-				Case 2 ; ListFilter Translation.
+				Case 2 ; HTML Filter Translation.
 					$lJavaScript = 'var clearFilterText = "' & __GetLang('LIST_HTML_CLEARFILTER', 'clear filter') & '";' & @CRLF & _
 							'var noResultsText = "' & __GetLang('LIST_HTML_NORESULTS', 'No results for this term') & ':";' & @CRLF & _
 							'var searchFieldText = "' & __GetLang('LIST_HTML_FILTER', 'filter') & '...";' & @CRLF & @CRLF
-				Case 3 ; ListLightbox Translation.
+				Case 3 ; HTML Lightbox Translation.
 					$lJavaScript = 'var viewText = "' & __GetLang('VIEW', 'View') & '";' & @CRLF & @CRLF
 			EndSwitch
-			$lJavaScript &= FileRead(@ScriptDir & "\Lib\list\" & $lArrayJS[$A][1])
+			$lJavaScript &= FileRead(@ScriptDir & "\Lib\list\" & $lArrayJS[$A])
 			If @error = 0 Then
 				$lLoadedJS &= '<script type="text/javascript" charset="utf-8">' & @CRLF & '//<![CDATA[' & @CRLF & $lJavaScript & @CRLF & '//]]>' & @CRLF & '</script>' & @CRLF
 			EndIf

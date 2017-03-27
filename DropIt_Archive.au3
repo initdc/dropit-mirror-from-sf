@@ -14,54 +14,17 @@
 #include "Lib\udf\DropIt_LibVarious.au3"
 #include "Lib\udf\WinAPIEx.au3"
 
-Func __7ZipCommands($cType, $cDestinationFilePath = "", $cDefault = 0, $cDuplicateMode = 0, $cPassword = "")
-	#cs
-		Description: Update 7-Zip Commands And Output Archive Format.
-		Returns: Needed Commands
-	#ce
-	Local $cCommand = ' a'
-	If $cType = 3 Then ; Update Archive.
-		$cCommand = ' u -ux2y2z2'
-	ElseIf $cType = 0 And FileExists($cDestinationFilePath) Then ; Create New Archive.
-		FileDelete($cDestinationFilePath)
-	EndIf
-	If ($cType = 0 Or $cType = 3) And $cDefault = 1 Then ; Compress With Default Parameters.
-		$cCommand &= ' -tzip -mm=Deflate -mx5 -mem=AES256 -ssw -sccUTF-8'
-		Return $cCommand & ' "' & $cDestinationFilePath & '"'
-	EndIf
-
-	If $cPassword == "" Then
-		$cPassword = __7ZipINIPassword($cDestinationFilePath)
-	EndIf
-	If $cType = 1 Then ; Extract.
-		Return ' x ' & __ExtractDuplicateMode($cDuplicateMode) & ' "-p' & $cPassword & '" -o"' & $cDestinationFilePath & '"'
-	EndIf
-
-	Local $c7ZipFormat = __GetFileExtension($cDestinationFilePath)
-	Switch $c7ZipFormat
-		Case "7z", "exe"
-			$cCommand &= __GetCommands7z($cPassword, $c7ZipFormat)
-		Case Else ; zip.
-			$cCommand &= __GetCommandsZip($cPassword)
-	EndSwitch
-
-	Return $cCommand & ' -ssw -sccUTF-8 "' & $cDestinationFilePath & '"'
-EndFunc   ;==>__7ZipCommands
-
-Func __7ZipGetPassword($sFilePath, $iGetPassword = 0)
+Func __7ZipGetPassword($sFilePath, $sPassword = "")
 	#cs
 		Description: Verify If The Archive Is Encrypted And Get Password.
 		Returns: Password
 	#ce
-	Local $sPassword = ""
 	__7ZipRun($sFilePath, "", 2) ; Check If Archive Is Encrypted.
 	Switch @error
 		Case 1
 			Return SetError(1, 0, "") ; Failed.
 		Case 2 ; Password Needed.
-			If $iGetPassword Then
-				$sPassword = __7ZipINIPassword($sFilePath)
-			Else
+			If $sPassword = "" Then
 				__ExpandEventMode(0) ; Disable Event Buttons.
 				$sPassword = __InsertPassword_GUI(_WinAPI_PathCompactPathEx(__GetFileName($sFilePath), 68))
 				__ExpandEventMode(1) ; Enable Event Buttons.
@@ -77,25 +40,7 @@ Func __7ZipGetPassword($sFilePath, $iGetPassword = 0)
 	Return $sPassword
 EndFunc   ;==>__7ZipGetPassword
 
-Func __7ZipINIPassword($sFilePath)
-	Local $sPassword, $sPassword_Code = $G_Global_PasswordKey
-	Local $sINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Local $s7ZipFormat = __GetFileExtension($sFilePath)
-
-	If $s7ZipFormat = "7z" Or $s7ZipFormat = "exe" Then
-		$sPassword = IniRead($sINI, $G_Global_GeneralSection, "7ZPassword", "")
-	Else
-		$sPassword = IniRead($sINI, $G_Global_GeneralSection, "ZIPPassword", "")
-	EndIf
-	$sPassword = _StringEncrypt(0, $sPassword, $sPassword_Code)
-	If @error Then
-		Return SetError(1, 0, "")
-	EndIf
-
-	Return $sPassword
-EndFunc   ;==>__7ZipINIPassword
-
-Func __7ZipRun($rSourceFilePath, $rDestinationFilePath, $rType = 0, $rDefault = 0, $rDuplicateMode = 0, $rNotWait = 0, $rPassword = "")
+Func __7ZipRun($rSourceFilePath, $rDestinationFilePath, $rType = 0, $rDuplicateMode = 0, $rNotWait = 0, $rPassword = "")
 	#cs
 		Description: Compress/Extract/Check Using 7-Zip.
 		Returns: Output FilePath [C:\Test.7z]
@@ -107,13 +52,14 @@ Func __7ZipRun($rSourceFilePath, $rDestinationFilePath, $rType = 0, $rDefault = 
 
 	Switch $rType
 		Case 0 ; Compress Mode.
-			$rCommand = '"' & $7Zip & '"' & __7ZipCommands($rType, $rDestinationFilePath, $rDefault, 0, $rPassword) & ' -- "' & $rSourceFilePath & '"'
+			$rCommand = '"' & $7Zip & '"' & __CompressCommands($rType, $rDestinationFilePath, $rPassword) & ' -- "' & $rSourceFilePath & '"'
 
 		Case 3 ; Compress List Mode.
-			$rCommand = '"' & $7Zip & '"' & __7ZipCommands($rType, $rDestinationFilePath, $rDefault, 0, $rPassword) & ' -- @"' & $rSourceFilePath & '"'
+			$rCommand = '"' & $7Zip & '"' & __CompressCommands($rType, $rDestinationFilePath, $rPassword) & ' -- @"' & $rSourceFilePath & '"'
 
 		Case 1 ; Extract Mode.
-			$rCommand = '"' & $7Zip & '"' & __7ZipCommands($rType, $rDestinationFilePath, 0, $rDuplicateMode, $rPassword) & ' -- "' & $rSourceFilePath & '"'
+			$rCommand = '"' & $7Zip & '" x ' & __ExtractDuplicateMode($rDuplicateMode) & ' "-p' & $rPassword & '" -o"' & $rDestinationFilePath & '" -- "' & $rSourceFilePath & '"'
+			
 
 		Case 2 ; Check Mode.
 			$rCommand = '"' & $7Zip & '" l -slt -- "' & $rSourceFilePath & '"'
@@ -171,7 +117,7 @@ Func __Backup_Restore($bHandle = -1, $bType = 0, $bZipFile = -1) ; 0 = Backup & 
 
 	Switch $bType
 		Case 0
-			__7ZipRun($bBackup[1] & '" "' & $bBackup[2], $bBackupDirectory & $bZipFile, 0, 1)
+			__7ZipRun($bBackup[1] & '" "' & $bBackup[2], $bBackupDirectory & $bZipFile, 0)
 			MsgBox(0, __GetLang('OPTIONS_BACKUP_MSGBOX_0', 'Backup Created'), __GetLang('OPTIONS_BACKUP_MSGBOX_1', 'Successfully created a DropIt Backup.'), 0, __OnTop($bHandle))
 
 		Case 1
@@ -193,7 +139,7 @@ Func __Backup_Restore($bHandle = -1, $bType = 0, $bZipFile = -1) ; 0 = Backup & 
 				EndIf
 			Next
 
-			__7ZipRun($bZipFile, $bSettingsDirectory, 1, 0, 1)
+			__7ZipRun($bZipFile, $bSettingsDirectory, 1, 1)
 			Sleep(100)
 			MsgBox(0, __GetLang('OPTIONS_BACKUP_MSGBOX_2', 'Backup Restored'), __GetLang('OPTIONS_BACKUP_MSGBOX_3', 'Successfully restored the selected DropIt Backup.'), 0, __OnTop($bHandle))
 
@@ -216,34 +162,67 @@ Func __Backup_Restore($bHandle = -1, $bType = 0, $bZipFile = -1) ; 0 = Backup & 
 	Return 1
 EndFunc   ;==>__Backup_Restore
 
-Func __GetCommands7z($cPassword, $c7ZipFormat)
-	Local $cINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Local $cEncryption = StringReplace(IniRead($cINI, $G_Global_GeneralSection, "7ZEncryption", "None"), "-", "")
-	Local $cReturn = ' -t7z'
-	$cReturn &= ' -m0=' & IniRead($cINI, $G_Global_GeneralSection, "7ZMethod", "LZMA")
-	$cReturn &= ' -mmt=on'
-	$cReturn &= ' -mx' & IniRead($cINI, $G_Global_GeneralSection, "7ZLevel", "5")
-	If $cEncryption <> "None" Then
-		$cReturn &= ' -mhe=on "-p' & $cPassword & '"'
+Func __CompressCommands($cType, $cDestinationFilePath, $sCompressSettings)
+	#cs
+		Description: Update 7-Zip Commands And Output Archive Format.
+		Returns: Needed Commands
+	#ce
+	Local $cEncryption, $cCommand = ' a'
+	If $cType = 3 Then ; Update Archive.
+		$cCommand = ' u -ux2y2z2'
+	ElseIf FileExists($cDestinationFilePath) Then ; Create New Archive.
+		FileDelete($cDestinationFilePath)
 	EndIf
-	If $c7ZipFormat = "exe" Then
-		$cReturn &= ' -sfx7z.sfx'
+	If IsArray($sCompressSettings) = 0 Then
+		$sCompressSettings = StringSplit(__GetDefaultCompressSettings(), ";") ; 1 = Remove Source, 2 = Compress Format, 3 = Level, 4 = Method, 5 = Encryption, 6 = Password.
+		ReDim $sCompressSettings[7] ; Number Of Settings.
 	EndIf
-	Return $cReturn
-EndFunc   ;==>__GetCommands7z
+	$cEncryption = StringReplace($sCompressSettings[5], "-", "")
+	$sCompressSettings[6] = _StringEncrypt(0, $sCompressSettings[6], $G_Global_PasswordKey)
+	If @error Then
+		$cEncryption = "None"
+		$sCompressSettings[6] = ""
+	EndIf
+	If $sCompressSettings[2] <> "zip" Then
+		$cCommand &= ' -t7z'
+		$cCommand &= ' -m0=' & $sCompressSettings[4]
+		$cCommand &= ' -mmt=on'
+		$cCommand &= ' -mx' & $sCompressSettings[3]
+		If $cEncryption <> "None" Then
+			$cCommand &= ' -mhe=on "-p' & $sCompressSettings[6] & '"'
+		EndIf
+		If $sCompressSettings[2] = "exe" Then
+			$cCommand &= ' -sfx7z.sfx'
+		EndIf
+	Else
+		$cCommand &= ' -tzip'
+		$cCommand &= ' -mm=' & $sCompressSettings[4]
+		$cCommand &= ' -mmt=on'
+		$cCommand &= ' -mx' & $sCompressSettings[3]
+		If $cEncryption <> "None" Then
+			$cCommand &= ' -mem=' & $cEncryption & ' "-p' & $sCompressSettings[6] & '"'
+		EndIf
+	EndIf
 
-Func __GetCommandsZip($cPassword)
-	Local $cINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Local $cEncryption = StringReplace(IniRead($cINI, $G_Global_GeneralSection, "ZIPEncryption", "None"), "-", "")
-	Local $cReturn = ' -tzip'
-	$cReturn &= ' -mm=' & IniRead($cINI, $G_Global_GeneralSection, "ZIPMethod", "Deflate")
-	$cReturn &= ' -mmt=on'
-	$cReturn &= ' -mx' & IniRead($cINI, $G_Global_GeneralSection, "ZIPLevel", "5")
-	If $cEncryption <> "None" Then
-		$cReturn &= ' -mem=' & $cEncryption & ' "-p' & $cPassword & '"'
+	Return $cCommand & ' -ssw -sccUTF-8 "' & $cDestinationFilePath & '"'
+EndFunc   ;==>__CompressCommands
+
+Func __GetDefaultCompressSettings($sCompressSettings = "", $sDestination = "")
+	Local $sCompress_ZipDefault = "False;zip;5;Deflate;None;", $sCompress_7zDefault = "False;7z;5;LZMA;None;", $sCompress_ExeDefault = "False;exe;5;LZMA;None;"
+	Local $sStringSplit = StringSplit($sCompressSettings, ";") ; Only To Get 2 = Compress Format.
+	ReDim $sStringSplit[3]
+	If $sStringSplit[2] = "" Then ; Load Default Settings If Not Defined (From Old DropIt Versions).
+		$sStringSplit[2] = __GetFileExtension($sDestination)
+		If $sStringSplit[2] = "7z" Then
+			$sCompressSettings = $sCompress_7zDefault
+		ElseIf $sStringSplit[2] = "exe" Then
+			$sCompressSettings = $sCompress_ExeDefault
+		Else
+			$sCompressSettings = $sCompress_ZipDefault
+		EndIf
 	EndIf
-	Return $cReturn
-EndFunc   ;==>__GetCommandsZip
+	Return $sCompressSettings
+EndFunc   ;==>__GetDefaultCompressSettings
 
 Func __EncryptionFolder($fDecrypt = -1) ; $fDecrypt = 0, Encrypt/Decrypt Profiles.
 	#cs

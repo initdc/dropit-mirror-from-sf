@@ -51,8 +51,11 @@ Func __UpgradeAssociations($gProfilePath)
 		EndIf
 
 		__PasteAssociation($gProfilePath, $gStringSplit[2], "State=" & $gStringSplit[4] & @LF & "Rules=" & StringTrimRight($gSection[$A][0], 2) & @LF & _
-				"Action=" & StringRight($gSection[$A][0], 2) & @LF & "Destination=" & $gStringSplit[1] & @LF & "Filters=" & $gStringSplit[3] & @LF & _
-				"ListProperties=" & $gStringSplit[5] & @LF & "HTMLTheme=" & $gTheme & @LF & "SiteSettings=" & $gSite)
+				"Action=" & StringRight($gSection[$A][0], 2) & @LF & "Destination=" & $gStringSplit[1] & _
+				__ComposeLineINI("Filters", $gStringSplit[3]) & _
+				__ComposeLineINI("ListProperties", $gStringSplit[5]) & _
+				__ComposeLineINI("HTMLTheme", $gTheme) & _
+				__ComposeLineINI("SiteSettings", $gSite))
 	Next
 	Return 1
 EndFunc   ;==>__UpgradeAssociations
@@ -275,7 +278,7 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 	Switch $gAction
 		Case "$6"
 			$gDestination = __GetDeleteString($gDestination)
-		Case "$8", "$F", "$G", "$H"
+		Case "$3", "$4", "$5", "$8", "$F", "$G", "$H"
 			$gStringSplit = StringSplit($gDestination, "|")
 			$gDestination = $gStringSplit[1]
 		Case "$C"
@@ -486,7 +489,7 @@ Func __GetAssociations($gProfile = -1)
 	#cs
 		Description: Get Associations Of The Current Profile [-1] Or Specified Profile Name [Valid Profile Name].
 		Returns: Array[0][0] - Number Of Items [?]
-		[0][1] - Number Of Fields [13]
+		[0][1] - Number Of Fields [19]
 		[0][2] - Profile Name [Profile]
 
 		Array[A][0] - Association Name [Example]
@@ -502,10 +505,16 @@ Func __GetAssociations($gProfile = -1)
 		[A][10] - Gallery Properties [#=%Counter%;Name=%FileName%]
 		[A][11] - Gallery Theme [Default]
 		[A][12] - Gallery Settings [2;1;]
+		[A][13] - Compress Settings [False]
+		[A][14] - Extract Settings [False]
+		[A][15] - Open With Settings [False]
+		[A][16] - List Settings [True;True;True;True]
+		[A][17] - Favourite Association [False]
+		[A][18] - Consider As Regular Expressions [False]
 	#ce
 	$gProfile = __IsProfile($gProfile, 0) ; Get Array Of Selected Profile.
 
-	Local $gNumberFields = 13
+	Local $gNumberFields = 19
 	Local $gAssociationNames = __IniReadSectionNamesEx($gProfile[0])
 	If @error Then
 		Local $gReturn[1][$gNumberFields + 1] = [[0, $gNumberFields, $gProfile[1]]]
@@ -551,6 +560,18 @@ Func __GetAssociations($gProfile = -1)
 					$gIndex = 11
 				Case "GallerySettings"
 					$gIndex = 12
+				Case "CompressSettings"
+					$gIndex = 13
+				Case "ExtractSettings"
+					$gIndex = 14
+				Case "OpenWithSettings"
+					$gIndex = 15
+				Case "ListSettings"
+					$gIndex = 16
+				Case "FavouriteAssociation"
+					$gIndex = 17
+				Case "UseRegEx"
+					$gIndex = 18
 				Case Else
 					ContinueLoop
 			EndSwitch

@@ -513,7 +513,7 @@ Func __ShellExecuteOnTop($sFilePath, $sText)
 		Returns: Nothing
 	#ce
 	ShellExecute($sFilePath)
-	Sleep(300)
+	Sleep(400)
 	WinSetOnTop($sText, "", 1)
 EndFunc   ;==>__ShellExecuteOnTop
 
