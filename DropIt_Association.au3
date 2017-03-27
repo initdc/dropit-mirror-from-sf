@@ -4,7 +4,46 @@
 #include-once
 #include <DropIt_General.au3>
 #include <DropIt_Global.au3>
-#include <Lib\udf\DropIt_LibVarious.au3>
+#include "Lib\udf\DropIt_LibVarious.au3"
+
+Func __GetActionResult($gAction)
+	#cs
+		Description: Get Action Result [Copied].
+	#ce
+	Local $gSyntaxMode
+	Switch $gAction
+		Case "$1"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_6', 'Copied')
+		Case "$3"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_3', 'Compressed')
+		Case "$4"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_4', 'Extracted')
+		Case "$5"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_7', 'Opened')
+		Case "$6"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_8', 'Deleted')
+		Case "$7"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_9', 'Renamed')
+		Case "$8"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_10', 'Added to List')
+		Case "$9"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_13', 'Added to Playlist')
+		Case "$A"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_11', 'Shortcut Created')
+		Case "$B"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_12', 'Copied to Clipboard')
+		Case "$C"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_14', 'Uploaded')
+		Case "$D"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_15', 'Changed Properties')
+		Case "$E"
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_16', 'Sent by Mail')
+		Case Else
+			$gSyntaxMode = __GetLang('POSITIONPROCESS_LOG_5', 'Moved')
+	EndSwitch
+
+	Return $gSyntaxMode
+EndFunc   ;==>__GetActionResult
 
 Func __GetAssociationField($gProfile, $gAction, $gAssociation, $gField)
 	#cs
@@ -101,6 +140,8 @@ Func __GetAssociationString($gAction, $gRule = "")
 				$gAssociationString = __GetLang('ACTION_UPLOAD', 'Upload')
 			Case "$D"
 				$gAssociationString = __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties')
+			Case "$E"
+				$gAssociationString = __GetLang('ACTION_SEND_MAIL', 'Send by Mail')
 			Case Else ; Move.
 				$gAssociationString = __GetLang('ACTION_MOVE', 'Move')
 		EndSwitch
@@ -132,6 +173,8 @@ Func __GetAssociationString($gAction, $gRule = "")
 				$gAssociationString = $gRule & "$C"
 			Case __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties'), 'Change Properties'
 				$gAssociationString = $gRule & "$D"
+			Case __GetLang('ACTION_SEND_MAIL', 'Send by Mail'), 'Send by Mail'
+				$gAssociationString = $gRule & "$E"
 			Case Else ; __GetLang('ACTION_MOVE', 'Move').
 				$gAssociationString = $gRule & "$0"
 		EndSwitch

@@ -7,9 +7,9 @@
 #include <DropIt_ProfileList.au3>
 #include <GUIConstantsEx.au3>
 #include <GUIListView.au3>
-#include <Lib\udf\APIConstants.au3>
-#include <Lib\udf\DropIt_LibVarious.au3>
-#include <Lib\udf\WinAPIEx.au3>
+#include "Lib\udf\APIConstants.au3"
+#include "Lib\udf\DropIt_LibVarious.au3"
+#include "Lib\udf\WinAPIEx.au3"
 
 Func __Monitored_Edit_GUI($mHandle, $mINI, $mListView, $mIndex = -1, $mFolder = -1)
 	Local $mGUI, $mInput_Folder, $mButton_Folder, $mCombo_Profile, $mCurrent_Folder, $mSave, $mCancel

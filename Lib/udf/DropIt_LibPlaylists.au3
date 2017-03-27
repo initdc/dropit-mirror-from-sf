@@ -10,7 +10,7 @@ Func __Playlist_Write($pFilePath, $pPlaylistPath)
 		Description: Write A File In A Defined Playlist.
 		Returns: 1
 	#ce
-	Local $pListType = StringTrimLeft(_WinAPI_PathFindExtension($pFilePath), 1)
+	Local $pListType = StringTrimLeft(_WinAPI_PathFindExtension($pPlaylistPath), 1)
 
 	Switch $pListType
 		Case "m3u"

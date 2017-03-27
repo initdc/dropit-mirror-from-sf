@@ -3,9 +3,9 @@
 
 #include-once
 #include <DropIt_General.au3>
-#include <Lib\udf\DropIt_LibFiles.au3>
-#include <Lib\udf\DropIt_LibImages.au3>
-#include <Lib\udf\DropIt_LibVarious.au3>
+#include "Lib\udf\DropIt_LibFiles.au3"
+#include "Lib\udf\DropIt_LibImages.au3"
+#include "Lib\udf\DropIt_LibVarious.au3"
 
 Func __ImageGet($hHandle = -1, $sProfile = -1)
 	Local $aReturn[6], $sFileName, $sFileOpenDialog, $sImagePath, $iSize

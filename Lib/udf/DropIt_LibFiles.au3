@@ -4,6 +4,7 @@
 #include-once
 #include "APIConstants.au3"
 #include <Date.au3>
+#include <String.au3>
 #include "WinAPIEx.au3"
 
 Func __FileCompareDate($sSource, $sDestination, $fDestinationIsDate = 0, $iMethod = 0) ; Modified From: http://www.autoitscript.com/forum/topic/125127-compare-file-datetime-stamps/page__p__868705#entry868705
@@ -87,6 +88,34 @@ Func __FileListToArrayEx($sFilePath, $sFilter = "*") ; Taken From: _FileListToAr
 	Return StringSplit(StringTrimRight($sReturn, 1), "*")
 EndFunc   ;==>__FileListToArrayEx
 
+Func __FindInFile($sFilePath, $sSearch, $iLiteral = 0, $iCaseSensitive = 0) ; Inspired By: http://www.autoitscript.com/forum/topic/132159-findinfile-search-for-a-string-within-files-located-in-a-specific-directory/
+	#cs
+		Description: Search for a string in a file.
+		Returns: True or False
+	#ce
+	Local $iPID = 0, $sCaseSensitive = '/i', $sLiteral = '', $sOutput = ''
+
+	If $iCaseSensitive Then
+		$sCaseSensitive = ''
+	EndIf
+	If $iLiteral Then
+		$sLiteral = '/c:'
+	EndIf
+
+	$iPID = Run(@ComSpec & ' /c ' & 'findstr ' & $sCaseSensitive & ' /m ' & $sLiteral & '"' & $sSearch & '" "' & $sFilePath & '"', @SystemDir, @SW_HIDE, 6)
+	While 1
+		$sOutput &= StdoutRead($iPID)
+		If @error Or StringStripWS($sOutput, 8) <> '' Then
+			ExitLoop
+		EndIf
+	WEnd
+
+	If StringStripWS($sOutput, 8) <> '' Then
+		Return 1
+	EndIf
+	Return SetError(1, 0, 0)
+EndFunc   ;==>__FindInFile
+
 Func __GetDrive($sFilePath) ; Taken From: http://www.autoitscript.com/forum/topic/82954-securely-overwrite-files/
 	#cs
 		Description: Get The Drive Letter Of An Absolute Or Relative Path.
@@ -139,7 +168,7 @@ Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gLocalNumeration = 0
 		0 Name, 1 Size, 2 Type, 3 Date Modified, 4 Date Created, 5 Date Opened, 6 Attributes, 7 Status, 8 Owner,
 		9 Date Taken, 10 Dimensions, 11 Camera Model, 12 Authors, 13 Artists, 14 Title, 15 Album, 16 Genre,
 		17 Year, 18 Track Number, 19 Subject, 20 Categories, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate.
-		This Numeration Is Automatically Converted For WinXP, WinVista And Win7.
+		This Numeration Is Automatically Converted For WinXP, WinVista, Win7, Win8.
 		More Properties And Relative Numeration Are Reported At The AutoIt Webpage.
 	#ce
 	Local $gDir_Name = StringRegExpReplace($gFilePath, "(^.*\\)(.*)", "\1")
@@ -151,8 +180,7 @@ Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gLocalNumeration = 0
 	If $gLocalNumeration = 0 Then
 		If @OSVersion == "WIN_XP" Or @OSVersion == "WIN_XPe" Then
 			$gPropertyNumber = $gArrayWinXP[$gPropertyNumber]
-		EndIf
-		If @OSVersion == "WIN_VISTA" Or @OSVersion == "WIN_7" Then
+		ElseIf @OSVersion == "WIN_VISTA" Or @OSVersion == "WIN_7" Or @OSVersion == "WIN_8" Then
 			$gPropertyNumber = $gArrayWinVista[$gPropertyNumber]
 		EndIf
 	EndIf
@@ -227,3 +255,27 @@ Func __IsValidFileType($sFilePath, $sList = "bat;cmd;exe") ; Taken From: http://
 	EndIf
 	Return StringRegExp($sFilePath, "\.(?i:\Q" & StringReplace($sList, ";", "\E|\Q") & "\E)\z")
 EndFunc   ;==>__IsValidFileType
+
+Func __Locale_MonthName($Month, $Abbrev = False, $LCID = "")
+	; ==========================================================================================
+	; Author:        Großvater (www.autoit.de) http://www.autoitscript.com/forum/topic/136945-the-name-of-any-day-by-date-multilingual/#entry958589
+	; Parameter:
+	; $Month    -   Nummer des Monats (1 - 12)
+	; $Abbrev   -   abgekürzten Namen liefern:
+	;               |0 : nein
+	;               |1 : ja
+	; $LCID     -   Sprachbezeichner gem. Abschnitt "@OSLang values" im Anhang der Hilfedatei
+	;               als 16-bittiger Hexwert: 0xnnnn (z.b. 0x0407 für Deutschland).
+	;               Bei fehlender Angabe wird die Defaulteinstellung  des Benutzers verwendet.
+	; ==========================================================================================
+	Local Const $LOCALE_USER_DEFAULT = 0x0400
+	Local Const $LOCALE_SMONTHNAME = 0x37
+	Local Const $LOCALE_SABBREVMONTHNAME = 0x43
+	Local $LCType = $LOCALE_SMONTHNAME
+	If $Abbrev Then $LCType = $LOCALE_SABBREVMONTHNAME
+	If $LCID = "" Then $LCID = $LOCALE_USER_DEFAULT
+	If Not StringIsInt($Month) Or $Month < 1 Or $Month > 12 Then Return False
+	Local $aResult = DllCall("Kernel32.dll", "Int", "GetLocaleInfoW", "UInt", $LCID, "UInt", $LCType + $Month, "WStr", "", "Int", 80)
+	If @error Or $aResult[0] = 0 Then Return False
+	Return _StringProper($aResult[3])
+EndFunc

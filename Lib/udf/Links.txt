@@ -22,6 +22,10 @@ SFTP Library (SFTPEx.au3)
 http://www.autoitscript.com/forum/topic/138095-udf-to-support-sftp-protocol-using-psftp/
 
 
+SMTP Mailer Library (SMTPMailer.au3)
+http://www.autoitscript.com/forum/topic/23860-smtp-mailer-that-supports-html-and-attachments/
+
+
 Startup Library (Startup.au3)
 http://www.autoitscript.com/forum/topic/124508-startup-create-startup-entries-in-the-startup-folder-or-registry/
 

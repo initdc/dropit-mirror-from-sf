@@ -3,9 +3,9 @@
 
 #include-once
 #include <DropIt_General.au3>
-#include <Lib\udf\DropIt_LibFiles.au3>
-#include <Lib\udf\DropIt_LibVarious.au3>
-#include <Lib\udf\HashForFile.au3>
+#include "Lib\udf\DropIt_LibFiles.au3"
+#include "Lib\udf\DropIt_LibVarious.au3"
+#include "Lib\udf\HashForFile.au3"
 
 Global $G_List_NumberProperties = 34
 

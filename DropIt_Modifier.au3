@@ -2,8 +2,8 @@
 ; Version note at the end of this file
 #include-once
 #include <DropIt_Global.au3>
-#include <Lib\udf\DropIt_LibBDV.au3>
-#include <Lib\udf\DropIt_LibStringM.au3>
+#include "Lib\udf\DropIt_LibBDV.au3"
+#include "Lib\udf\DropIt_LibStringM.au3"
 
 ; #INDEX#===================================================================================================
 ; Title .........: Abbreviation Modifier
@@ -295,12 +295,12 @@ Prompter modifier
 	- d(s1)		;Delete all occurences og the string s1
 	- c>d       ;Cut d letter from Ini
 	- c<d		;Cut d letter from End
-	- >(s)		;Retrive a String from the substring s included until the end
-	- >-(s)		;Retrive a String from the substring s excluded until the end
-	- <(s)		;Retrive a String from the substring s included until the beginning
-	- <-(s)		;Retrive a String from the substring s excluded until the beginning
-	- -(s1,s2)	;Retrive a String between string s1 and s2 included
-	- --(s1,s2)	;Retrive a String between string s1 and s2 excluded
+	- s>(s1)		;Retrive a String from the substring s1 included until the end
+	- s>-(s1)		;Retrive a String from the substring s1 excluded until the end
+	- s<(s1)		;Retrive a String from the substring s1 included until the beginning
+	- s<-(s1)		;Retrive a String from the substring s1 excluded until the beginning
+	- s-(s1,s2)	;Retrive a String between string s1 and s2 included
+	- s--(s1,s2)	;Retrive a String between string s1 and s2 excluded
 	- ??		;Alternates letter upper and lower
 	- ? ?		;Alternates letter upper and lower but leave space neutral
 	- En(pass)  ;Encrypt with password *

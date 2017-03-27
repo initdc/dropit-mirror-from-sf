@@ -5,20 +5,20 @@
 #include <DropIt_General.au3>
 #include <DropIt_Global.au3>
 #include <FTPEx.au3>
-#include <Lib\udf\APIConstants.au3>
-#include <Lib\udf\WinAPIEx.au3>
+#include "Lib\udf\APIConstants.au3"
+#include "Lib\udf\WinAPIEx.au3"
 
-Func __FTP_ListToArrayEx($sSession, $sRemoteDir = "", $ReturnType = 0, $iFlags = 0, $fTimeFormat = 1)
-	If $sSession = 0 Then
+Func __FTP_ListToArrayEx($l_FTPSession, $s_RemoteDir = "", $ReturnType = 0, $iFlags = 0, $fTimeFormat = 1)
+	If $l_FTPSession = 0 Then
 		Return SetError(1, 0, 0)
 	EndIf
 
 	Local $aFileList, $sPreviousDir, $iError = 0
-	$sPreviousDir = _FTP_DirGetCurrent($sSession)
-	_FTP_DirSetCurrent($sSession, $sRemoteDir)
-	$aFileList = _FTP_ListToArrayEx($sSession, $ReturnType, $iFlags, $fTimeFormat)
+	$sPreviousDir = _FTP_DirGetCurrent($l_FTPSession)
+	_FTP_DirSetCurrent($l_FTPSession, $s_RemoteDir)
+	$aFileList = _FTP_ListToArrayEx($l_FTPSession, $ReturnType, $iFlags, $fTimeFormat)
 	$iError = @error
-	_FTP_DirSetCurrent($sSession, $sPreviousDir)
+	_FTP_DirSetCurrent($l_FTPSession, $sPreviousDir)
 	If $iError Then
 		Return SetError($iError, 0, $aFileList)
 	EndIf
@@ -26,7 +26,7 @@ Func __FTP_ListToArrayEx($sSession, $sRemoteDir = "", $ReturnType = 0, $iFlags =
 	Return $aFileList
 EndFunc   ;==>__FTP_ListToArrayEx
 
-Func __FTP_ProgressUpload($l_FTPSession, $s_LocalFile, $s_RemoteFile, $l_Progress1, $l_Progress2, $fSize) ; Modified From: http://www.autoitscript.com/forum/topic/113542-ftp-upload-issue/
+Func __FTP_ProgressUpload($l_FTPSession, $s_LocalFile, $s_RemoteFile, $l_Progress1, $l_Progress2, $l_Percent1, $l_Percent2, $fSize) ; Modified From: http://www.autoitscript.com/forum/topic/113542-ftp-upload-issue/
 	#cs
 		Description: Uploads A File In Binary Mode And Update Progress Bars.
 		Returns: 1
@@ -70,9 +70,11 @@ Func __FTP_ProgressUpload($l_FTPSession, $s_LocalFile, $s_RemoteFile, $l_Progres
 		$fPercent = Round($fDone / $fSize * 100)
 		If GUICtrlRead($l_Progress2) <> $fPercent Then
 			GUICtrlSetData($l_Progress2, $fPercent)
+			GUICtrlSetData($l_Percent2, $fPercent & ' %')
 			$fPercent = __GetPercent($fDone, 0)
 			If GUICtrlRead($l_Progress1) <> $fPercent Then
 				GUICtrlSetData($l_Progress1, $fPercent)
+				GUICtrlSetData($l_Percent1, $fPercent & ' %')
 			EndIf
 		EndIf
 
@@ -94,66 +96,68 @@ Func __FTP_ProgressUpload($l_FTPSession, $s_LocalFile, $s_RemoteFile, $l_Progres
 	Return 1
 EndFunc   ;==>__FTP_ProgressUpload
 
-Func __SFTP_ProgressUpload($sSession, $sLocalFile, $sRemoteFile, $sProgress_1, $sProgress_2, $sSize)
+Func __SFTP_ProgressUpload($l_SFTPSession, $s_LocalFile, $s_RemoteFile, $l_Progress1, $l_Progress2, $l_Percent1, $l_Percent2, $iSize)
 	#cs
 		Description: Uploads A File With SFTP Protocol And Update Progress Bars.
 		Returns: 1
 	#ce
-	If ProcessExists($sSession) = 0 Then
+	If ProcessExists($l_SFTPSession) = 0 Then
 		Return SetError(1, 0, 0)
 	EndIf
 
-	If $sRemoteFile <> "" Then
-		$sRemoteFile = ' "' & $sRemoteFile & '"'
+	If $s_RemoteFile <> "" Then
+		$s_RemoteFile = ' "' & $s_RemoteFile & '"'
 	EndIf
-	Local $sLine, $sInitialBytes, $sReadBytes, $sPercent, $sError
-	If _WinAPI_PathIsDirectory($sLocalFile) Then
+	Local $sLine, $sInitialBytes, $sReadBytes, $fPercent, $iError
+	If _WinAPI_PathIsDirectory($s_LocalFile) Then
 		$sLine = '-r '
 	EndIf
 
-	StdinWrite($sSession, 'put ' & $sLine & '-- "' & $sLocalFile & '"' & $sRemoteFile & @CRLF)
-	$sReadBytes = ProcessGetStats($sSession, 1)
+	StdinWrite($l_SFTPSession, 'put ' & $sLine & '-- "' & $s_LocalFile & '"' & $s_RemoteFile & @CRLF)
+	$sReadBytes = ProcessGetStats($l_SFTPSession, 1)
 	$sInitialBytes = $sReadBytes[3]
 	While 1
-		$sLine = StdoutRead($sSession)
-		If ProcessExists($sSession) = 0 Then
-			$sError = 1
+		$sLine = StdoutRead($l_SFTPSession)
+		If ProcessExists($l_SFTPSession) = 0 Then
+			$iError = 1
 			ExitLoop
 		ElseIf StringInStr($sLine, "psftp>") Then
 			ExitLoop
 		ElseIf StringInStr($sLine, "=> remote:") Then
 			ContinueLoop
 		ElseIf StringInStr($sLine, "unable to open") Then
-			$sError = 2
+			$iError = 2
 			ExitLoop
 		ElseIf StringInStr($sLine, "Cannot create directory") Then
-			$sError = 3
+			$iError = 3
 			ExitLoop
 		ElseIf $sLine <> "" Then
-			$sError = 5
+			$iError = 5
 			ExitLoop
 		EndIf
 
-		$sReadBytes = ProcessGetStats($sSession, 1)
-		$sPercent = Round(($sReadBytes[3] - $sInitialBytes) / $sSize * 100)
-		If GUICtrlRead($sProgress_2) <> $sPercent Then
-			GUICtrlSetData($sProgress_2, $sPercent)
-			$sPercent = __GetPercent($sReadBytes[3] - $sInitialBytes, 0)
-			If GUICtrlRead($sProgress_1) <> $sPercent Then
-				GUICtrlSetData($sProgress_1, $sPercent)
+		$sReadBytes = ProcessGetStats($l_SFTPSession, 1)
+		$fPercent = Round(($sReadBytes[3] - $sInitialBytes) / $iSize * 100)
+		If GUICtrlRead($l_Progress2) <> $fPercent Then
+			GUICtrlSetData($l_Progress2, $fPercent)
+			GUICtrlSetData($l_Percent2, $fPercent & ' %')
+			$fPercent = __GetPercent($sReadBytes[3] - $sInitialBytes, 0)
+			If GUICtrlRead($l_Progress1) <> $fPercent Then
+				GUICtrlSetData($l_Progress1, $fPercent)
+				GUICtrlSetData($l_Percent1, $fPercent & ' %')
 			EndIf
 		EndIf
 
 		If $G_Global_AbortSorting Then
-			ProcessClose($sSession)
-			$sError = 4
+			ProcessClose($l_SFTPSession)
+			$iError = 4
 			ExitLoop
 		EndIf
 		Sleep(10)
 	WEnd
 
-	If $sError Then
-		Return SetError($sError, 0, 0)
+	If $iError Then
+		Return SetError($iError, 0, 0)
 	EndIf
 	Return 1
 EndFunc   ;==>__SFTP_ProgressUpload

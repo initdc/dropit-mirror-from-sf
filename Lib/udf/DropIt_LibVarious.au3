@@ -6,22 +6,6 @@
 #include <GUIConstantsEx.au3>
 #include "WinAPIEx.au3"
 
-Func __ByteSuffix($iBytes)
-	#cs
-		Description: Round A Value Of Bytes To Highest Value.
-		Returns: [1024 Bytes = 1 KB]
-	#ce
-	Local $A, $iPlaces = 1, $aArray[9] = ["bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"]
-	While $iBytes > 1023
-		$A += 1
-		$iBytes /= 1024
-	WEnd
-	If $iBytes < 100 Then
-		$iPlaces += 1
-	EndIf
-	Return Round($iBytes, $iPlaces) & " " & $aArray[$A]
-EndFunc   ;==>__ByteSuffix
-
 Func __CmdLineRaw($sString) ; Taken From: http://www.autoitscript.com/forum/topic/121034-stringsplit-cmdlineraw/page__p__840768#entry840768
 	Local $aError[2] = [1, $sString]
 

@@ -10,11 +10,11 @@
 #include <GUIComboBoxEx.au3>
 #include <GUIConstantsEx.au3>
 #include <GUIImageList.au3>
-#include <Lib\udf\APIConstants.au3>
-#include <Lib\udf\DropIt_LibFiles.au3>
-#include <Lib\udf\DropIt_LibImages.au3>
-#include <Lib\udf\DropIt_LibVarious.au3>
-#include <Lib\udf\WinAPIEx.au3>
+#include "Lib\udf\APIConstants.au3"
+#include "Lib\udf\DropIt_LibFiles.au3"
+#include "Lib\udf\DropIt_LibImages.au3"
+#include "Lib\udf\DropIt_LibVarious.au3"
+#include "Lib\udf\WinAPIEx.au3"
 
 Global $G_General_Language
 
@@ -596,6 +596,22 @@ EndFunc   ;==>__SetCurrentSize
 #EndRegion >>>>> Size Functions <<<<<
 
 #Region >>>>> Others Functions <<<<<
+Func __ByteSuffix($iBytes)
+	#cs
+		Description: Round A Value Of Bytes To Highest Value.
+		Returns: [1024 Bytes = 1 KB]
+	#ce
+	Local $A, $iPlaces = 1, $aArray[9] = [__GetLang('SIZE_B', 'bytes'), __GetLang('SIZE_KB', 'KB'), __GetLang('SIZE_MB', 'MB'), __GetLang('SIZE_GB', 'GB'), __GetLang('SIZE_TB', 'TB'), "PB", "EB", "ZB", "YB"]
+	While $iBytes > 1023
+		$A += 1
+		$iBytes /= 1024
+	WEnd
+	If $iBytes < 100 Then
+		$iPlaces += 1
+	EndIf
+	Return Round($iBytes, $iPlaces) & " " & $aArray[$A]
+EndFunc   ;==>__ByteSuffix
+
 Func __EnvironmentVariables()
 	#cs
 		Description: Set The Standard & User Assigned Environment Variables.
