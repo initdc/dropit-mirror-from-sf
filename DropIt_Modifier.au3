@@ -1,9 +1,10 @@
-; !!! VERSION 0.5 !!!
+; !!! VERSION 0.6 !!!
 ; Version note at the end of this file
 #include-once
 #include "DropIt_Global.au3"
 #include "Lib\udf\DropIt_LibBDV.au3"
 #include "Lib\udf\DropIt_LibStringM.au3"
+#include "Lib\udf\UDFB64.au3"
 
 ; #INDEX#===================================================================================================
 ; Title .........: Abbreviation Modifier
@@ -23,7 +24,7 @@
 
 
 ; #VARIABLES# ==============================================================================================
-Global $i_Modifier_ModifierRulesLength = 46  ;Note UBound($modifierRules) - 1 not used
+Global $i_Modifier_ModifierRulesLength = 50  ;Note UBound($modifierRules) - 1 not used
 Global Const $i_Modifier_ModifierRule = 0         ;Indexes of inner array
 Global Const $i_Modifier_ModifierWhat = 1
 Global Const $i_Modifier_ModifierAction = 2
@@ -77,16 +78,20 @@ Global $aas_Modifier_ModifierRules[$i_Modifier_ModifierRulesLength][6] = [ _
 	["[a][>][(](.+),(.+)[)]", "(.+)" , '_StringInsert("/1", "\1", \2 - 1)'], _
 	["[a][<][(](.+),(.+)[)]", "(.+)" , '_StringInsert("/1", "\1", - \2 + 1)'], _
 	["[l][z][(](.+)[)]", "(.+)", '_StringM_AddLeadingZeros("/1", \1)'], _
-	["[E][n][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2)'], _ ; DEPRECATED.
-	["[D][e][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2)'], _ ; DEPRECATED.
-	["[E][n][N][P][t][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, true, false)'], _ ; DEPRECATED.
-	["[D][e][N][P][t][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, true, false)'], _ ; DEPRECATED.
-	["[E][n][N][S][p][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, false, true)'], _ ; DEPRECATED.
-	["[D][e][N][S][p][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, false, true)'], _ ; DEPRECATED.
-	["[E][n][N][S][p][P][t][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, true, true)'], _ ; DEPRECATED.
-	["[D][e][N][S][p][P][t][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, true, true)'], _ ; DEPRECATED.
-	["[E][n][(](.+)[,](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, false, false, "\2")'], _ ; DEPRECATED.
-	["[D][e][(](.+)[,](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, false, false, "\2")']] ; DEPRECATED.
+	["[E][n][6][4][a]", "(.+)", 'B64Encode("/1", 0)'], _
+	["[E][n][6][4][u]", "(.+)", 'B64Encode("/1", 1)'], _
+	["[D][e][6][4][a]", "(.+)", 'B64Decode("/1", 0)'], _
+	["[D][e][6][4][u]", "(.+)", 'B64Decode("/1", 1)'], _
+	["[E][n][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2)'], _
+	["[D][e][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2)'], _
+	["[E][n][N][P][t][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, true, false)'], _
+	["[D][e][N][P][t][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, true, false)'], _
+	["[E][n][N][S][p][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, false, true)'], _
+	["[D][e][N][S][p][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, false, true)'], _
+	["[E][n][N][S][p][P][t][(](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, true, true)'], _
+	["[D][e][N][S][p][P][t][(](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, true, true)'], _
+	["[E][n][(](.+)[,](.+)[)]", "(.+)" , '_BDV_Encrypt("/1", "\1", 2, false, false, "\2")'], _
+	["[D][e][(](.+)[,](.+)[)]", "(.+)" , '_BDV_Decrypt("/1", "\1", 2, false, false, "\2")']]
 
 
 ; ==========================================================================================================

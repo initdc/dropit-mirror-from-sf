@@ -2,6 +2,10 @@
 http://www.autoitscript.com/forum/topic/91283-7zread-udf/
 
 
+Base64 Library (UDFB64.au3)
+https://www.autoitscript.com/forum/topic/145526-base64-converter-files-and-strings-can-be-modified-easily/
+
+
 Binary Library (Binary.au3)
 http://www.autoitscript.com/forum/topic/131037-binary-udf/
 

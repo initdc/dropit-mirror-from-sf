@@ -11,7 +11,7 @@
 #include "Lib\udf\DropIt_LibVarious.au3"
 
 Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 0)
-	Local $dGUI, $dButtonOverwrite, $dButtonRename, $dButtonSkip, $dCheckForAll, $dValue, $dString[5], $dLabel[8]
+	Local $dGUI, $dINI, $dButtonOverwrite, $dButtonRename, $dButtonSkip, $dCheckForAll, $dValue, $dString[5], $dLabel[8]
 
 	If _WinAPI_PathIsDirectory($dSourceDir & "\" & $dItem) = 0 Or $dInfo[0] = "-" Then
 		$dString[0] = __GetLang('POSITIONPROCESS_DUPLICATE_0', 'File Already Exists')
@@ -101,7 +101,8 @@ Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 
 				ExitLoop
 
 			Case $dButtonRename
-				$dValue = "Rename1"
+				$dINI = __IsSettingsFile() ; Get Default Settings INI File.
+				$dValue = IniRead($dINI, $G_Global_GeneralSection, "DupManualRename", "Rename1")
 				ExitLoop
 
 			Case $dLabel[0]

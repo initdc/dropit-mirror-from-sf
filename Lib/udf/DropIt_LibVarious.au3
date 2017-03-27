@@ -311,7 +311,7 @@ Func __IniWriteEx($sFilePath, $sSection, $sKey = "", $sValue = "")
 		$hWrite = IniWriteSection($sFilePath, $sSection, $sValue)
 		FileWriteLine($sFilePath, "") ; Add Empty Line.
 		$hFileRead = StringReplace(FileRead($sFilePath), @CRLF & @CRLF & @CRLF, @CRLF & @CRLF) ; Remove Double Empty Lines.
-		$hFileOpen = FileOpen($sFilePath, 2)
+		$hFileOpen = FileOpen($sFilePath, 2 + 8 + 32)
 		If $hFileOpen = -1 Then
 			Return SetError(1, 0, 0)
 		EndIf

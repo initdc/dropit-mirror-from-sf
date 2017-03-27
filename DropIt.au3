@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt: Personal Assistant to Automatically Manage Your Files
-#AutoIt3Wrapper_Res_Fileversion=8.1.2.0
-#AutoIt3Wrapper_Res_ProductVersion=8.1.2.0
+#AutoIt3Wrapper_Res_Fileversion=8.2.0.0
+#AutoIt3Wrapper_Res_ProductVersion=8.2.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Andrea Luparia
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.dropitproject.com
@@ -6089,7 +6089,7 @@ Func _Sorting_EncryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	DirRemove($G_Global_TempDir, 1)
 
 	If $sStringSplit[4] == "True" Then
-		_Sorting_RunDelete($sSource) ; Remove Source After Processing It.
+		_Sorting_RunDelete($sMainArray[$sIndex][0]) ; Remove Source After Processing It.
 	EndIf
 
 	Return $sMainArray ; OK.
@@ -6297,7 +6297,7 @@ Func _Sorting_JoinFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 		$sDestination &= $STATIC_TEMP_ZIP_EXT
 	EndIf
 
-	$sOpenFile = FileOpen($sDestination, 10)
+	$sOpenFile = FileOpen($sDestination, 2 + 8)
     If $sOpenFile = -1 Then
 		Return SetError(2, 0, $sMainArray) ; Failed.
 	EndIf
@@ -6759,7 +6759,7 @@ Func _Sorting_SplitFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 
 	For $A = 1 To $sParts
 		$sCurrPath = $sDestination & "\" & $sFileName & "." & _StringM_AddLeadingZeros($A, 3)
-		$sOpenCurrFile = FileOpen($sCurrPath, 10)
+		$sOpenCurrFile = FileOpen($sCurrPath, 2 + 8)
 		If $sOpenCurrFile = -1 Then
 			FileClose($sOpenFile)
 			DirRemove($sDestination, 1)
@@ -7119,6 +7119,11 @@ Func _Main()
 	__Log_Write(@LF & "===== " & __GetLang('DROPIT_STARTED', 'DropIt Started') & " =====")
 
 	_WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
+
+	If $Global_Monitoring <> 0 And __Is("MonitoringFirstAtStartup") Then
+		$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now, 1) ; Do A First Monitoring Scan At Startup.
+	EndIf
+
 	While 1
 		If $Global_GraduallyHide <> 0 Then
 			$mHidingTime_Now = _HidingTargetImage($mHidingTime_Now)
@@ -7311,10 +7316,10 @@ Func _HidingTargetImage($mTime_Now)
 	Return $mTime_Now
 EndFunc   ;==>_HidingTargetImage
 
-Func _MonitoringFolders($mINI, $mTime_Now)
+Func _MonitoringFolders($mINI, $mTime_Now, $mDoNow = 0)
 	Local $mMonitored, $mStringSplit, $mLoadedFolder[2] = [1, 0]
 
-	If TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
+	If TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Or $mDoNow = 1 Then
 		$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
 		If @error = 0 Then
 			$Global_MenuDisable = 1
@@ -9034,8 +9039,8 @@ Func __Upgrade()
 		Return SetError(1, 0, 0) ; Abort Upgrade If INI Version Is The Same Of Current Software Version.
 	EndIf
 
-	Local $uINI_Array[58][2] = [ _
-			[57, 2], _
+	Local $uINI_Array[60][2] = [ _
+			[59, 2], _
 			["Profile", 1], _
 			["Language", 1], _
 			["PosX", 1], _
@@ -9073,6 +9078,7 @@ Func __Upgrade()
 			["AutoBackup", 1], _
 			["AutoDup", 1], _
 			["DupMode", 1], _
+			["DupManualRename", 1], _ ; INI Setting Only (Not In Options).
 			["CreateLog", 1], _
 			["AmbiguitiesCheck", 1], _
 			["SizeMessage", "AlertSize"], _
@@ -9091,6 +9097,7 @@ Func __Upgrade()
 			["Monitoring", 1], _
 			["MonitoringTime", 1], _
 			["MonitoringSize", 1], _
+			["MonitoringFirstAtStartup", 1], _ ; INI Setting Only (Not In Options).
 			["MasterPassword", 1], _
 			["EndCommandLine", 1]] ; INI Setting Only (Not In Options).
 

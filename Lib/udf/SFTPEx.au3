@@ -1,5 +1,5 @@
 
-; !!! VERSION 1.0 BETA 9 - NOT COMPLETE !!!
+; !!! VERSION 1.0 BETA 10 - NOT COMPLETE !!!
 
 #include-once
 #include <Constants.au3>
@@ -978,7 +978,9 @@ Func _SFTP_ListToArray($hConnection, $sRemoteDir = "", $ReturnType = 0)
 		If ($ReturnType = 1 And StringLeft($aStringSplit[$A], 1) <> "d") Or ($ReturnType = 2 And StringLeft($aStringSplit[$A], 1) <> "-") Then
 			ContinueLoop
 		EndIf
-		$aSubStringSplit = _StringExplode(StringStripWS($aStringSplit[$A], 7), " ", 8)
+		;$aSubStringSplit = _StringExplode(StringStripWS($aStringSplit[$A], 7), " ", 8)
+		$aSubStringSplit = _StringExplode(StringStripWS(StringLeft($aStringSplit[$A], StringInStr($aStringSplit[$A], ":") + 3), 7), " ", 7)
+		_ArrayAdd($aSubStringSplit, StringMid($aStringSplit[$A], StringInStr($aStringSplit[$A], ":") + 4))
 		If UBound($aSubStringSplit) < 9 Then
 			ContinueLoop
 		EndIf
