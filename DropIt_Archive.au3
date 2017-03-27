@@ -5,14 +5,14 @@
 #include <Constants.au3>
 #include <GUIConstantsEx.au3>
 #include <String.au3>
+#include <WinAPIFiles.au3>
+#include <WinAPIShPath.au3>
 #include <WindowsConstants.au3>
 
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
-#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
-#include "Lib\udf\WinAPIEx.au3"
 
 Func __7ZipGetPassword($sFilePath, $sPassword = "")
 	#cs

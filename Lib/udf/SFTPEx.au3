@@ -813,15 +813,18 @@ EndFunc   ; ==>_SFTP_FileGetSize
 ; Description ...: Move/Rename a file on a SFTP server.
 ; Syntax.........: _SFTP_FileMove ( $hConnection, $sSourceFile, $sDestinationFile )
 ; Parameters ....: $hConnection - as returned by _SFTP_Connect().
-;                  $sSourceFile - The source file to move/rename.
-;                  $sDestinationFile - The destination file to move/rename.
+;                  $sSourceFile - The source file to move/rename. Wildcards are allowed if move to a directory
+;                  $sDestinationFile - The destination file or directory to move/rename.
 ; Return values .: Success - 1
 ;                  Failure - 0, sets @error
 ;                  |1 - The connection is closed
 ;                  |2 - File not found
-;                  |3 - Other error
-; Author ........: Lupo73
-; Modified.......:
+;                  |3 - Failure to rename or move a file. In case of wildcards, failure to move at least one file.
+;                  |4 - no file name matched the source file name(s)
+;                  |5 - Other error
+; Author ........: Lupo73, GreenCan
+; Modified.......: Corrected issue while trying to rename a file to a new file that already exists
+;                   Issue with StdoutRead being empty still, causing malfunction of _SFTP_FileMove, added wait loop.
 ; Remarks .......:
 ; Related .......: _SFTP_Connect
 ; Link ..........:
@@ -832,23 +835,37 @@ Func _SFTP_FileMove($hConnection, $sSourceFile, $sDestinationFile)
 		Return SetError(1, 0, 0)
 	EndIf
 
-	Local $sLine
+    Local $sLine = StdoutRead($hConnection)
 	StdinWrite($hConnection, 'mv "' & $sSourceFile & '" "' & $sDestinationFile & '"' & @CRLF)
+	While 1
+		Sleep(100)
+		$sLine = StdoutRead($hConnection, True)
+		If StringInStr($sLine, "psftp>") Then
+			ExitLoop
+		EndIf
+	WEnd
 	While 1
 		$sLine = StdoutRead($hConnection)
 		If ProcessExists($hConnection) = 0 Then
 			Return SetError(1, 0, 0)
-		ElseIf StringInStr($sLine, "psftp>") Then
-			ExitLoop
 		ElseIf StringInStr($sLine, $sSourceFile & " -> ") Then
 			ContinueLoop
 		ElseIf StringInStr($sLine, "no such file or directory") Then
 			Return SetError(2, 0, 0)
-		ElseIf $sLine <> "" Then
+		ElseIf StringInStr($sLine, "failure") Then
 			Return SetError(3, 0, 0)
+		ElseIf StringInStr($sLine, "nothing matched") Then
+			Return SetError(4, 0, 0)
+		ElseIf StringInStr($sLine, "psftp>") Then
+			ExitLoop
+		ElseIf $sLine <> "" Then
+			Return SetError(5, 0, 0)
+		ElseIf $sLine == "" Then
+			ExitLoop
 		EndIf
 		Sleep(10)
 	WEnd
+	$sLine = StdoutRead($hConnection)
 
 	Return 1
 EndFunc   ; ==>_SFTP_FileMove

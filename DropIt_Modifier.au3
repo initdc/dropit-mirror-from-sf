@@ -41,10 +41,10 @@ Global $s_Modifier_VarEscapeChar = $STATIC_ABBREVIATION_ESCAPE_CHAR
 ;Attention: action from ModifierRule is with "\" and action from ModifierWhat is "/"
 ;Modifier array [n][6] = [n]["Modifier Rule", "Applicantion Rule (What)", "Application (Action)","MultiAction"..]
 Global $aas_Modifier_ModifierRules[$i_Modifier_ModifierRulesLength][6] = [ _
-	["[+]" , "(.)(.*)", 'StringUpper("/1")&"/2"'], _
+	["[+]", "(.)(.*)", 'StringUpper("/1")&"/2"'], _
 	["[+][+]", "(.+)", '_StringM_FirstLetterUpAllWord("/1")'],  _
 	["[+][+][+]", "(.+)", 'StringUpper("/1")'],  _
-	["[-]" , "(.)(.*)", 'StringLower("/1")&"/2"'], _
+	["[-]", "(.)(.*)", 'StringLower("/1")&"/2"'], _
 	["[-][-]", "(.+)", '_StringM_LowerAllExceptFirstLetter("/1")'],  _
 	["[-][-][-]", "(.+)", 'StringLower("/1")'],  _
 	["[>](\d+)[,](\d+)","(.+)",'StringMid("/1", \1, \2 )'], _
@@ -62,10 +62,10 @@ Global $aas_Modifier_ModifierRules[$i_Modifier_ModifierRulesLength][6] = [ _
 	["[c][>](.+)","(.+)",'StringTrimLeft("/1", \1)'], _
 	["[c][<](.+)","(.+)",'StringTrimRight("/1", \1)'], _
 	["[d][:](.+)([|].+)*","(.+)",'StringReplace("/1", "\1","")',"|","(.+)",2], _
-	["[s][>][(](.+)[)]","(.+)", 'StringMid("/1",StringInStr ("/1", "\1"))' ], _
-	["[s][>][-][(](.+)[)]","(.+)" ,'StringMid("/1",StringInStr ("/1", "\1") + StringLen("\1"))' ], _
-	["[s][<][(](.+)[)]","(.+)",'StringMid("/1",1,StringInStr ("/1", "\1") + StringLen("\1") -1)'], _
-	["[s][<][-][(](.+)[)]","(.+)" ,'StringMid("/1",1,StringInStr ("/1", "\1") -1)'], _
+	["[s][>][(](.+)[)]","(.+)", 'StringMid("/1",StringInStr("/1", "\1"))' ], _
+	["[s][>][-][(](.+)[)]","(.+)" ,'StringMid("/1",StringInStr("/1", "\1") + StringLen("\1"))' ], _
+	["[s][<][(](.+)[)]","(.+)",'StringMid("/1",1,StringInStr("/1", "\1") + StringLen("\1") -1)'], _
+	["[s][<][-][(](.+)[)]","(.+)" ,'StringMid("/1",1,StringInStr("/1", "\1") -1)'], _
 	["[s][-][(](.+),(.+)[)]","(.+)" ,'_StringM_getStringBetween("/1","\1","\2",true)'], _
 	["[s][-][-][(](.+),(.+)[)]","(.+)" ,'_StringM_getStringBetween("/1","\1","\2")' ], _
 	["[?][?]","(.+)" ,'_StringM_UpperLowerString("/1",false)'], _

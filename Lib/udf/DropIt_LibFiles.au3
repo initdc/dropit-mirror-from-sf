@@ -5,10 +5,9 @@
 #include <Constants.au3>
 #include <Date.au3>
 #include <String.au3>
+#include <WinAPIFiles.au3>
 
-#include "APIConstants.au3"
 #include "RecFileListToArray.au3"
-#include "WinAPIEx.au3"
 
 Func __FileCompareDate($sSource, $sDestination, $fDestinationIsDate = 0, $iMethod = 0) ; Modified From: http://www.autoitscript.com/forum/topic/125127-compare-file-datetime-stamps/page__p__868705#entry868705
 	#cs
@@ -195,12 +194,49 @@ Func __FindInDOCX($sFilePath, $sSearch, $iLiteral = 0, $iCaseSensitive = 0) ; In
 	Return SetError(1, 0, 0)
 EndFunc   ;==>__FindInDOCX
 
+Func __FindInPDF($sFilePath, $sSearch, $iLiteral = 0, $iCaseSensitive = 0)
+	#cs
+		Description: Search for a string in a PDF file.
+		Returns: True or False
+	#ce
+	If StringTrimLeft(_WinAPI_PathFindExtension($sFilePath), 1) <> 'pdf' Then
+		Return SetError(1, 0, -1)
+	EndIf
+
+	Local $sOutput, $sPDFToTextPath = @ScriptDir & "\Lib\pdftotext\pdftotext.exe"
+	Local $iPID = Run('"' & $sPDFToTextPath & '" -q "' & $sFilePath & '" -', @SystemDir, @SW_HIDE, $STDOUT_CHILD)
+	While 1
+		$sOutput &= StdoutRead($iPID)
+		If @error Then
+			ExitLoop
+		EndIf
+	WEnd
+
+	If $iLiteral = 0 Then
+		$sSearch = StringReplace($sSearch, " ", "|")
+	EndIf
+	If $iCaseSensitive = 0 Then
+		$sSearch = "(?i)" & $sSearch
+	EndIf
+
+	If StringRegExp($sOutput, $sSearch) Then
+		Return 1
+	EndIf
+	Return SetError(1, 0, 0)
+EndFunc   ;==>__FindInPDF
+
 Func __FindInFile($sFilePath, $sSearch, $iLiteral = 0, $iCaseSensitive = 0) ; Inspired By: http://www.autoitscript.com/forum/topic/132159-findinfile-search-for-a-string-within-files-located-in-a-specific-directory/
 	#cs
 		Description: Search for a string in a file.
 		Returns: True or False
 	#ce
 	If __FindInDOCX($sFilePath, $sSearch, $iLiteral, $iCaseSensitive) >= 0 Then ; File Is DOCX.
+		If @error = 0 Then
+			Return 1
+		EndIf
+		Return SetError(1, 0, 0)
+	EndIf
+	If __FindInPDF($sFilePath, $sSearch, $iLiteral, $iCaseSensitive) >= 0 Then ; File Is PDF.
 		If @error = 0 Then
 			Return 1
 		EndIf

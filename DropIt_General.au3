@@ -6,16 +6,15 @@
 #include <GUIComboBoxEx.au3>
 #include <GUIConstantsEx.au3>
 #include <GUIImageList.au3>
+#include <WinAPIShPath.au3>
 
 #include "DropIt_Association.au3"
 #include "DropIt_Duplicate.au3"
 #include "DropIt_Global.au3"
 #include "DropIt_ProfileList.au3"
-#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibFiles.au3"
 #include "Lib\udf\DropIt_LibImages.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
-#include "Lib\udf\WinAPIEx.au3"
 
 Global $G_General_Language
 
@@ -113,7 +112,8 @@ Func __IsSettingsFile($iINI = -1)
 				"SendToMode=Permanent" & @LF & "ProfileEncryption=False" & @LF & "ScanSubfolders=False" & @LF & "FolderAsFile=False" & @LF & "IgnoreNew=False" & @LF & _
 				"AutoStart=False" & @LF & "AutoClose=True" & @LF & "PlaySound=False" & @LF & "AutoDup=False" & @LF & "DupMode=Skip" & @LF & "CreateLog=False" & @LF & _
 				"ShowListView=False" & @LF & "AmbiguitiesCheck=False" & @LF & "GroupOrder=Path" & @LF & "AlertSize=True" & @LF & "AlertDelete=False" & @LF & _
-				"AlertFailed=True" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & "MonitoringSize=0" & @LF & "MasterPassword="
+				"AlertFailed=True" & @LF & "GraduallyHide=False" & @LF & "ChangedSize=False" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & _
+				"MonitoringSize=0" & @LF & "MasterPassword="
 
 		__IniWriteEx($iINI, $G_Global_GeneralSection, "", $iINIData)
 		__IniWriteEx($iINI, "MonitoredFolders", "", "")
@@ -341,8 +341,11 @@ Func __ArrayToProfile($aArray, $sProfileName, $sProfileDirectory = -1, $sImage =
 		Description: Create A Profile From An Array.
 		Return: Profile Name
 	#ce
-	Local $sProfilePath, $sAssociationField
-	Local $sFields[19] = [18, "State", "Rules", "Action", "Destination", "Filters", "ListProperties", "HTMLTheme", "SiteSettings", "CryptSettings", "GalleryProperties", "GalleryTheme", "GallerySettings", "CompressSettings", "ExtractSettings", "OpenWithSettings", "ListSettings", "FavouriteAssociation", "UseRegEx"]
+	Local $sProfilePath, $sAssociationField, $iNumberFields = __GetAssociationKey(-1)
+	Local $sFields[$iNumberFields] = [$iNumberFields - 1]
+	For $A = 1 To $iNumberFields - 1
+		$sFields[$A] = __GetAssociationKey($A)
+	Next
 	ReDim $aArray[$aArray[0][0] + 1][$sFields[0] + 2]
 
 	If $sProfileDirectory = -1 Then
@@ -442,7 +445,15 @@ Func __ArrayToCSV($aArray, $sDestination)
 		Description: Write An Array Of Associations To CSV File.
 		Returns: 1
 	#ce
-	Local $hFileOpen, $sString = '"NAME", "STATE", "RULES", "ACTION", "DESTINATION", "FILTERS", "LIST PROPERTIES", "HTML THEME", "SITE SETTINGS", "CRYPT SETTINGS", "GALLERY PROPERTIES", "GALLERY THEME", "GALLERY SETTINGS", "COMPRESS SETTINGS", "EXTRACT SETTINGS", "OPEN WITH SETTINGS", "LIST SETTINGS", "FAVOURITE ASSOCIATION", "USE REGULAR EXPRESSION"' & @CRLF
+	Local $hFileOpen, $sString, $iNumberFields = __GetAssociationKey(-1)
+	For $A = 1 To $iNumberFields
+		$sString &= '"' & __GetAssociationKey($A - 1, 1) & '"'
+		If $A <> $iNumberFields Then
+			$sString &= ', '
+		Else
+			$sString &= @CRLF
+		EndIf
+	Next
 
 	For $A = 1 To $aArray[0][0]
 		For $B = 1 To $aArray[0][1]
@@ -513,8 +524,8 @@ Func __SetPositionResult($sMainArray, $sFrom, $sTo, $sListView, $sElementsGUI, $
 		Description: Set The Position Result In The ListView.
 		Returns: Nothing.
 	#ce
-	Local $sText, $sDestination, $sAction = $sMainArray[$sFrom][3]
-	$sDestination = __GetDestinationString($sAction, $sMainArray[$sFrom][4])
+	Local $sText, $sDestination, $sAction = $sMainArray[$sFrom][2]
+	$sDestination = __GetDestinationString($sAction, $sMainArray[$sFrom][3])
 
 	If $sResult == 0 Then
 		$sText = __GetLang('OK', 'OK')
@@ -522,7 +533,7 @@ Func __SetPositionResult($sMainArray, $sFrom, $sTo, $sListView, $sElementsGUI, $
 	EndIf
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][5] <> -9 Then ; If Not Previously Processed.
+		If $sMainArray[$A][4] <> -9 Then ; If Not Previously Processed.
 			If $sResult <> 0 Then
 				If $sResult == -1 Then
 					$sText = __GetLang('POSITIONPROCESS_LOGMSG_0', 'Skipped')
@@ -531,7 +542,7 @@ Func __SetPositionResult($sMainArray, $sFrom, $sTo, $sListView, $sElementsGUI, $
 				EndIf
 				__Log_Write($sText, $sMainArray[$A][0])
 			EndIf
-			If $sMainArray[$A][5] <> -8 Then ; If Not Previously Virtually Processed.
+			If $sMainArray[$A][4] <> -8 Then ; If Not Previously Virtually Processed.
 				__SetProgressResult($sElementsGUI, $sMainArray[$A][1], $sMainArray[0][0], $A)
 			EndIf
 			_GUICtrlListView_AddSubItem($sListView, $A - 1, $sDestination, 2)

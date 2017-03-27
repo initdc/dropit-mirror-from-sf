@@ -1,4 +1,4 @@
-#define MyAppVer "6.0"
+#define MyAppVer "6.1"
 
 [Setup]
 AppName=DropIt
@@ -56,8 +56,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "..\DropIt_v{#MyAppVer}_Portable\DropIt_x64.exe"; DestDir: "{app}"; DestName: "DropIt.exe"; Check: Is64BitInstallMode
-Source: "..\DropIt_v{#MyAppVer}_Portable\DropIt.exe"; DestDir: "{app}"; Check: not Is64BitInstallMode
+Source: "..\DropIt_v{#MyAppVer}_Portable\DropIt.exe"; DestDir: "{app}"
 Source: "..\DropIt_v{#MyAppVer}_Portable\*"; DestDir: "{app}"; Excludes: "\*.exe"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
@@ -74,5 +73,4 @@ Filename: "{app}\DropIt.exe"; Description: "{cm:LaunchProgram,DropIt}"; Flags: n
 Filename: "{app}\DropIt.exe"; Parameters: "/Uninstall"
 
 [UninstallDelete]
-; Type: filesandordirs; Name: "{userappdata}\DropIt"
 Type: filesandordirs; Name: "{app}\Profiles"

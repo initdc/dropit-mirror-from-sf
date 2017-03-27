@@ -2,12 +2,13 @@
 ; Update funtions of DropIt
 
 #include-once
+#include <WinAPI.au3>
+#include <WinAPIFiles.au3>
+
 #include "DropIt_Archive.au3"
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
-#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
-#include "Lib\udf\WinAPIEx.au3"
 
 Func __Update_Check($uLabel = -1, $uProgress = -1, $uCancel = -1, $uHandle = -1)
 	Local $uBackground_GUI
@@ -28,7 +29,7 @@ Func __Update_Check($uLabel = -1, $uProgress = -1, $uCancel = -1, $uHandle = -1)
 	EndIf
 
 	Local $uMsgBox, $uDownload, $uVersion, $uPage, $uCancelRead, $uCancelled = 0, $uPercent = 0, $uBefore = "<!--<version>", $uAfter = "</version>-->"
-	Local $uSize, $uCurrentPercent, $uDownloaded, $uText, $uDownloadURL, $uDownloadFile, $uDownloadName, $uExtraName64
+	Local $uSize, $uCurrentPercent, $uDownloaded, $uText, $uDownloadURL, $uDownloadFile, $uDownloadName
 
 	HttpSetProxy(0) ; Load System Proxy Settings.
 	$uPage = BinaryToString(InetRead(_WinAPI_ExpandEnvironmentStrings("%DropItURL%"), 17)) ; Load Web Page.
@@ -49,15 +50,8 @@ Func __Update_Check($uLabel = -1, $uProgress = -1, $uCancel = -1, $uHandle = -1)
 	EndIf
 
 	If $uVersion > $G_Global_CurrentVersion Then
-		If (@OSArch <> "X86" And __IsInstalled()) Or @AutoItX64 Then
-			$uBefore = '<!--<update64>'
-			$uAfter = '</update64>-->'
-			$uExtraName64 = '_x64'
-		Else
-			$uBefore = '<!--<update>'
-			$uAfter = '</update>-->'
-			$uExtraName64 = ''
-		EndIf
+		$uBefore = '<!--<update>'
+		$uAfter = '</update>-->'
 		If StringInStr($uPage, $uBefore) = 0 Then
 			GUICtrlSetData($uLabel, __GetLang('UPDATE_MSGBOX_3', 'An error occurs during check for updates.'))
 			Return SetError(1, 0, 0)
@@ -77,7 +71,7 @@ Func __Update_Check($uLabel = -1, $uProgress = -1, $uCancel = -1, $uHandle = -1)
 		GUISetState(@SW_SHOW, $uBackground_GUI) ; Show The Background GUI If It Exists.
 		$uCancelRead = GUICtrlRead($uCancel)
 		GUICtrlSetData($uCancel, __GetLang('CANCEL', 'Cancel'))
-		$uDownloadName = "DropIt_v" & StringReplace($uVersion, " ", "_") & "_Portable" & $uExtraName64
+		$uDownloadName = "DropIt_v" & StringReplace($uVersion, " ", "_") & "_Portable"
 		$uDownloadFile = @ScriptDir & "\" & $uDownloadName & ".zip"
 
 		GUICtrlSetData($uLabel, StringReplace(__GetLang('UPDATE_MSGBOX_8', 'Calculating size for version %DropItNewVersion%'), '%DropItNewVersion%', $uVersion))

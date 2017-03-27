@@ -5,6 +5,7 @@
 #include <Date.au3>
 #include <EditConstants.au3>
 #include <GUIConstantsEx.au3>
+#include <WinAPIFiles.au3>
 #include <WindowsConstants.au3>
 
 #include "DropIt_General.au3"
@@ -81,7 +82,7 @@ Func _ManageCustomAbbreviation($mMenuItem, $mCustomItem, $mNoCustom, $mINI, $mHa
 				ExitLoop
 
 			Case $mSave
-				$mAbbreviation = GUICtrlRead($mInput_Abbreviation)
+				$mAbbreviation = StringReplace(GUICtrlRead($mInput_Abbreviation), "%", "")
 				$mComboAbbreviation = GUICtrlRead($A_Global_ComboBox)
 				$mText = GUICtrlRead($mInput_Text)
 				If StringInStr($mAbbreviation, "#") <> 0 Then
@@ -219,7 +220,7 @@ Func _ContextMenuAbbreviations($mButton_Abbreviations, $mMenuGroup, $mNumberAbbr
 		Case 2000 ; Open The Guide.
 			Local $mMsgBox = MsgBox(0x44, __GetLang('ENV_VAR_MSGBOX_10', 'Abbreviation Modifiers'), __GetLang('ENV_VAR_MSGBOX_11', 'The last chapter of the Guide contains the instructions to use the abbreviation modifiers.') & @LF & __GetLang('ENV_VAR_MSGBOX_12', 'Do you want to read the Guide?'), 0, __OnTop($mHandle))
 			If $mMsgBox = 6 Then
-				__ShellExecuteOnTop($G_Global_GuidePath, "Guide")
+				__ShellExecuteOnTop($G_Global_GuidePath)
 			EndIf
 		Case Else
 			If $mMsg >= $mMenuItem[1][3] And $mMsg <= $mMenuItem[$mMenuItem[0][0]][3] Then
@@ -249,7 +250,7 @@ Func _ContextMenuAbbreviations($mButton_Abbreviations, $mMenuGroup, $mNumberAbbr
 	Return $mValue
 EndFunc   ;==>_ContextMenuAbbreviations
 
-Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDir = "")
+Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDirs = 0)
 	Local $sLoadedProperty
 	Local $aEnvArray[128][3] = [ _
 			[127, 0, 0], _
@@ -382,7 +383,7 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 			["UserInput", 6, 0]]
 
 	For $A = 1 To $aEnvArray[0][0]
-		If StringRegExp($sDestination, "%" & $aEnvArray[$A][0] & "%|%" & $aEnvArray[$A][0] & "#(.*?)%") Then
+		If StringRegExp($sDestination, "(?i)%" & $aEnvArray[$A][0] & "%|%" & $aEnvArray[$A][0] & "#(.*?)%") Then
 			If $sFilePath = "" And $aEnvArray[$A][1] <> 5 Then ; Only Macro Category Is File Independent (Used For Monitored Folders).
 				$sLoadedProperty = StringReplace(__GetLang('ENV_VAR_UNKNOWN', 'Unknown %Abbreviation%', 1), "%Abbreviation%", $aEnvArray[$A][0])
 				$sDestination = _Modifier_StringReplaceModifier($sDestination, $aEnvArray[$A][0], $sLoadedProperty)
@@ -390,7 +391,7 @@ Func _ReplaceAbbreviation($sDestination, $sFilePath = "", $sProfile = "", $sActi
 			EndIf
 			Switch $aEnvArray[$A][1]
 				Case 0 ; Specific Strings.
-					$sLoadedProperty = __GetFileParameter($sFilePath, $sMainDir, $aEnvArray[$A][2])
+					$sLoadedProperty = __GetFileParameter($sFilePath, $sMainDirs, $aEnvArray[$A][2])
 				Case 1 ; From Windows Explorer.
 					$sLoadedProperty = __GetFileProperties($sFilePath, $aEnvArray[$A][2])
 					$sLoadedProperty = StringReplace($sLoadedProperty, ":", ".")
@@ -470,7 +471,7 @@ Func __GetFileHash($sFilePath, $iHashCode)
 	Return $sReturn
 EndFunc   ;==>__GetFileHash
 
-Func __GetFileParameter($sFilePath, $sMainDir, $iParameterCode)
+Func __GetFileParameter($sFilePath, $sMainDirs, $iParameterCode)
 	Local $sReturn = ''
 
 	Switch $iParameterCode
@@ -489,7 +490,7 @@ Func __GetFileParameter($sFilePath, $sMainDir, $iParameterCode)
 		Case 7 ; Parent Folder Name.
 			$sReturn = __GetFileName(__GetParentFolder($sFilePath))
 		Case 8 ; Recreated Directory Structure.
-			$sReturn = StringTrimLeft(__GetParentFolder($sFilePath), StringLen($sMainDir))
+			$sReturn = __GetSubDir($sFilePath, $sMainDirs)
 		Case 9 ; File Drive Letter.
 			$sReturn = StringTrimRight(__GetDrive($sFilePath), 1)
 		Case 10 ; File Version.
@@ -614,27 +615,55 @@ Func __GetDefinedMacro($sProfileName, $iMacroCode)
 	Return $sReturn
 EndFunc   ;==>__GetDefinedMacro
 
+Func __GetSubDir($sFilePath, $sMainDirs)
+	Local $sReturn = ''
+
+	If IsArray($sMainDirs) Then
+		For $A = 1 To $sMainDirs[0]
+			If StringInStr($sFilePath, $sMainDirs[$A]) Then
+				$sReturn = StringTrimLeft(__GetParentFolder($sFilePath), StringLen($sMainDirs[$A]))
+			EndIf
+		Next
+	EndIf
+
+	Return $sReturn
+EndFunc   ;==>__GetSubDir
+
 Func __GetUserInput($sDestination, $sFilePath, $sAction)
-	Local $hGUI, $hSave, $hCancel, $hCheckForAll, $sText, $hInput
+	Local $hGUI, $hSave, $hCancel, $hCheckForAll, $sString[2], $sText, $sFolder, $hInput, $hOpen_Item, $hButton_Destination
 
 	If $G_Global_UserInput <> "" Then
 		Return $G_Global_UserInput
 	EndIf
 	$sDestination = __GetDestinationString($sAction, $sDestination)
+	If _WinAPI_PathIsDirectory($sFilePath) = 0 Then
+		$sString[0] = __GetLang('MOREMATCHES_LABEL_0', 'Loaded file:')
+		$sString[1] = __GetLang('OPEN_FILE', 'Open file')
+	Else
+		$sString[0] = __GetLang('MOREMATCHES_LABEL_3', 'Loaded folder:')
+		$sString[1] = __GetLang('OPEN_FOLDER', 'Open folder')
+	EndIf
 
 	__ExpandEventMode(0) ; Disable Event Buttons.
-	$hGUI = GUICreate(__GetLang('USERINPUT_0', 'Define Abbreviation Value'), 400, 280, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
-	GUICtrlCreateLabel(__GetLang('MOREMATCHES_LABEL_0', 'Loaded item:'), 10, 10, 380, 20)
-	GUICtrlCreateEdit($sFilePath, 10, 30, 380, 52, $ES_READONLY + $WS_VSCROLL)
-	GUICtrlCreateLabel(__GetLang('DESTINATION', 'Destination') & ":", 10, 90 + 10, 380, 20)
-	GUICtrlCreateInput($sDestination, 10, 90 + 30, 380, 22, BitOR($ES_READONLY, $ES_AUTOHSCROLL))
-	GUICtrlCreateLabel(__GetLang('USERINPUT_1', 'Replace %UserInput% with', 1) & ":", 10, 90 + 60 + 10, 380, 20)
-	$hInput = GUICtrlCreateInput("", 10, 90 + 60 + 30, 380, 22)
+	$hGUI = GUICreate(__GetLang('USERINPUT_0', 'Define Abbreviation Value'), 440, 250, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
+	GUICtrlCreateLabel($sString[0], 10, 10, 420, 20)
+	GUICtrlCreateInput($sFilePath, 10, 30, 379, 22, BitOR($ES_READONLY, $ES_AUTOHSCROLL, $ES_LEFT))
+	$hOpen_Item = GUICtrlCreateButton("O", 10 + 384, 28, 36, 25, $BS_ICON)
+	GUICtrlSetTip($hOpen_Item, $sString[1])
+	GUICtrlSetImage($hOpen_Item, @ScriptFullPath, -27, 0)
 
-	$hSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 200 - 60 - 85, 220, 85, 24)
-	$hCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 200 + 60, 220, 85, 24)
+	GUICtrlCreateLabel(__GetLang('DESTINATION', 'Destination') & ":", 10, 60 + 10, 420, 20)
+	GUICtrlCreateInput($sDestination, 10, 60 + 30, 420, 22, BitOR($ES_READONLY, $ES_AUTOHSCROLL))
+	GUICtrlCreateLabel(__GetLang('USERINPUT_1', 'Replace %UserInput% with', 1) & ":", 10, 120 + 10, 420, 20)
+	$hInput = GUICtrlCreateInput("", 10, 120 + 30, 379, 22)
+	$hButton_Destination = GUICtrlCreateButton("S", 10 + 384, 120 + 28, 36, 25, $BS_ICON)
+	GUICtrlSetTip($hButton_Destination, __GetLang('SEARCH', 'Search'))
+	GUICtrlSetImage($hButton_Destination, @ScriptFullPath, -6, 0)
+
+	$hSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 220 - 60 - 90, 190, 90, 24)
+	$hCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 220 + 60, 190, 90, 24)
 	GUICtrlSetState($hSave, $GUI_DEFBUTTON)
-	$hCheckForAll = GUICtrlCreateCheckbox(__GetLang('USERINPUT_2', 'Apply to all %UserInput% abbreviations of this drop', 1), 10, 255, 380, 20)
+	$hCheckForAll = GUICtrlCreateCheckbox(__GetLang('USERINPUT_2', 'Apply to all %UserInput% abbreviations of this drop', 1), 10, 225, 420, 20)
 	GUISetState(@SW_SHOW)
 
 	While 1
@@ -645,6 +674,16 @@ Func __GetUserInput($sDestination, $sFilePath, $sAction)
 			Case $hSave
 				$sText = GUICtrlRead($hInput)
 				ExitLoop
+
+			Case $hOpen_Item
+				__ShellExecuteOnTop($sFilePath, 1)
+
+			Case $hButton_Destination
+				$sFolder = FileSelectFolder(__GetLang('MANAGE_DESTINATION_FOLDER_SELECT', 'Select a destination folder:'), "", 3, GUICtrlRead($hInput), $hGUI)
+				$sFolder = _WinAPI_PathRemoveBackslash($sFolder)
+				If $sFolder <> "" Then
+					GUICtrlSetData($hInput, $sFolder)
+				EndIf
 
 		EndSwitch
 	WEnd

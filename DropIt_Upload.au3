@@ -3,11 +3,11 @@
 
 #include-once
 #include <FTPEx.au3>
+#include <WinAPIFiles.au3>
 
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
-#include "Lib\udf\APIConstants.au3"
-#include "Lib\udf\WinAPIEx.au3"
+#include "Lib\udf\SFTPEx.au3"
 
 Func __FTP_DirCreateEx($l_FTPSession, $s_RemoteDir)
 	If $l_FTPSession = 0 Then

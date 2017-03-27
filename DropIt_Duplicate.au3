@@ -3,57 +3,91 @@
 
 #include-once
 #include <EditConstants.au3>
+#include <WinAPIFiles.au3>
 #include <WindowsConstants.au3>
 
 #include "DropIt_General.au3"
 #include "DropIt_Global.au3"
-#include "Lib\udf\APIConstants.au3"
 #include "Lib\udf\DropIt_LibVarious.au3"
-#include "Lib\udf\WinAPIEx.au3"
 
 Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 0)
-	Local $dGUI, $dButtonOverwrite, $dButtonRename, $dButtonSkip, $dCheckForAll, $dValue
+	Local $dGUI, $dButtonOverwrite, $dButtonRename, $dButtonSkip, $dCheckForAll, $dValue, $dString[5], $dLabel[8]
 
+	If _WinAPI_PathIsDirectory($dSourceDir & "\" & $dItem) = 0 Or $dInfo[0] = "-" Then
+		$dString[0] = __GetLang('POSITIONPROCESS_DUPLICATE_0', 'File Already Exists')
+		$dString[1] = __GetLang('POSITIONPROCESS_DUPLICATE_1', 'This file already exists in destination directory:')
+		$dString[2] = __GetLang('OPEN_FILE', 'Open file')
+		$dString[3] = __GetLang('POSITIONPROCESS_DUPLICATE_4', 'Open file from source directory')
+		$dString[4] = __GetLang('POSITIONPROCESS_DUPLICATE_6', 'Open file already in destination directory')
+	Else
+		$dString[0] = __GetLang('POSITIONPROCESS_DUPLICATE_8', 'Folder Already Exists')
+		$dString[1] = __GetLang('POSITIONPROCESS_DUPLICATE_9', 'This folder already exists in destination directory:')
+		$dString[2] = __GetLang('OPEN_FOLDER', 'Open folder')
+		$dString[3] = __GetLang('POSITIONPROCESS_DUPLICATE_5', 'Open folder from source directory')
+		$dString[4] = __GetLang('POSITIONPROCESS_DUPLICATE_7', 'Open folder already in destination directory')
+	EndIf
 	If $dInfo[0] = "-" Then
 		$dSourceDir = __GetLang('POSITIONPROCESS_DUPLICATE_3', 'New file')
 	EndIf
 
-	$dGUI = GUICreate(__GetLang('POSITIONPROCESS_DUPLICATE_0', 'Item already exists'), 460, 230, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
+	$dGUI = GUICreate($dString[0], 500, 220, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($G_Global_SortingGUI))
 
-	GUICtrlCreateLabel(__GetLang('POSITIONPROCESS_DUPLICATE_1', 'This item already exists in destination folder:'), 10, 10, 440, 20)
-	GUICtrlCreateEdit($dItem, 10, 30, 440, 50, $ES_READONLY + $WS_VSCROLL)
+	GUICtrlCreateLabel($dString[1], 10, 10, 480, 18)
+	GUICtrlCreateInput($dItem, 10, 30, 480, 22, BitOR($ES_READONLY, $ES_AUTOHSCROLL, $ES_LEFT))
 
-	GUICtrlCreateLabel(__GetLang('FROM', 'From') & ":", 10, 95, 80, 20)
-	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel(_WinAPI_PathCompactPathEx($dSourceDir, 23), 10 + 80, 95, 130, 20)
-	GUICtrlSetTip(-1, $dSourceDir)
-	GUICtrlCreateLabel(__GetLang('FILE_SIZE', 'Size') & ":", 10, 95 + 20, 80, 20)
-	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel($dInfo[0], 10 + 80, 95 + 20, 130, 20)
-	GUICtrlCreateLabel(__GetLang('ENV_VAR_TAB_7', 'Modified') & ":", 10, 95 + 40, 80, 20)
-	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel($dInfo[1], 10 + 80, 95 + 40, 130, 20)
+	$dLabel[0] = GUICtrlCreateLabel(__GetLang('FROM', 'From') & ": " & __GetFileName($dSourceDir), 10, 65, 230, 18)
+	GUICtrlSetTip($dLabel[0], $dSourceDir, "", 0, 2)
+	$dLabel[1] = GUICtrlCreateLabel($dInfo[0], 10, 65 + 20, 80, 18)
+	If $dInfo[0] > $dInfo[2] Then
+		GUICtrlSetFont($dLabel[1], 8.5, 800)
+	EndIf
+	GUICtrlSetTip($dLabel[1], __GetLang('FILE_SIZE', 'Size'), "", 0, 2)
+	$dLabel[2] = GUICtrlCreateLabel($dInfo[1], 10, 65 + 40, 140, 18)
+	If $dInfo[1] > $dInfo[3] Then
+		GUICtrlSetFont($dLabel[2], 8.5, 800)
+	EndIf
+	GUICtrlSetTip($dLabel[2], __GetLang('DATE_MODIFIED', 'Date Modified'), "", 0, 2)
+	$dLabel[3] = GUICtrlCreateLabel($dString[2], 10, 65 + 60, 120, 18)
+	GUICtrlSetTip($dLabel[3], $dString[3], "", 0, 2)
+	GUICtrlSetColor($dLabel[3], 0x0058C9)
+	If $dInfo[0] <> "-" Then
+		GUICtrlSetCursor($dLabel[0], 0)
+		GUICtrlSetCursor($dLabel[3], 0)
+	Else ; Disabled For Upload Action.
+		GUICtrlSetState($dLabel[3], $GUI_DISABLE)
+	EndIf
 
-	GUICtrlCreateLabel(__GetLang('TO', 'To') & ":", 10 + 220, 95, 80, 20)
-	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel(_WinAPI_PathCompactPathEx($dDestinationDir, 23), 10 + 220 + 80, 95, 130, 20)
-	GUICtrlSetTip(-1, $dDestinationDir)
-	GUICtrlCreateLabel(__GetLang('FILE_SIZE', 'Size') & ":", 10 + 220, 95 + 20, 80, 20)
-	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel($dInfo[2], 10 + 220 + 80, 95 + 20, 130, 20)
-	GUICtrlCreateLabel(__GetLang('ENV_VAR_TAB_7', 'Modified') & ":", 10 + 220, 95 + 40, 80, 20)
-	GUICtrlSetColor(-1, 0x787878)
-	GUICtrlCreateLabel($dInfo[3], 10 + 220 + 80, 95 + 40, 130, 20)
+	$dLabel[4] = GUICtrlCreateLabel(__GetLang('TO', 'To') & ": " & __GetFileName($dDestinationDir), 10 + 240, 65, 230, 18)
+	GUICtrlSetTip($dLabel[4], $dDestinationDir, "", 0, 2)
+	$dLabel[5] = GUICtrlCreateLabel($dInfo[2], 10 + 240, 65 + 20, 80, 18)
+	If $dInfo[0] < $dInfo[2] Then
+		GUICtrlSetFont($dLabel[5], 8.5, 800)
+	EndIf
+	GUICtrlSetTip($dLabel[5], __GetLang('FILE_SIZE', 'Size'), "", 0, 2)
+	$dLabel[6] = GUICtrlCreateLabel($dInfo[3], 10 + 240, 65 + 40, 140, 18)
+	If $dInfo[1] < $dInfo[3] Then
+		GUICtrlSetFont($dLabel[6], 8.5, 800)
+	EndIf
+	GUICtrlSetTip($dLabel[6], __GetLang('DATE_MODIFIED', 'Date Modified'), "", 0, 2)
+	$dLabel[7] = GUICtrlCreateLabel($dString[2], 10 + 240, 65 + 60, 120, 18)
+	GUICtrlSetTip($dLabel[7], $dString[4], "", 0, 2)
+	GUICtrlSetColor($dLabel[7], 0x0058C9)
+	If StringInStr($dDestinationDir, "/") = 0 Then
+		GUICtrlSetCursor($dLabel[4], 0)
+		GUICtrlSetCursor($dLabel[7], 0)
+	Else ; Disabled For Upload Action.
+		GUICtrlSetState($dLabel[7], $GUI_DISABLE)
+	EndIf
 
 	$dValue = __GetLang('DUPLICATE_MODE_0', 'Overwrite')
 	If $dMerge Then ; Compress Action Supports To Merge Archives.
 		$dValue = __GetLang('DUPLICATE_MODE_8', 'Merge')
 	EndIf
-	$dButtonOverwrite = GUICtrlCreateButton($dValue, 230 - 80 - 100, 170, 100, 26)
-	$dButtonRename = GUICtrlCreateButton(__GetLang('DUPLICATE_MODE_2', 'Rename'), 230 - 50, 170, 100, 26)
-	$dButtonSkip = GUICtrlCreateButton(__GetLang('DUPLICATE_MODE_6', 'Skip'), 230 + 80, 170, 100, 26)
+	$dButtonOverwrite = GUICtrlCreateButton($dValue, 250 - 80 - 110, 160, 110, 26)
+	$dButtonRename = GUICtrlCreateButton(__GetLang('DUPLICATE_MODE_2', 'Rename'), 250 - 55, 160, 110, 26)
+	$dButtonSkip = GUICtrlCreateButton(__GetLang('DUPLICATE_MODE_6', 'Skip'), 250 + 80, 160, 110, 26)
 	GUICtrlSetState($dButtonSkip, $GUI_DEFBUTTON)
-	$dCheckForAll = GUICtrlCreateCheckbox(__GetLang('POSITIONPROCESS_DUPLICATE_2', 'Apply to all duplicates of this drop'), 14, 205, 420, 20)
+	$dCheckForAll = GUICtrlCreateCheckbox(__GetLang('POSITIONPROCESS_DUPLICATE_2', 'Apply to all duplicates of this drop'), 14, 195, 460, 20)
 	GUISetState(@SW_SHOW)
 
 	While 1
@@ -69,6 +103,26 @@ Func __Duplicate_Alert($dItem, $dSourceDir, $dDestinationDir, $dInfo, $dMerge = 
 			Case $dButtonRename
 				$dValue = "Rename1"
 				ExitLoop
+
+			Case $dLabel[0]
+				If $dInfo[0] <> "-" Then ; Disabled For New Files.
+					__ShellExecuteOnTop($dSourceDir, 1)
+				EndIf
+
+			Case $dLabel[3]
+				If $dInfo[0] <> "-" Then ; Disabled For New Files.
+					__ShellExecuteOnTop($dSourceDir & "\" & $dItem, 1)
+				EndIf
+
+			Case $dLabel[4]
+				If StringInStr($dDestinationDir, "/") = 0 Then ; Disabled For Upload Actions.
+					__ShellExecuteOnTop($dDestinationDir, 1)
+				EndIf
+
+			Case $dLabel[7]
+				If StringInStr($dDestinationDir, "/") = 0 Then ; Disabled For Upload Actions.
+					__ShellExecuteOnTop($dDestinationDir & "\" & $dItem, 1)
+				EndIf
 
 		EndSwitch
 	WEnd

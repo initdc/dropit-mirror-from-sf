@@ -485,6 +485,31 @@ Func __GetAssociationField($gProfile, $gAssociationName, $gField)
 	Return IniRead($gProfile, $gAssociationName, $gField, "")
 EndFunc   ;==>__GetAssociationField
 
+Func __GetAssociationKey($gParameter = -1, $gType = 0)
+	#cs
+		Description: Get A Key String ($gParameter = Number) Or A Key Number ($gParameter = String).
+		Returns: Key $gType = 0 [ExtractSettings] Or Key $gType = 1 [EXTRACT SETTINGS]
+	#ce
+	Local $gIsNumber = StringIsDigit($gParameter), $gNumberFields = 19
+	If $gParameter = -1 Then
+		Return $gNumberFields
+	EndIf
+	Local $gFields[$gNumberFields] = ["Name", "State", "Rules", "Action", "Destination", "Filters", "List Properties", "HTML Theme", "Site Settings", "Crypt Settings", "Gallery Properties", "Gallery Theme", "Gallery Settings", "Compress Settings", "Extract Settings", "Open With Settings", "List Settings", "Favourite Association", "Use RegEx"]
+	For $A = 0 To $gNumberFields
+		If $gType = 0 Then
+			$gFields[$A] = StringStripWS($gFields[$A], 8)
+		Else
+			$gFields[$A] = StringUpper($gFields[$A])
+		EndIf
+		If $gIsNumber And $gParameter = $A Then
+			Return $gFields[$A]
+		ElseIf $gIsNumber = 0 And $gParameter = $gFields[$A] Then
+			Return $A
+		EndIf
+	Next
+	Return SetError(1, 0, "")
+EndFunc   ;==>__GetAssociationKey
+
 Func __GetAssociations($gProfile = -1)
 	#cs
 		Description: Get Associations Of The Current Profile [-1] Or Specified Profile Name [Valid Profile Name].
@@ -514,7 +539,7 @@ Func __GetAssociations($gProfile = -1)
 	#ce
 	$gProfile = __IsProfile($gProfile, 0) ; Get Array Of Selected Profile.
 
-	Local $gNumberFields = 19
+	Local $gNumberFields = __GetAssociationKey(-1)
 	Local $gAssociationNames = __IniReadSectionNamesEx($gProfile[0])
 	If @error Then
 		Local $gReturn[1][$gNumberFields + 1] = [[0, $gNumberFields, $gProfile[1]]]
@@ -535,46 +560,10 @@ Func __GetAssociations($gProfile = -1)
 		$gReturn[0][0] += 1
 		$gReturn[$gReturn[0][0]][0] = $gAssociationNames[$A]
 		For $B = 1 To $gSection[0][0]
-			Switch $gSection[$B][0]
-				Case "State"
-					$gIndex = 1
-				Case "Rules"
-					$gIndex = 2
-				Case "Action"
-					$gIndex = 3
-				Case "Destination"
-					$gIndex = 4
-				Case "Filters"
-					$gIndex = 5
-				Case "ListProperties"
-					$gIndex = 6
-				Case "HTMLTheme"
-					$gIndex = 7
-				Case "SiteSettings"
-					$gIndex = 8
-				Case "CryptSettings"
-					$gIndex = 9
-				Case "GalleryProperties"
-					$gIndex = 10
-				Case "GalleryTheme"
-					$gIndex = 11
-				Case "GallerySettings"
-					$gIndex = 12
-				Case "CompressSettings"
-					$gIndex = 13
-				Case "ExtractSettings"
-					$gIndex = 14
-				Case "OpenWithSettings"
-					$gIndex = 15
-				Case "ListSettings"
-					$gIndex = 16
-				Case "FavouriteAssociation"
-					$gIndex = 17
-				Case "UseRegEx"
-					$gIndex = 18
-				Case Else
-					ContinueLoop
-			EndSwitch
+			$gIndex = __GetAssociationKey($gSection[$B][0])
+			If @error Then
+				ContinueLoop
+			EndIf
 			$gReturn[$gReturn[0][0]][$gIndex] = $gSection[$B][1]
 		Next
 	Next

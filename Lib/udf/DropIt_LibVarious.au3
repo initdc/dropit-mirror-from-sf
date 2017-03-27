@@ -2,10 +2,13 @@
 ; Various funtions collected for DropIt
 
 #include-once
+#include <Array.au3>
 #include <GUIConstantsEx.au3>
-
-#include "APIConstants.au3"
-#include "WinAPIEx.au3"
+#include <String.au3>
+#include <WinAPI.au3>
+#include <WinAPIProc.au3>
+#include <WinAPIsysinfoConstants.au3>
+#include <WindowsConstants.au3>
 
 Func _ArraySortEx(ByRef $avArray, $iStartRow = 1, $iEndRow = 0, $iCol1 = 0, $iCol2 = -1, $iCol3 = -1, $iCol4 = -1) ; Taken From: http://www.autoitscript.com/forum/topic/98071-array-multi-column-sort/
 	Local $iLastRow = 0, $iStart = -1, $iEnd = -1
@@ -170,6 +173,45 @@ Func __GetOSLanguage()
 	Return $aLanguage[1]
 EndFunc   ;==>__GetOSLanguage
 
+Func __GetSelectionPointers($hEdit) ; Used In __InsertText()
+	Local $aReturn[2] = [0, 0]
+	Local $aSelected = GUICtrlRecvMsg($hEdit, 0x00B0) ; $EM_GETSEL.
+	If IsArray($aSelected) Then
+		$aReturn[0] = $aSelected[0]
+		$aReturn[1] = $aSelected[1]
+	EndIf
+	Return $aReturn
+EndFunc   ;==>__GetSelectionPointers
+
+Func __GUIGraduallyHide($hHandle, $iVisiblePixels = 50, $iVisibleMarginLeft = 10)
+	#cs
+		Description: Gradually Hide GUI On The Left Of The Screen.
+		Returns: 1
+	#ce
+	Local $aWinPos, $aMousePos, $hControl, $hWin, $hOldWin, $iStep
+	$aWinPos = WinGetPos($hHandle)
+	$aMousePos = MouseGetPos()
+	$hControl = __WindowFromPoint($aMousePos[0], $aMousePos[1])
+	$hWin = _WinAPI_GetAncestor($hControl, 2)
+	If $hWin <> $hOldWin Or ($aMousePos[0] < 1 And $aMousePos[1] > $aWinPos[1] And $aMousePos[1] < $aWinPos[1] + $aWinPos[3]) Then
+		$iStep = Ceiling($aWinPos[2] / 100)
+		If $aWinPos[0] < $iVisibleMarginLeft And ($hWin = $hHandle Or ($aMousePos[0] < 1 And $aMousePos[1] > $aWinPos[1] And $aMousePos[1] < $aWinPos[1] + $aWinPos[3])) Then
+			If WinActive($hHandle) = 0 Then
+				WinActivate($hHandle)
+			EndIf
+			WinMove($hHandle, "", $aWinPos[0] + $iStep, $aWinPos[1], $aWinPos[2], $aWinPos[3])
+		ElseIf $aWinPos[0] > - ($aWinPos[2] - $iVisiblePixels) And $hWin <> $hHandle And ($aMousePos[0] > $aWinPos[3] Or $aMousePos[1] < $aWinPos[1] Or $aMousePos[1] > $aWinPos[1] + $aWinPos[3]) Then
+			If $aWinPos[0] > 0 Then
+				$aWinPos[0] = 0
+			EndIf
+			WinMove($hHandle, "", $aWinPos[0] - $iStep, $aWinPos[1], $aWinPos[2], $aWinPos[3])
+		EndIf
+		$hOldWin = $hWin
+	EndIf
+	Sleep(2)
+	Return 1
+EndFunc   ;==>__GUIGraduallyHide
+
 Func __GUIInBounds($hHandle) ; Original Idea By wraithdu, Modified By guinness.
 	#cs
 		Description: Check If The GUI Is Within View Of The Users Screen.
@@ -300,14 +342,14 @@ Func __IniWriteEx($sFilePath, $sSection, $sKey = "", $sValue = "")
 		Description: Write A Key Or A Section From A Standard Format INI File With Unicode Support.
 		Returns: 1
 	#ce
-	Local $hWrite
+	Local $hWrite, $hFileRead, $hFileOpen
 
 	If FileGetEncoding($sFilePath) <> 32 Then
-		Local $hFileRead = FileRead($sFilePath)
+		$hFileRead = FileRead($sFilePath)
 		If @error And FileExists($sFilePath) Then
 			Return SetError(1, 0, 0)
 		EndIf
-		Local $hFileOpen = FileOpen($sFilePath, 2 + 8 + 32)
+		$hFileOpen = FileOpen($sFilePath, 2 + 8 + 32)
 		If $hFileOpen = -1 Then
 			Return SetError(1, 0, 0)
 		EndIf
@@ -321,6 +363,13 @@ Func __IniWriteEx($sFilePath, $sSection, $sKey = "", $sValue = "")
 	If $sKey = "" Then ; Write Section.
 		$hWrite = IniWriteSection($sFilePath, $sSection, $sValue)
 		FileWriteLine($sFilePath, "") ; Add Empty Line.
+		$hFileRead = StringReplace(FileRead($sFilePath), @CRLF & @CRLF & @CRLF, @CRLF & @CRLF) ; Remove Double Empty Lines.
+		$hFileOpen = FileOpen($sFilePath, 2)
+		If $hFileOpen = -1 Then
+			Return SetError(1, 0, 0)
+		EndIf
+		FileWrite($hFileOpen, $hFileRead)
+		FileClose($hFileOpen)
 	Else ; Write Key.
 		$hWrite = IniWrite($sFilePath, $sSection, $sKey, $sValue)
 	EndIf
@@ -335,12 +384,10 @@ Func __InsertText(ByRef $hEdit, $sString) ; Modified From: http://www.autoitscri
 		Description: Insert A Text In A Control.
 		Returns: Nothing
 	#ce
-	Local $iSelected = GUICtrlRecvMsg($hEdit, 0x00B0) ; $EM_GETSEL.
-	If (IsArray($iSelected)) And ($iSelected[0] <= $iSelected[1]) Then
-		GUICtrlSetData($hEdit, StringLeft(GUICtrlRead($hEdit), $iSelected[0]) & $sString & StringTrimLeft(GUICtrlRead($hEdit), $iSelected[1]))
-	Else
-		GUICtrlSetData($hEdit, $sString & GUICtrlRead($hEdit))
-	EndIf
+	Local $aSelected = __GetSelectionPointers($hEdit)
+	GUICtrlSetData($hEdit, StringLeft(GUICtrlRead($hEdit), $aSelected[0]) & $sString & StringTrimLeft(GUICtrlRead($hEdit), $aSelected[1]))
+	Local $iCursorPlace = StringLen(StringLeft(GUICtrlRead($hEdit), $aSelected[0]) & $sString)
+	GUICtrlSendMsg($hEdit, 0x00B1, $iCursorPlace, $iCursorPlace) ; $EM_SETSEL.
 EndFunc   ;==>__InsertText
 
 Func __IsHandle($hHandle = -1)
@@ -507,14 +554,49 @@ Func __SetProgress($sHandle, $sPercentage, $sColor = 0, $sVertical = False) ; Ta
 	Return $sResult
 EndFunc   ;==>__SetProgress
 
-Func __ShellExecuteOnTop($sFilePath, $sText)
+Func __ShellExecuteOnTop($sFilePath, $sWait = 0) ; Modified From: http://www.autoitscript.com/forum/topic/157528-open-a-file-and-set-the-window-always-on-top/
 	#cs
 		Description: Open A File With Default Program And Set It On Top.
 		Returns: Nothing
 	#ce
-	ShellExecute($sFilePath)
-	Sleep(400)
-	WinSetOnTop($sText, "", 1)
+	Local $iPID, $aData, $hWnd, $iCounter, $aNewWinList, $aOldWinList = WinList()
+
+	$iPID = ShellExecute($sFilePath)
+	If @error Then
+		Return SetError(1, 0, 0)
+	EndIf
+
+	If $iPID <> -1 Then
+		$iCounter = 0
+		Do
+			$iCounter += 1
+			Sleep(50)
+			$aData = _WinAPI_EnumProcessWindows($iPID, 1)
+		Until IsArray($aData) Or $iCounter = 6
+		If IsArray($aData) = 0 Then
+			$iPID = -1
+		ElseIf $aData[0][0] = 1 Then
+			$hWnd = $aData[1][0]
+		EndIf
+	EndIf
+	If $iPID = -1 Then
+		$iCounter = 0
+		Do
+			$iCounter += 1
+			Sleep(50)
+			$aNewWinList = WinList()
+		Until $aNewWinList[0][0] <> $aOldWinList[0][0] Or $iCounter = 6
+		If $aNewWinList[0][0] = $aOldWinList[0][0] Then
+			Return SetError(1, 0, 0)
+		EndIf
+		Sleep(100)
+		$hWnd = WinGetHandle("[ACTIVE]")
+	EndIf
+
+	WinSetOnTop($hWnd, "", 1)
+	If $sWait Then
+		WinWaitClose($hWnd)
+	EndIf
 EndFunc   ;==>__ShellExecuteOnTop
 
 Func __ShowPassword($iControlID)
@@ -547,3 +629,14 @@ Func __StringIsValid($sString, $sPattern = '|<>')
 	EndIf
 	Return BitAND(StringRegExp($sString, '[\Q' & StringRegExpReplace($sPattern, "\\E", "E\") & '\E]') = 0, 1)
 EndFunc   ;==>__StringIsValid
+
+Func __WindowFromPoint($iX, $iY) ; Used In __GUIGraduallyHide()
+	Local $stInt64, $aRet, $stPoint = DllStructCreate("long;long")
+	DllStructSetData($stPoint, 1, $iX)
+	DllStructSetData($stPoint, 2, $iY)
+	$stInt64 = DllStructCreate("int64", DllStructGetPtr($stPoint))
+	$aRet = DllCall("user32.dll", "hwnd", "WindowFromPoint", "int64", DllStructGetData($stInt64, 1))
+	If @error Then Return SetError(2, @error, 0)
+	If $aRet[0] = 0 Then Return SetError(3, 0, 0)
+	Return $aRet[0]
+EndFunc   ;==>__WindowFromPoint
