@@ -1,4 +1,4 @@
-#define MyAppVer "0.9.4"
+#define MyAppVer "1.0"
 
 [Setup]
 AppName=DropIt
@@ -11,14 +11,14 @@ DefaultDirName={pf}\DropIt
 DefaultGroupName=DropIt
 AllowNoIcons=yes
 UninstallDisplayIcon={app}\DropIt.exe
-InfoBeforeFile=..\DropIt_v{#MyAppVer}_Portable\docs\Readme.txt
+InfoBeforeFile=..\DropIt_v{#MyAppVer}_Portable\Readme.txt
 OutputDir=..\
 OutputBaseFilename=DropIt_v{#MyAppVer}_Setup
-Compression=lzma/Ultra
+Compression=lzma2/Ultra
 SolidCompression=yes
 VersionInfoVersion={#MyAppVer}
-WizardImageFile=img\WizModernImage-IS.bmp
-WizardSmallImageFile=img\WizModernSmallImage-IS.bmp
+WizardImageFile=Lib\img\WizModernImage-IS.bmp
+WizardSmallImageFile=Lib\img\WizModernSmallImage-IS.bmp
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -26,8 +26,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "associate"; Description: "Add ""Sort with DropIt"" in the ContextMenu"; GroupDescription: "Shell integration:"; Flags: unchecked
-Name: "sendto"; Description: "Add ""DropIt"" in the SendTo menu"; GroupDescription: "SendTo icon:"; Flags: unchecked
+Name: "associate"; Description: "Add ""Sort with DropIt"" in the Context menu"; GroupDescription: "Shell integration:"; Flags: unchecked
 
 [Files]
 Source: "..\DropIt_v{#MyAppVer}_Portable\DropIt.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -36,8 +35,7 @@ Source: "..\DropIt_v{#MyAppVer}_Portable\*"; DestDir: "{app}"; Flags: ignorevers
 
 [Icons]
 Name: "{group}\DropIt"; Filename: "{app}\DropIt.exe"; Comment: "Launch DropIt";
-Name: "{group}\Readme"; Filename: "{app}\docs\Readme.txt"; Comment: "Open Readme file";
-Name: "{sendto}\DropIt"; Filename: "{app}\DropIt.exe"; Tasks: sendto;
+Name: "{group}\Readme"; Filename: "{app}\Readme.txt"; Comment: "Open Readme file";
 Name: "{group}\{cm:UninstallProgram,DropIt}"; Filename: "{uninstallexe}"; Comment: "Remove DropIt";
 Name: "{userdesktop}\DropIt"; Filename: "{app}\DropIt.exe"; Comment: "Launch DropIt"; Tasks: desktopicon
 Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\DropIt"; Filename: "{app}\DropIt.exe"; Comment: "Launch DropIt"; Tasks: quicklaunchicon
@@ -52,5 +50,9 @@ Root: HKCR; Subkey: "Directory\Shell\Sort with DropIt\command"; ValueType: strin
 [Run]
 Filename: "{app}\DropIt.exe"; Description: "{cm:LaunchProgram,DropIt}"; Flags: nowait postinstall skipifsilent unchecked
 
+[UninstallRun]
+Filename: "{app}\DropIt.exe"; Parameters: "/Uninstall"
+
 [UninstallDelete]
 Type: filesandordirs; Name: "{userappdata}\DropIt"
+Type: filesandordirs; Name: "{app}\Profiles"
