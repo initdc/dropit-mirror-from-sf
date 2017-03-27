@@ -230,7 +230,7 @@ Func __IniReadSection($sFilePath, $sSection) ; Modified From: http://www.autoits
 
 	Local $aSplitKeyValue
 	Local $hFileRead = FileRead($sFilePath)
-	Local $aData = StringRegExp($hFileRead, "(?is)(?:^|\v)(?!;|#)\h*\[\h*\Q" & $sSection & "\E\h*\]\h*\v+(.*?)(?:\z|\v\h*\[)", 1)
+	Local $aData = StringRegExp($hFileRead, "(?is)(?:^|\v)(?!;|#)\h*\[\h*\Q" & $sSection & "\E\h*\]\h*\r?\n?(.*?)(?:\z|\v\h*\[)", 1) ; "\r?\n?" Instead Of "\v+" To Correctly Work.
 	If @error Then
 		Return SetError(1, 0, "")
 	EndIf

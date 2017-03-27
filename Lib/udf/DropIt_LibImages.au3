@@ -103,7 +103,6 @@ Func __ImageWriteResize($sInFile, $sOutFile, $iOutWidth, $iOutHeight, $iCrop = 0
 	Local $hInHandle, $iInWidth, $iInHeight, $iRatio, $hOutHandle, $hGraphic, $CLSID, $iInX = 0, $iInY = 0
 	Local $sExt = StringTrimLeft(_WinAPI_PathFindExtension($sOutFile), 1)
 
-	_GDIPlus_Startup()
 	$hInHandle = _GDIPlus_ImageLoadFromFile($sInFile)
 	$iInWidth = _GDIPlus_ImageGetWidth($hInHandle)
 	$iInHeight = _GDIPlus_ImageGetHeight($hInHandle)
@@ -131,7 +130,7 @@ Func __ImageWriteResize($sInFile, $sOutFile, $iOutWidth, $iOutHeight, $iCrop = 0
 		$iOutHeight = Int($iInHeight * $iRatio)
 	EndIf
 
-	$hOutHandle = _GDIPlus_BitmapCreateFromScan0($iOutWidth, $iOutHeight)
+	$hOutHandle = __GDIPlus_BitmapCreateFromScan0($iOutWidth, $iOutHeight)
 	$hGraphic = _GDIPlus_ImageGetGraphicsContext($hOutHandle)
 	_GDIPlus_GraphicsDrawImageRectRect($hGraphic, $hInHandle, $iInX, $iInY, $iInWidth, $iInHeight, 0, 0, $iOutWidth, $iOutHeight)
 	$CLSID = _GDIPlus_EncodersGetCLSID(StringUpper($sExt))
@@ -140,7 +139,6 @@ Func __ImageWriteResize($sInFile, $sOutFile, $iOutWidth, $iOutHeight, $iCrop = 0
 	_GDIPlus_ImageDispose($hInHandle)
 	_GDIPlus_ImageDispose($hOutHandle)
 	_GDIPlus_GraphicsDispose($hGraphic)
-	_GDIPlus_Shutdown()
 
 	Return 1
 EndFunc   ;==>__ImageWriteResize
@@ -211,7 +209,7 @@ Func __SetItemImage($gImageFile, $gIndex, $gHandle = 0, $gType = 1, $gResource =
 			_GUICtrlMenu_SetItemBmp($gHandle, $gIndex, $gImage)
 			Return SetError(0, 0, $gImage)
 		Case Else
-			Local $gBitmap, $gContext, $gIcon, $gImageHeight, $gImageWidth, $gResult
+			Local $gBitmap, $gContext, $gIcon, $gImageHeight, $gImageWidth
 			$gImage = _GDIPlus_BitmapCreateFromFile($gImageFile)
 			$gImageWidth = _GDIPlus_ImageGetWidth($gImage)
 			$gImageHeight = _GDIPlus_ImageGetHeight($gImage)
@@ -225,8 +223,7 @@ Func __SetItemImage($gImageFile, $gIndex, $gHandle = 0, $gType = 1, $gResource =
 				$gImageHeight = $gHeight * $gImageHeight / $gImageWidth
 				$gImageWidth = $gWidth
 			EndIf
-			$gResult = DllCall($ghGDIPDll, "uint", "GdipCreateBitmapFromScan0", "int", $gWidth, "int", $gHeight, "int", 0, "int", 0x0026200A, "ptr", 0, "int*", 0)
-			$gBitmap = $gResult[6]
+			$gBitmap = __GDIPlus_BitmapCreateFromScan0($gWidth, $gHeight)
 			$gContext = _GDIPlus_ImageGetGraphicsContext($gBitmap)
 			_GDIPlus_GraphicsDrawImageRect($gContext, $gImage, 0, 0, $gWidth, $gHeight)
 			$gIcon = _GDIPlus_BitmapCreateHBITMAPFromBitmap($gBitmap)
@@ -237,6 +234,14 @@ Func __SetItemImage($gImageFile, $gIndex, $gHandle = 0, $gType = 1, $gResource =
 			Return SetError(0, 0, $gIcon)
 	EndSwitch
 EndFunc   ;==>__SetItemImage
+
+Func __GDIPlus_BitmapCreateFromScan0($iWidth, $iHeight, $iStride = 0, $iPixelFormat = $GDIP_PXF32ARGB, $pScan0 = 0) ; Fixed Support To 64bit OS.
+	Local $aResult = DllCall($ghGDIPDll, "uint", "GdipCreateBitmapFromScan0", "int", $iWidth, "int", $iHeight, "int", $iStride, "int", $iPixelFormat, "ptr", $pScan0, "ptr*", 0)
+	If @error Then Return SetError(@error, @extended, 0)
+	If $aResult[0] Then Return SetError(10, $aResult[0], 0)
+
+	Return $aResult[6]
+EndFunc   ;==>__GDIPlus_BitmapCreateFromScan0
 
 Func __SetItemImageEx($gHandle, $gIndex, ByRef $gImageList, $gImageFile, $gType) ; Taken From: http://www.autoitscript.com/forum/topic/113827-thumbnail-of-a-file/page__p__799038#entry799038
 	#cs

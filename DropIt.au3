@@ -2,7 +2,7 @@
 	Application Name: DropIt
 	License: Open Source GPL
 	Language: English
-	AutoIt Version: 3.3.9.18 beta
+	AutoIt Version: 3.3.9.21 beta
 	Authors: Lupo73 and guinness
 	Website: http://www.dropitproject.com/
 	Contact: http://www.lupopensuite.com/contact.htm
@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt - Process your files with a drop
-#AutoIt3Wrapper_Res_Fileversion=5.3.0.0
-#AutoIt3Wrapper_Res_ProductVersion=5.3.0.0
+#AutoIt3Wrapper_Res_Fileversion=5.3.1.0
+#AutoIt3Wrapper_Res_ProductVersion=5.3.1.0
 #AutoIt3Wrapper_Res_LegalCopyright=Andrea Luparia
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.dropitproject.com
@@ -45,6 +45,8 @@
 #AutoIt3Wrapper_Res_Icon_Add=Lib\img\More.ico
 #AutoIt3Wrapper_Res_Icon_Add=Lib\img\Less.ico
 #AutoIt3Wrapper_Res_Icon_Add=Lib\img\Done.ico
+#AutoIt3Wrapper_Res_Icon_Add=Lib\img\New.ico
+#AutoIt3Wrapper_Res_Icon_Add=Lib\img\Images.ico
 #AutoIt3Wrapper_Res_File_Add=Images\Default.png, 10, IMAGE
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Associations.png, 10, ASSO
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Close.png, 10, CLOSE
@@ -68,7 +70,7 @@
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Show.png, 10, SHOW
 #AutoIt3Wrapper_Res_File_Add=Lib\img\Skip.png, 10, SKIP
 #AutoIt3Wrapper_Au3Check_Parameters=-d -w 1 -w 2 -w 3 -w 4 -w 5 -w 6 -w 7
-#AutoIt3Wrapper_Run_Obfuscator=Y
+#AutoIt3Wrapper_Run_Obfuscator=N
 #Obfuscator_Parameters=/SF /SV /OM /CF=0 /CN=0 /CS=0 /CV=0
 #AutoIt3Wrapper_res_requestedExecutionLevel=asInvoker
 #AutoIt3Wrapper_Outfile_Type=exe
@@ -134,7 +136,7 @@ Opt("TrayOnEventMode", 1)
 
 Global $Global_GUI_1, $Global_GUI_2, $Global_Icon_1, $Global_GUI_State = 1 ; ImageList & GUI Handles & Icons Handle & GUI State.
 Global $Global_ContextMenu[14][2] = [[13, 2]], $Global_TrayMenu[13][2] = [[12, 2]], $Global_MenuDisable = 0 ; ContextMenu & TrayMenu.
-Global $Global_ListViewIndex = -1, $Global_ListViewFolders, $Global_ListViewProfiles, $Global_ListViewRules, $Global_ListViewProcess ; ListView Variables.
+Global $Global_ListViewIndex = -1, $Global_ListViewFolders, $Global_ListViewProfiles, $Global_ListViewRules, $Global_ListViewProcess, $Global_ListViewProcessControl ; ListView Variables.
 Global $Global_ListViewProfiles_Enter, $Global_ListViewProfiles_New, $Global_ListViewProfiles_Delete, $Global_ListViewProfiles_Duplicate ; ListView Variables.
 Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Export, $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New ; ListView Variables.
 Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1, $Global_ListViewProcess_Info, $Global_ListViewProcess_Skip ; ListView Variables.
@@ -142,7 +144,7 @@ Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_Li
 Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_Clipboard, $Global_Wheel, $Global_ScriptRefresh, $Global_ScriptRestart, $Global_ListViewCreateGallery, $Global_ListViewCreateList ; Misc.
 Global $Global_DroppedFiles[1], $Global_PriorityActions[1], $Global_SendTo_ControlID ; Misc.
 Global $Global_AbortButton, $Global_PauseButton, $Global_ExtendButton ; Process GUI.
-Global $Global_ResizeWidth, $Global_ResizeHeight ; Windows Size For Resizing.
+Global $Global_ResizeMinWidth, $Global_ResizeMinHeight, $Global_ResizeMaxWidth, $Global_ResizeMaxHeight, $Global_ResizeCurrentDiff ; Windows Size For Resizing.
 Global $Global_Slider, $Global_SliderLabel ; _Customize_GUI_Edit.
 
 _WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
@@ -171,8 +173,10 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 
 	$mGUI = GUICreate(__GetLang('MANAGE_GUI', 'Manage Associations'), $mSize[0], $mSize[1], -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_MAXIMIZEBOX, $WS_SIZEBOX), -1, __OnTop($mHandle))
 	GUISetIcon(@ScriptFullPath, -5, $mGUI) ; Use Associations.ico
-	$Global_ResizeWidth = 400 ; Set Default Minimum Width.
-	$Global_ResizeHeight = 200 ; Set Default Minimum Height.
+	$Global_ResizeMinWidth = 400 ; Set Default Min Width.
+	$Global_ResizeMaxWidth = @DesktopWidth ; Set Default Max Width.
+	$Global_ResizeMinHeight = 200 ; Set Default Min Height.
+	$Global_ResizeMaxHeight = @DesktopHeight ; Set Default Max Height.
 
 	$mListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('RULES', 'Rules') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination'), 0, 0, $mSize[0], $mSize[1] - 35, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
 	$mListView_Handle = GUICtrlGetHandle($mListView)
@@ -204,19 +208,21 @@ Func _Manage_GUI($mINI = -1, $mHandle = -1)
 	$mNewDummy = GUICtrlCreateDummy()
 	$Global_ListViewRules_New = $mNewDummy
 
-	$mNew = GUICtrlCreateButton(__GetLang('NEW', 'New'), 15, $mSize[1] - 31, 90, 25)
-	GUICtrlSetTip($mNew, __GetLang('MANAGE_GUI_TIP_0', 'Click to add an association or Right-click associations to modify them.'))
+	$mNew = GUICtrlCreateButton("N", 15, $mSize[1] - 31, 70, 25, $BS_ICON)
+	GUICtrlSetImage($mNew, @ScriptFullPath, -23, 0)
+	GUICtrlSetTip($mNew, __GetLang('NEW', 'New'))
 	GUICtrlSetResizing($mNew, $GUI_DOCKSIZE + $GUI_DOCKLEFT + $GUI_DOCKBOTTOM)
 
-	$mProfileCombo = GUICtrlCreateCombo("", 140, $mSize[1] - 29, $mSize[0] - 280, 24, $WS_VSCROLL + $CBS_DROPDOWNLIST)
+	$mProfileCombo = GUICtrlCreateCombo("", 120, $mSize[1] - 29, $mSize[0] - 240, 24, $WS_VSCROLL + $CBS_DROPDOWNLIST)
 	$mProfileCombo_Handle = GUICtrlGetHandle($mProfileCombo)
 	$Global_ListViewRules_ComboBox = $mProfileCombo_Handle
 	GUICtrlSetData($mProfileCombo, __ProfileList_Combo(), $mProfileName)
-	GUICtrlSetTip($mProfileCombo, __GetLang('MANAGE_GUI_TIP_1', 'Select a Profile to change its associations.'))
+	GUICtrlSetTip($mProfileCombo, __GetLang('MANAGE_GUI_TIP_1', 'Select a Profile to manage its associations.'))
 	GUICtrlSetResizing($mProfileCombo, $GUI_DOCKSIZE + $GUI_DOCKLEFT + $GUI_DOCKRIGHT + $GUI_DOCKBOTTOM)
 
-	$mClose = GUICtrlCreateButton(__GetLang('CLOSE', 'Close'), $mSize[0] - 15 - 90, $mSize[1] - 31, 90, 25)
-	GUICtrlSetTip($mClose, __GetLang('MANAGE_GUI_TIP_2', 'Save associations and close the window.'))
+	$mClose = GUICtrlCreateButton("C", $mSize[0] - 15 - 70, $mSize[1] - 31, 70, 25, $BS_ICON)
+	GUICtrlSetImage($mClose, @ScriptFullPath, -22, 0)
+	GUICtrlSetTip($mClose, __GetLang('SAVE_CLOSE', 'Save & Close'))
 	GUICtrlSetResizing($mClose, $GUI_DOCKSIZE + $GUI_DOCKRIGHT + $GUI_DOCKBOTTOM)
 	GUICtrlSetState($mClose, $GUI_DEFBUTTON)
 
@@ -2668,8 +2674,10 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 
 	$cGUI = GUICreate(__GetLang('CUSTOMIZE_GUI', 'Customize Profiles'), $cSize[0], $cSize[1], -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_MAXIMIZEBOX, $WS_SIZEBOX), -1, __OnTop($cHandle))
 	GUISetIcon(@ScriptFullPath, -3, $cGUI) ; Use Custom.ico
-	$Global_ResizeWidth = 320 ; Set Default Minimum Width.
-	$Global_ResizeHeight = 200 ; Set Default Minimum Height.
+	$Global_ResizeMinWidth = 320 ; Set Default Min Width.
+	$Global_ResizeMaxWidth = @DesktopWidth ; Set Default Max Width.
+	$Global_ResizeMinHeight = 200 ; Set Default Min Height.
+	$Global_ResizeMaxHeight = @DesktopHeight ; Set Default Max Height.
 
 	$cListView = GUICtrlCreateListView(__GetLang('PROFILE', 'Profile') & "|" & __GetLang('IMAGE', 'Image') & "|" & __GetLang('IMAGE_DIMENSIONS', 'Dimensions') & "|" & __GetLang('OPACITY', 'Opacity'), 0, 0, $cSize[0], $cSize[1] - 35, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
 	$cListView_Handle = GUICtrlGetHandle($cListView)
@@ -2716,16 +2724,19 @@ Func _Customize_GUI($cHandle = -1, $cProfileList = -1)
 	$cExampleDummy = GUICtrlCreateDummy()
 	$Global_ListViewProfiles_Example[0] = $cExampleDummy
 
-	$cNew = GUICtrlCreateButton(__GetLang('NEW', 'New'), 15, $cSize[1] - 31, 90, 25)
-	GUICtrlSetTip($cNew, __GetLang('CUSTOMIZE_GUI_TIP_0', 'Click to add a profile or Right-click a profile to manage it.'))
+	$cNew = GUICtrlCreateButton("N", 15, $cSize[1] - 31, 70, 25, $BS_ICON)
+	GUICtrlSetImage($cNew, @ScriptFullPath, -23, 0)
+	GUICtrlSetTip($cNew, __GetLang('NEW', 'New'))
 	GUICtrlSetResizing($cNew, $GUI_DOCKSIZE + $GUI_DOCKLEFT + $GUI_DOCKBOTTOM)
 
-	$cGetImages = GUICtrlCreateButton(__GetLang('IMAGE_GET', 'Images'), ($cSize[0] - 90) / 2, $cSize[1] - 31, 90, 25)
+	$cGetImages = GUICtrlCreateButton("I", ($cSize[0] - 70) / 2, $cSize[1] - 31, 70, 25, $BS_ICON)
+	GUICtrlSetImage($cGetImages, @ScriptFullPath, -24, 0)
 	GUICtrlSetTip($cGetImages, __GetLang('IMAGE_GET_LABEL_0', 'Get more target images online'))
 	GUICtrlSetResizing($cGetImages, $GUI_DOCKSIZE + $GUI_DOCKHCENTER + $GUI_DOCKBOTTOM)
 
-	$cClose = GUICtrlCreateButton(__GetLang('CLOSE', 'Close'), $cSize[0] - 15 - 90, $cSize[1] - 31, 90, 25)
-	GUICtrlSetTip($cClose, __GetLang('CUSTOMIZE_GUI_TIP_1', 'Save profiles and close the window.'))
+	$cClose = GUICtrlCreateButton("C", $cSize[0] - 15 - 70, $cSize[1] - 31, 70, 25, $BS_ICON)
+	GUICtrlSetImage($cClose, @ScriptFullPath, -22, 0)
+	GUICtrlSetTip($cClose, __GetLang('SAVE_CLOSE', 'Save & Close'))
 	GUICtrlSetResizing($cClose, $GUI_DOCKSIZE + $GUI_DOCKRIGHT + $GUI_DOCKBOTTOM)
 	GUICtrlSetState($cClose, $GUI_DEFBUTTON)
 
@@ -3292,13 +3303,13 @@ Func _Customize_Import($cProfileDirectory, $cHandle = -1)
 		Case "csv"
 			$cFileOpen = StringReplace(FileRead($cListPath), ', ', ',')
 			$cArray = __CSVSplit($cFileOpen, ',')
-			If @error Then
+			If @error Or UBound($cArray, 2) < 5 Then
 				Return SetError(2, 0, 0)
 			EndIf
 		Case "xls", "xlsx"
 			$cFileOpen = _ExcelBookOpen($cListPath, 0, True)
-			$cArray = _ExcelReadSheetToArray($cFileOpen, 3, 2, 0, 13)
-			If @error Then
+			$cArray = _ExcelReadSheetToArray($cFileOpen, 3, 2)
+			If @error Or UBound($cArray, 2) < 5 Then
 				_ExcelBookClose($cFileOpen, 0, 0)
 				Return SetError(2, 0, 0)
 			EndIf
@@ -4491,21 +4502,30 @@ EndFunc   ;==>_Sorting_EventButtons
 Func _Sorting_Extend()
 	Local $sNameGUI = "DropIt - " & __GetLang('POSITIONPROCESS_0', 'Processing')
 	Local $sPos = WinGetPos($sNameGUI)
+	$Global_ResizeMinWidth = 460 ; Set Default Min Width.
+	$Global_ResizeMaxWidth = @DesktopWidth ; Set Default Max Width.
+	$Global_ResizeMinHeight = 188 ; Set Default Min Height.
+	$Global_ResizeMaxHeight = 188 ; Set Default Max Height.
 	If $G_Global_ExtendGUI = 1 Then ; Hide The Extended GUI.
 		$G_Global_ExtendGUI = 0
-		WinMove($sNameGUI, "", $sPos[0], $sPos[1], $sPos[2], $sPos[3] - 250)
+		$Global_ResizeCurrentDiff = $sPos[3] - 188 ; Needed To Correctly Resize ListView.
+		GUICtrlSetResizing($Global_ListViewProcessControl, $GUI_DOCKHEIGHT + $GUI_DOCKLEFT + $GUI_DOCKRIGHT + $GUI_DOCKTOP) ; Needed To Correctly Resize ListView.
+		WinMove($sNameGUI, "", $sPos[0], $sPos[1], $sPos[2], 188)
 		GUICtrlSetTip($Global_ExtendButton, __GetLang('POSITIONPROCESS_9', 'More'))
 		GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -20, 0)
 	Else ; Show The Extended GUI.
 		$G_Global_ExtendGUI = 1
-		WinMove($sNameGUI, "", $sPos[0], $sPos[1], $sPos[2], $sPos[3] + 250)
+		$Global_ResizeMinHeight += 100 ; Fix Default Min Height.
+		$Global_ResizeMaxHeight = @DesktopHeight ; Fix Default Max Height.
+		WinMove($sNameGUI, "", $sPos[0], $sPos[1], $sPos[2], 188 + $Global_ResizeCurrentDiff)
 		GUICtrlSetTip($Global_ExtendButton, __GetLang('POSITIONPROCESS_10', 'Less'))
 		GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -21, 0)
+		GUICtrlSetResizing($Global_ListViewProcessControl, $GUI_DOCKBORDERS) ; Needed To Correctly Resize ListView.
 	EndIf
 EndFunc   ;==>_Sorting_Extend
 
 Func _Sorting_Pause($sMainArray, $sMode = 0)
-	Local $sIndex_Selected, $sStatus, $sInfoDummy = -1, $sSkipDummy = -1
+	Local $sIndices_Selected, $sStatus, $sInfoDummy = -1, $sSkipDummy = -1
 
 	$G_Global_PauseSorting = 2 ; To Define That The Process Is In This Function.
 	GUICtrlSetState($Global_PauseButton, $GUI_ENABLE)
@@ -4536,8 +4556,6 @@ Func _Sorting_Pause($sMainArray, $sMode = 0)
 
 	__ExpandEventMode(0) ; Disable Event Buttons.
 	While $G_Global_PauseSorting
-		$sIndex_Selected = $Global_ListViewIndex
-
 		Switch GUIGetMsg()
 			Case $GUI_EVENT_CLOSE, $Global_AbortButton
 				$G_Global_PauseSorting = 0
@@ -4551,15 +4569,21 @@ Func _Sorting_Pause($sMainArray, $sMode = 0)
 			Case $Global_ExtendButton
 				_Sorting_Extend() ; Show/Hide The Extended GUI.
 			Case $sInfoDummy
-				_Sorting_Pause_Info($sMainArray[$sIndex_Selected + 1][0])
+				$sIndices_Selected = _GUICtrlListView_GetSelectedIndices($Global_ListViewProcess, True)
+				For $A = 1 To $sIndices_Selected[0]
+					_Sorting_Pause_Info($sMainArray[$sIndices_Selected[$A] + 1][0])
+				Next
 			Case $sSkipDummy
-				$sStatus = _GUICtrlListView_GetItemText($Global_ListViewProcess, $sIndex_Selected, 3)
-				If $sStatus == "" Then
-					$sStatus = __GetLang('DUPLICATE_MODE_6', 'Skip')
-				ElseIf $sStatus == __GetLang('DUPLICATE_MODE_6', 'Skip') Then
-					$sStatus = ""
-				EndIf
-				_GUICtrlListView_AddSubItem($Global_ListViewProcess, $sIndex_Selected, $sStatus, 3)
+				$sIndices_Selected = _GUICtrlListView_GetSelectedIndices($Global_ListViewProcess, True)
+				For $A = 1 To $sIndices_Selected[0]
+					$sStatus = _GUICtrlListView_GetItemText($Global_ListViewProcess, $sIndices_Selected[$A], 3)
+					If $sStatus == "" Then
+						$sStatus = __GetLang('DUPLICATE_MODE_6', 'Skip')
+					ElseIf $sStatus == __GetLang('DUPLICATE_MODE_6', 'Skip') Then
+						$sStatus = ""
+					EndIf
+					_GUICtrlListView_AddSubItem($Global_ListViewProcess, $sIndices_Selected[$A], $sStatus, 3)
+				Next
 		EndSwitch
 	WEnd
 	__ExpandEventMode(1) ; Enable Event Buttons.
@@ -4649,39 +4673,47 @@ Func _Sorting_CreateGUI($sProfile, $sMonitored)
 	Local $sLabel_1, $sLabel_2, $sProgress_1, $sProgress_2, $sPercent_1, $sPercent_2
 	Local $sListView, $sListView_Handle, $sToolTip, $sCounter
 
-	$G_Global_SortingGUI = GUICreate("DropIt - " & __GetLang('POSITIONPROCESS_0', 'Processing'), 500, 150, -1, -1, -1, -1, __OnTop($Global_GUI_1))
+	$G_Global_SortingGUI = GUICreate("DropIt - " & __GetLang('POSITIONPROCESS_0', 'Processing'), 500, 150, -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_MAXIMIZEBOX, $WS_SIZEBOX), -1, __OnTop($Global_GUI_1))
 	GUISetOnEvent($GUI_EVENT_CLOSE, '_Sorting_EventButtons')
 	$sLabel_1 = GUICtrlCreateLabel('', 12, 14, 376, 16)
+	GUICtrlSetResizing($sLabel_1, $GUI_DOCKHEIGHT + $GUI_DOCKLEFT + $GUI_DOCKRIGHT + $GUI_DOCKTOP)
 	$sCounter = GUICtrlCreateLabel('', 12 + 376, 14, 100, 16, $SS_RIGHT)
+	GUICtrlSetResizing($sCounter, $GUI_DOCKSIZE + $GUI_DOCKRIGHT + $GUI_DOCKTOP)
 	$sLabel_2 = GUICtrlCreateLabel('', 12, 14 + 20, 476, 16)
+	GUICtrlSetResizing($sLabel_2, $GUI_DOCKHEIGHT + $GUI_DOCKLEFT + $GUI_DOCKRIGHT + $GUI_DOCKTOP)
 	$sProgress_2 = GUICtrlCreateProgress(12, 14 + 43, 440, 12)
+	GUICtrlSetResizing($sProgress_2, $GUI_DOCKHEIGHT + $GUI_DOCKLEFT + $GUI_DOCKRIGHT + $GUI_DOCKTOP)
 	$sPercent_2 = GUICtrlCreateLabel('0 %', 12 + 442, 14 + 43, 34, 16, $SS_RIGHT)
+	GUICtrlSetResizing($sPercent_2, $GUI_DOCKSIZE + $GUI_DOCKRIGHT + $GUI_DOCKTOP)
 	$sProgress_1 = GUICtrlCreateProgress(12, 14 + 64, 440, 18)
+	GUICtrlSetResizing($sProgress_1, $GUI_DOCKHEIGHT + $GUI_DOCKLEFT + $GUI_DOCKRIGHT + $GUI_DOCKTOP)
 	$sPercent_1 = GUICtrlCreateLabel('0 %', 12 + 442, 14 + 67, 34, 16, $SS_RIGHT)
+	GUICtrlSetResizing($sPercent_1, $GUI_DOCKSIZE + $GUI_DOCKRIGHT + $GUI_DOCKTOP)
 
 	$Global_ExtendButton = GUICtrlCreateButton("E", 250 - 110 - 58, 110, 58, 26, $BS_ICON)
 	GUICtrlSetTip($Global_ExtendButton, __GetLang('POSITIONPROCESS_9', 'More'))
 	GUICtrlSetOnEvent($Global_ExtendButton, '_Sorting_EventButtons')
 	GUICtrlSetImage($Global_ExtendButton, @ScriptFullPath, -20, 0)
-	GUICtrlSetResizing($Global_ExtendButton, $GUI_DOCKALL)
+	GUICtrlSetResizing($Global_ExtendButton, $GUI_DOCKSIZE + $GUI_DOCKLEFT + $GUI_DOCKTOP)
 	GUICtrlSetState($Global_ExtendButton, $GUI_DISABLE) ; Enabled When MainArray Is Sorted.
 
 	$Global_PauseButton = GUICtrlCreateButton("P", 250 - 29, 110, 58, 26, $BS_ICON)
 	GUICtrlSetTip($Global_PauseButton, __GetLang('POSITIONPROCESS_3', 'Pause'))
 	GUICtrlSetOnEvent($Global_PauseButton, '_Sorting_EventButtons')
 	GUICtrlSetImage($Global_PauseButton, @ScriptFullPath, -17, 0)
-	GUICtrlSetResizing($Global_PauseButton, $GUI_DOCKALL)
+	GUICtrlSetResizing($Global_PauseButton, $GUI_DOCKSIZE + $GUI_DOCKHCENTER + $GUI_DOCKTOP)
 
 	$Global_AbortButton = GUICtrlCreateButton("X", 250 + 110, 110, 58, 26, $BS_ICON)
 	GUICtrlSetTip($Global_AbortButton, __GetLang('POSITIONPROCESS_2', 'Stop'))
 	GUICtrlSetOnEvent($Global_AbortButton, '_Sorting_EventButtons')
 	GUICtrlSetImage($Global_AbortButton, @ScriptFullPath, -16, 0)
-	GUICtrlSetResizing($Global_AbortButton, $GUI_DOCKALL)
+	GUICtrlSetResizing($Global_AbortButton, $GUI_DOCKSIZE + $GUI_DOCKRIGHT + $GUI_DOCKTOP)
 
-	$sListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination') & "|" & __GetLang('STATUS', 'Status'), 0, 150, 500, 250, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
+	$sListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination') & "|" & __GetLang('STATUS', 'Status'), 0, 150, 500, 250, BitOR($LVS_NOSORTHEADER, $LVS_REPORT))
 	$sListView_Handle = GUICtrlGetHandle($sListView)
 	$Global_ListViewProcess = $sListView_Handle
-	GUICtrlSetResizing($sListView, $GUI_DOCKALL)
+	$Global_ListViewProcessControl = $sListView ; Nedded To Correctly Resize The ListView.
+	GUICtrlSetResizing($sListView, $GUI_DOCKHEIGHT + $GUI_DOCKLEFT + $GUI_DOCKRIGHT + $GUI_DOCKTOP)
 	_GUICtrlListView_SetExtendedListViewStyle($sListView_Handle, BitOR($LVS_EX_FULLROWSELECT, $LVS_EX_GRIDLINES, $LVS_EX_INFOTIP))
 	_GUICtrlListView_SetColumnWidth($sListView_Handle, 0, 140)
 	_GUICtrlListView_SetColumnWidth($sListView_Handle, 1, 80)
@@ -4696,12 +4728,15 @@ Func _Sorting_CreateGUI($sProfile, $sMonitored)
 
 	$Global_ListViewProcess_Info = GUICtrlCreateDummy()
 	$Global_ListViewProcess_Skip = GUICtrlCreateDummy()
+	$Global_ResizeMinWidth = 460 ; Set Default Min Width.
+	$Global_ResizeMaxWidth = @DesktopWidth ; Set Default Max Width.
+	$Global_ResizeMinHeight = 188 ; Set Default Min Height.
+	$Global_ResizeMaxHeight = 188 ; Set Default Max Height.
+	$Global_ResizeCurrentDiff = 250 ; Set Default Height Difference.
+	GUIRegisterMsg($WM_GETMINMAXINFO, "_WM_GETMINMAXINFO")
 
 	Local $sElementsGUI[7] = [$sLabel_1, $sLabel_2, $sProgress_1, $sProgress_2, $sPercent_1, $sPercent_2, $sCounter] ; Populate Elements GUI.
 
-	For $A = 0 To 6
-		GUICtrlSetResizing($sElementsGUI[$A], $GUI_DOCKALL)
-	Next
 	If (__Is("ShowSorting", -1, "True", $sProfile) And $sMonitored = 0) Or (__Is("ShowMonitored") And $sMonitored) Then
 		GUISetState(@SW_SHOWNOACTIVATE, $G_Global_SortingGUI)
 	EndIf
@@ -7305,10 +7340,10 @@ EndFunc   ;==>_WM_DROPFILES
 Func _WM_GETMINMAXINFO($hWnd, $iMsg, $iwParam, $ilParam) ; Enable The GUI From Being Dragged To A Certain Size.
 	#forceref $hWnd, $iMsg, $iwParam
 	Local $gStructure = DllStructCreate("int;int;int;int;int;int;int;int;int;int", $ilParam)
-	DllStructSetData($gStructure, 7, $Global_ResizeWidth) ; Min Width.
-	DllStructSetData($gStructure, 8, $Global_ResizeHeight) ; Min Height.
-	DllStructSetData($gStructure, 9, @DesktopWidth) ; Max Width.
-	DllStructSetData($gStructure, 10, @DesktopHeight) ; Max Height.
+	DllStructSetData($gStructure, 7, $Global_ResizeMinWidth) ; Min Width.
+	DllStructSetData($gStructure, 8, $Global_ResizeMinHeight) ; Min Height.
+	DllStructSetData($gStructure, 9, $Global_ResizeMaxWidth) ; Max Width.
+	DllStructSetData($gStructure, 10, $Global_ResizeMaxHeight) ; Max Height.
 	Return 0
 EndFunc   ;==>_WM_GETMINMAXINFO
 
