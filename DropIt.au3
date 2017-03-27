@@ -3,9 +3,9 @@
 #AutoIt3Wrapper_outfile=DropIt.exe
 #AutoIt3Wrapper_Compression=4
 #AutoIt3Wrapper_UseUpx=N
-#AutoIt3Wrapper_Res_Description=DropIt - To place your files with a drop
-#AutoIt3Wrapper_Res_Fileversion=0.9.3.0
-#AutoIt3Wrapper_Res_ProductVersion=0.9.3.0
+#AutoIt3Wrapper_Res_Description=DropIt - To sort your files with a drop
+#AutoIt3Wrapper_Res_Fileversion=0.9.4.0
+#AutoIt3Wrapper_Res_ProductVersion=0.9.4.0
 #AutoIt3Wrapper_Res_LegalCopyright=Lupo PenSuite Team
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Run_Obfuscator=y
@@ -28,14 +28,14 @@ Opt("TrayIconHide", 1)
 Opt("TrayOnEventMode", 1)
 Opt("TrayMenuMode", 1)
 
-Global $sName = "DropIt", $sVer = " (v0.9.3)", $ii = $sName & " - To place your files with a drop"
-Global $sIni = @ScriptDir & "\settings.ini", $sIniPr, $PrDir = @ScriptDir & "\profiles", $ImDir = @ScriptDir & "\img", $ImWork = "ps.gif", $ImDef = "default.gif", $sIm
+Global $sName = "DropIt", $sVer = " (v0.9.4)", $ii = $sName & " - To sort your files with a drop"
+Global $sIni = @ScriptDir & "\settings.ini", $sIniPr, $PrDir = @ScriptDir & "\profiles", $ImDir = @ScriptDir & "\img", $sWork = $ImDir & "\zz.gif", $ImDef = "Default.gif", $sIm = $ImDir & "\" & $ImDef
 Global $hGUI, $hGUI2, $sIcon, $sIcon2, $sData, $Dummy, $hListView, $temp, $i, $top, $Show, $Separ, $Exit, $menu, $func1, $func3, $func2, $func4, $func5, $func6, $custom, $specialClick
 Global Const $WM_DROPFILES = 0x233, $WM_ENTERSIZEMOVE = 0x231, $WM_EXITSIZEMOVE = 0x232
 Global $gaDropFiles[1], $RelPos[2], $EP = "Exclusion-Pattern"
 Global $tips = '- As destination folders are supported both absolute ("C:\Lupo\My Images") and relative ("..\My Images") paths.' & @LF & @LF & '- If you want to use different pattern groups, for example on different computers, you can click "Profiles" -> "Customize" to create and manage them.' & @LF & @LF & '- If you want to exclude files that match with a specified pattern, you can add "$" at the end of the pattern itself (for example:  *.exe$ ).' & @LF & @LF & '- If you need more info about supported pattern rules, you can click the "Rules" button and see a list of possible patterns.'
 Global $prs = 'Examples of supported pattern rules for files:' & @LF & '*.zip   = all files with "zip" extension' & @LF & 'penguin.*   = all files named "penguin"' & @LF & 'penguin*.*   = all files that begin with "penguin"' & @LF & '*penguin*   = all files that contain "penguin"' & @LF & @LF & 'Examples of supported pattern rules for folders:' & @LF & 'robot**   = all folders that begin with "robot"' & @LF & '**robot   = all folders that end with "robot"' & @LF & '**robot**   = all folders that contain "robot"' & @LF & @LF & 'Add "$" at the end of a pattern to skip loaded' & @LF & 'files that match with it (eg:  sky*.jpg$ ).' & @LF & @LF & 'Separate several strings in a pattern with ";" to' & @LF & 'create multi-string patterns (eg:  *.jpg;*.png ).'
-Global $er1 = "You have to select a destination folder to associate it.", $er2 = "You have to insert a correct pattern to add the association.", $er3 = "This pattern rule already exists.", $me1 = "Insert the desired destination folder and write a pattern, to place there files that match with it:", $me2 = "Change this pattern, the destination folder for files that match with it or delete this association:"
+Global $er1 = "You have to select a destination folder to associate it.", $er2 = "You have to insert a correct pattern to add the association.", $er3 = "This pattern rule already exists.", $er4 = "You are running " & $sName & " with an invalid profile.", $me1 = "Insert the desired destination folder and write a pattern, to place there files that match with it:", $me2 = "Change this pattern, the destination folder for files that match with it or delete this association:"
 
 
 _Main()
@@ -127,7 +127,7 @@ Func Manage()
 				EndIf
 				
 			Case $bot3
-				$decision = MsgBox(0x40004, "Delete Association", 'Are you sure to delete this association?')
+				$decision = MsgBox(0x40004, "Delete association", 'Are you sure to delete this association?')
 				If $decision = 6 Then
 					IniDelete($sIniPr, "Patterns", $ff)
 					_GUICtrlListBox_DeleteString($hListBox, _GUICtrlListBox_FindString($hListBox, $ff))
@@ -475,7 +475,7 @@ EndFunc
 
 
 Func PosFile($temp)
-	Local $Place, $item, $name, $tut, $decision, $cont, $tx, $j = 1, $f = 0, $DD = 0, $ff = "0"
+	Local $Place, $item, $name, $tut, $decision, $cont, $tx, $j = 1, $f = 0, $DD = 0, $nodir = 1, $ff = "0"
 	If StringInStr(FileGetAttrib($temp), "D") Then $DD = 1
 	; Rules extrapolation
 	While 1
@@ -508,7 +508,10 @@ Func PosFile($temp)
 	If $Place <> "0" And $Place <> "-1" Then
 		Opt("ExpandEnvStrings", 1)
 		$decision = 6
-		If Not FileExists($Place) Then DirCreate($Place)
+		If Not FileExists($Place) Then
+			$nodir = DirCreate($Place)
+			If $nodir = 0 Then MsgBox(0, "Destination problem", "Sort operation has been partially skipped. The following destination folder does not exist and cannot be created:" & @LF & $Place)
+		EndIf
 		If FileExists($Place & "\" & $item) Then
 			If IniRead($sIni, "General", "AutoForDup", "False") = "False" Then
 				If $DD = 1 Then
@@ -541,7 +544,7 @@ Func PosFile($temp)
 				EndIf
 			EndIf
 		EndIf
-		If $decision = 6 Then
+		If $decision = 6 And $nodir = 1 Then
 			If IniRead($sIni, "General", "Mode", "Move") = "Move" Then
 				If $DD = 1 Then
 					DirMove($temp, $Place & "\" & $item, 1)
@@ -593,7 +596,7 @@ EndFunc
 
 
 Func DropEvent()
-	Local $decision, $num, $size, $fullsize = 0
+	Local $decision, $size, $fullsize = 0
 	If IniRead($sIni, "General", "AskMode", "False") = "True" Then
 		$decision = MsgBox(0x40004, "Choose positioning mode", "Do you want to 'move' these files in destination folders?" & @LF & "(otherwise they will be 'copied' in destination folders)")
 		If $decision = 6 Then
@@ -602,8 +605,7 @@ Func DropEvent()
 			IniWrite($sIni, "General", "Mode", "Copy")
 		EndIf
 	EndIf
-	$num = UBound($gaDropFiles)
-	For $i = 0 To $num - 1
+	For $i = 0 To UBound($gaDropFiles) - 1
 		$temp = $gaDropFiles[$i]
 		If FileExists($temp) Then
 			If StringInStr(FileGetAttrib($temp), "D") Then
@@ -614,13 +616,13 @@ Func DropEvent()
 			$fullsize = $fullsize + $size
 		EndIf
 	Next
-	If $fullsize > 2000000000 Or $num > 5000 Then
-		$decision = MsgBox(0x40004, "Long estimated time", "You are trying to process a big number/size of files." & @LF & "It may take long time, are you sure to continue?")
+	If $fullsize > 2000000000 Then
+		$decision = MsgBox(0x40004, "Estimated long processing time", "You are trying to process a large size of files (" & StringFormat("%.2f", $fullsize/1073741824) & " GB)." & @LF & "It may take long time, do you wish to continue?")
 	Else
 		$decision = 6
 	EndIf
 	If $decision = 6 Then
-		For $i = 0 To $num - 1
+		For $i = 0 To UBound($gaDropFiles) - 1
 			$temp = $gaDropFiles[$i]
 			If FileExists($temp) Then Position($temp)
 		Next
@@ -796,7 +798,7 @@ Func ImSizeProf($cust, $nProf, $tp)
 					$size = $temX & "x" & $temY
 					ExitLoop
 				Else
-					MsgBox(0x40000, "Size Not Correct", "You have to insert correct sizes for target image." & @LF & "(both width and height must be more than 10 pixels)")
+					MsgBox(0x40000, "Size not correct", "You have to insert correct sizes for target image." & @LF & "(both width and height must be more than 10 pixels)")
 				EndIf
 	
 			Case $cancel, $GUI_EVENT_CLOSE
@@ -807,6 +809,17 @@ Func ImSizeProf($cust, $nProf, $tp)
 	GUIDelete($create)
 	If $top = "True" Then WinSetOnTop($cust, "", 1)
 	Return $size
+EndFunc
+
+
+Func ImTarget()
+	$sIm = IniRead($sIniPr, "Target", "Image", "")
+	If $sIm = "" Or Not FileExists($ImDir & "\" & $sIm) Then
+		$sIm = $ImDef
+		IniWrite($sIniPr, "Target", "Image", $sIm)
+		MsgBox(0, "Image not found", 'Target image not found. The default image will be assigned to this profile.')
+	EndIf
+	$sIm = $ImDir & "\" & $sIm
 EndFunc
 
 
@@ -886,7 +899,7 @@ Func Customize($profiles)
 				If $tp <> "0" Then _GUICtrlListView_SetItemText($hListView, $profSel, $tp, 2)
 				
 			Case $bt5
-				$decision = MsgBox(0x40004, "Remove Selected Profile", 'Are you sure to remove selected profile?')
+				$decision = MsgBox(0x40004, "Remove selected profile", 'Are you sure to remove selected profile?')
 				If $decision = 6 Then
 					FileDelete($PrDir & "\" & $temp & ".ini")
 					_GUICtrlListView_DeleteItem($hListView, $profSel)
@@ -914,7 +927,7 @@ Func Customize($profiles)
 					; check if the profile name already exists
 					$tp = _GUICtrlListView_GetItemText($hListView, $i - 1, 0)
 					If $nProf = $tp And $profSel <> $i - 1 Then
-						MsgBox(0x40000, "Name Not Available", "This profile name already exists.")
+						MsgBox(0x40000, "Name not available", "This profile name already exists.")
 						_GUICtrlListView_SetItemText($hListView, $profSel, $temp, 0)
 						$nProf = ""
 					EndIf
@@ -997,7 +1010,7 @@ Func Refresh($sIniPr, $profiles)
 	
 	Local $pos = WinGetPos($hGUI)
 	$hGUI2 = GUICreate("Positioning", 16, 16, $pos[0]+($xD/9), $pos[1]+($yD/9), $WS_POPUP, BitOR($WS_EX_LAYERED, $WS_EX_TOPMOST), $hGUI)
-	$sIcon2 = GUICtrlCreatePic($ImDir & "\" & $ImWork, 0, 0, 16, 16, $SS_NOTIFY, $GUI_WS_EX_PARENTDRAG)
+	$sIcon2 = GUICtrlCreatePic($sWork, 0, 0, 16, 16, $SS_NOTIFY, $GUI_WS_EX_PARENTDRAG)
 	GUIRegisterMsg($WM_ENTERSIZEMOVE, "SetRelPos")
 	GUIRegisterMsg($WM_MOVE, "FollowMe")
 	GUISetState(@SW_HIDE, $hGUI2)
@@ -1013,7 +1026,7 @@ EndFunc
 
 
 Func _Main()
-	Local $nMsg, $j, $list, $prof[16], $profiles[16]
+	Local $nMsg, $j, $list, $tp, $noprof = 0, $prof[16], $profiles[16]
 	If FileExists(@ScriptDir & "\unins000.exe") Then
 		If FileExists($sIni) Then FileMove($sIni, @AppDataDir & "\" & $sName & "\settings.ini", 9)
 		If FileExists($PrDir) Then DirMove($PrDir, @AppDataDir & "\" & $sName & "\profiles", 1)
@@ -1024,8 +1037,8 @@ Func _Main()
 	EndIf
 	If Not FileExists($PrDir) Then DirCreate($PrDir)
 	If Not FileExists($ImDir) Then DirCreate($ImDir)
-	If Not FileExists($ImDir & "\" & $ImDef) Then FileInstall("img\default.gif", $ImDir & "\" & $ImDef)
-	If Not FileExists($ImDir & "\" & $ImWork) Then FileInstall("img\ps.gif", $ImDir & "\" & $ImWork)
+	If Not FileExists($sIm) Then FileInstall("img\Default.gif", $sIm)
+	If Not FileExists($sWork) Then FileInstall("img\zz.gif", $sWork)
 	
 	; Creation of the main ini
 	If Not FileExists($sIni) Then
@@ -1041,63 +1054,57 @@ Func _Main()
 	
 	; Loading of the profile ini
 	$sData = IniRead($sIni, "General", "Profile", "")
-	If $sData = "" Then
+	If Not FileExists($PrDir & "\" & $sData & ".ini") And $sData <> "Default" Then
+		$noprof = 1
 		$sData = "Default"
 		IniWrite($sIni, "General", "Profile", $sData)
+		If $CmdLine[0] = 0 Then MsgBox(0, "Profile not found", $er4 & @LF & 'It will be started with "Default" profile.')
 	EndIf
-	$sIm = $ImDir & "\" & $ImDef
 	$sIniPr = $PrDir & "\" & $sData & ".ini"
-	$temp = IniReadSection($sIni, "Patterns")
-	If @error Then
-		If Not FileExists($sIniPr) Then
-			; create empty profile ini
-			IniWriteSection($sIniPr, "Target", "Image=" & $ImDef & @LF & "SizeX=64" & @LF & "SizeY=64")
-			IniWriteSection($sIniPr, "Patterns", "")
-		EndIf
-	Else
-		; restore patterns from an old DropIt version
-		IniWriteSection($sIniPr, "Patterns", $temp)
-		IniDelete($sIni, "Patterns")
+	If Not FileExists($sIniPr) Then
+		IniWriteSection($sIniPr, "Target", "Image=" & $ImDef & @LF & "SizeX=64" & @LF & "SizeY=64")
+		IniWriteSection($sIniPr, "Patterns", "")
 	EndIf
 	
 	; Creation of the profile list
 	$profiles = ListProfiles()
+	
 	; Background mode
-	If $CmdLine[0] > 0 Then
-		$temp = 1
+	$temp = $CmdLine[0]
+	If $temp > 0 Then
 		If StringLeft($CmdLine[1], 1) = "-" Then
+			$temp = $temp - 1
 			$sData = StringTrimLeft($CmdLine[1], 1)
 			If FileExists($PrDir & "\" & $sData & ".ini") Then
 				IniWrite($sIni, "General", "Profile", $sData)
 				$sIniPr = $PrDir & "\" & $sData & ".ini"
-				If $CmdLine[0] > 1 Then $temp = 2
+				$noprof = 0
 			Else
-				MsgBox(0, "Invalid Command", "You are running " & $sName & " with an invalid command." & @LF & "It will be normally started.")
+				MsgBox(0, "Profile not found", $er4 & @LF & "It will start with the last-known profile and files sent with command line will be skipped.")
 				$temp = 0
 			EndIf
 		EndIf
-		If $temp > 0 And FileExists($CmdLine[$temp]) Then
-			Local $assign
-			ReDim $gaDropFiles[$CmdLine[0]]
-			For $j = $temp To $CmdLine[0]
-				$assign = $CmdLine[$j]
-				If Not(StringInStr($CmdLine[$j], ":")) Then $assign = _PathFull(@ScriptDir & "..\" & $assign)	; it needs this additional "..\" to work fine
-				$gaDropFiles[$j - $temp] = $assign
-			Next
-			DropEvent()
+		If $temp > 0 Then
+			If $noprof = 1 Then
+				MsgBox(0, "Profile not found", $er4 & @LF & "It cannot be started and files will not be sorted.")
+			Else
+				ReDim $gaDropFiles[$temp]
+				For $j = 1 To $temp
+					$tp = $CmdLine[$CmdLine[0] - $temp + $j]
+					If StringInStr($tp, ":") Then
+						$gaDropFiles[$j - 1] = $tp
+					Else
+						$gaDropFiles[$j - 1] = _PathFull(@ScriptDir & "..\" & $tp)	; it needs this additional "..\" to work fine
+					EndIf
+				Next
+				DropEvent()
+			EndIf
 			Exit
 		EndIf
 	EndIf
 	
 	; Target image loading
-	$sIm = IniRead($sIniPr, "Target", "Image", "")
-	If $sIm = "" Or Not FileExists($ImDir & "\" & $sIm) Then
-		$sIm = $ImDir & "\" & $ImDef
-		IniWrite($sIniPr, "Target", "Image", $ImDef)
-		MsgBox(0, "Image not found", 'Target image not found. The default image will be associated to this profile.')
-	Else
-		$sIm = $ImDir & "\" & $sIm
-	EndIf
+	ImTarget()
 	
 	GUIRegisterMsg($WM_DROPFILES, "WM_DROPFILES_UNICODE_FUNC")
 	GUIRegisterMsg($WM_SYSCOMMAND, "WM_SYSCOMMAND")
@@ -1121,9 +1128,7 @@ Func _Main()
 				$profiles = Customize($profiles)
 				$sIniPr = $PrDir & "\" & IniRead($sIni, "General", "Profile", "Default") & ".ini"
 				_Pos()
-				$sIm = IniRead($sIniPr, "Target", "Image", "")
-				If $sIm = "" Then $sIm = $ImDef
-				$sIm = $ImDir & "\" & $sIm
+				ImTarget()
 				$prof = Refresh($sIniPr, $profiles)
 				
 			Case $nMsg >= $prof[1] And $nMsg <= $prof[$profiles[0]]
@@ -1134,9 +1139,7 @@ Func _Main()
 					EndIf
 				Next
 				_Pos()
-				$sIm = IniRead($sIniPr, "Target", "Image", "")
-				If $sIm = "" Then $sIm = $ImDef
-				$sIm = $ImDir & "\" & $sIm
+				ImTarget()
 				$prof = Refresh($sIniPr, $profiles)
 				
 			Case $nMsg = $func3
