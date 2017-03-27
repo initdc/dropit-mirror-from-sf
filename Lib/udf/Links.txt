@@ -1,58 +1,58 @@
-7Zip Library (7ZipRead.au3)
+7Zip Library (7ZipRead.au3) - 15/03/2009
 http://www.autoitscript.com/forum/topic/91283-7zread-udf/
 
 
-Base64 Library (UDFB64.au3)
+Base64 Library (UDFB64.au3) - 01/11/2012
 https://www.autoitscript.com/forum/topic/145526-base64-converter-files-and-strings-can-be-modified-easily/
 
 
-Binary Library (Binary.au3)
+Binary Library (Binary.au3) - 15/09/2011
 http://www.autoitscript.com/forum/topic/131037-binary-udf/
 
 
-Copy Library (Copy.au3)
+Copy Library (Copy.au3) - 30/04/2012
 http://www.autoitscript.com/forum/topic/121833-copy-udf/
 
 
-Create PDF Library (MPDF.au3)
+Create PDF Library (MPDF.au3) - 10/08/2011
 http://www.autoitscript.com/forum/topic/118827-create-pdf-from-your-application/
 
 
-DragDropEvent Library (DragDropEvent.au3)
+DragDropEvent Library (DragDropEvent.au3) - 15/03/2012
 https://www.autoitscript.com/forum/topic/138372-dragdropevent-udf-handle-ole-dragdrop-event/
 
 
-Embedding Library (ResourcesEx.au3)
+Embedding Library (ResourcesEx.au3) - 12/01/2015
 http://www.autoitscript.com/forum/topic/162499-resourcesex-udf/
 
 
-Hash For File Library (HashForFile.au3)
+Hash For File Library (HashForFile.au3) - 12/09/2009
 http://www.autoitscript.com/forum/topic/95558-crc32-md4-md5-sha1-for-files/
 
 
-Icon Image Library (IconImage.au3)
+Icon Image Library (IconImage.au3) - 19/03/2014
 http://www.autoitscript.com/forum/topic/133053-iconimage-udf/
 
 
-Image Get Info Library (ImageGetInfo.au3)
+Image Get Info Library (ImageGetInfo.au3) - 13/11/2010
 http://www.autoitscript.com/forum/topic/13096-udf-imagegetinfo/
 
 
-Secure Delete Library (SecureDelete.au3)
+Secure Delete Library (SecureDelete.au3) - 14/11/2012
 http://www.autoitscript.com/forum/topic/82954-securely-overwrite-files-and-free-space/
 
 
-SFTP Library (SFTPEx.au3)
+SFTP Library (SFTPEx.au3) - 11/05/2013
 http://www.autoitscript.com/forum/topic/138095-udf-to-support-sftp-protocol-using-psftp/
 
 
-SMTP Mailer Library (SMTPMailer.au3)
+SMTP Mailer Library (SMTPMailer.au3) - 03/02/2013
 http://www.autoitscript.com/forum/topic/23860-smtp-mailer-that-supports-html-and-attachments/
 
 
-Startup Library (Startup.au3)
+Startup Library (Startup.au3) - 30/06/2014
 http://www.autoitscript.com/forum/topic/124508-startup-create-startup-entries-in-the-startup-folder-or-registry/
 
 
-WM_COPYDATA Library (WM_COPYDATA.au3)
+WM_COPYDATA Library (WM_COPYDATA.au3) - 25/04/2013
 http://www.autoitscript.com/forum/topic/119502-solved-wm-copydata-x64-issue/

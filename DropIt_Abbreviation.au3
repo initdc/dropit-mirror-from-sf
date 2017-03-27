@@ -252,8 +252,8 @@ EndFunc   ;==>_ContextMenuAbbreviations
 
 Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDirs = 0)
 	Local $sLoadedProperty
-	Local $aEnvArray[150][3] = [ _
-			[149, 0, 0], _
+	Local $aEnvArray[153][3] = [ _
+			[152, 0, 0], _
 			["FileExt", 0, 1], _
 			["FileName", 0, 2], _
 			["FileNameExt", 0, 3], _
@@ -277,6 +277,7 @@ Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "",
 			["FileType", 1, 2], _
 			["Attributes", 1, 6], _
 			["Comments", 1, 21], _
+			["Keywords", 1, 29], _
 			["Copyright", 1, 22], _
 			["Duration", 1, 23], _
 			["BitRate", 1, 24], _
@@ -402,7 +403,9 @@ Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "",
 			["MD5", 3, 3], _
 			["SHA-1", 3, 4], _
 			["SHA1", 3, 4], _
-			["UserInput", 6, 0]]
+			["UserInput", 6, 0], _
+			["FirstFileContentDate", 0, 13], _
+			["FirstFileContentDateNormalized", 0, 14]]
 
 	For $A = 1 To $aEnvArray[0][0]
 		If StringRegExp($sDestination, "(?i)%" & $aEnvArray[$A][0] & "%|%" & $aEnvArray[$A][0] & "#(.*?)%") Then
@@ -569,6 +572,10 @@ Func __GetFileParameter($sFilePath, $sDestination, $sMainDirs, $iParameterCode)
 			$sReturn = __GetSubDir($sFilePath, $sMainDirs, 0)
 		Case 12 ; Dropped Folder Name.
 			$sReturn = __GetFileName(__GetSubDir($sFilePath, $sMainDirs, 0))
+		Case 13 ; First File Content Date.
+			$sReturn = __ReadFileContentDate($sFilePath, 0)
+		Case 14 ; First File Content Date Normalized.
+			$sReturn = __ReadFileContentDate($sFilePath, 1)
 	EndSwitch
 
 	Return $sReturn
