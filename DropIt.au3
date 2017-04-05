@@ -1364,7 +1364,7 @@ Func _Manage_Compress(ByRef $mSettings, $mHandle = -1)
 	$mComboItems[4] = GUICtrlCreateCombo("", 15 + 124, 12 + 90, 205, 20, 0x0003)
 	$mComboItems[6] = GUICtrlCreateCombo("", 15 + 124, 12 + 90, 205, 20, 0x0003)
 	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_13', 'Password') & ":", 15, 12 + 120 + 4, 110, 20)
-	$mPassword = GUICtrlCreateInput("", 15 + 124, 12 + 120, 205, 20, 0x0020)
+	$mPassword = GUICtrlCreateInput("", 15 + 124, 12 + 120, 205, 20, BitOR(0x0020, 0x0080))
 	$mCheckbox_Remove = GUICtrlCreateCheckbox(__GetLang('MANAGE_REMOVE_SOURCE', 'Remove source after processing it'), 15, 12 + 150, 320, 20)
 
 	If $mStringSplit[1] == "True" Then
