@@ -282,8 +282,12 @@ Func __ReadPDF($sFilePath)
 	If @error Then
 		Return SetError(1, 0, "")
 	EndIf
-	ProcessWaitClose($iPID)
-	$sOutput = StdoutRead($iPID)
+	While 1
+		$sOutput &= StdoutRead($iPID)
+		If @error Then
+			ExitLoop
+		EndIf
+	WEnd
 
 	Return $sOutput
 EndFunc   ;==>__ReadPDF
@@ -291,11 +295,18 @@ EndFunc   ;==>__ReadPDF
 Func __FindInFile($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 	#cs
 		Description: Search for a string in a file.
-			$iAllWords = 0 (At least one of the words), 1 (All words in casual order), 2 (Literal string), 3 (Regular expression)
+			$iAllWords = 0 (At least one of the words), 1 (All words in casual order), 2 (Literal string)
 		Returns: True or False
 	#ce
-	Local $sText = __ReadFile($sFilePath)
-
+	Local $sText = ''
+	If _WinAPI_PathFindExtension($sFilePath) = '.pdf' Then
+		$sText = __ReadPDF($sFilePath)
+	ElseIf _WinAPI_PathFindExtension($sFilePath) = '.docx' Then
+		$sText = __ReadDOCX($sFilePath)
+	EndIf
+	If $sText = '' Then
+		$sText = FileRead($sFilePath)
+	EndIf
 	If @error Or $sText = '' Then
 		Return SetError(1, 0, 0)
 	EndIf
@@ -306,224 +317,15 @@ Func __FindInFile($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 		$sSearch = '(?=.*' & StringReplace($sSearch, ' ', ')(?=.*') & ')'
 		$sText = StringStripWS($sText, 8)
 	EndIf
-	If $iCaseSensitive = 0 And $iAllWords <> 2 Then ; Do not add case insensitivity for Literal string search
+	If $iCaseSensitive = 0 Then
 		$sSearch = '(?i)' & $sSearch
 	EndIf
 
-	If $iAllWords = 2 Then
-		; Use StringInStr for Literal string search
-		If StringInStr($sText, $sSearch, $iCaseSensitive) > 0 Then
-			Return 1
-		EndIf
-	Else
-		If StringRegExp($sText, $sSearch) Then
-			Return 1
-		EndIf
+	If StringRegExp($sText, $sSearch) Then
+		Return 1
 	EndIf
-
 	Return SetError(1, 0, 0)
 EndFunc   ;==>__FindInFile
-
-Func __ReadFile($sFilePath)
-	Local $sText = ''
-
-	 If Not IsDeclared("Global_File_Content") Then
-		 Global $Global_File_Content[1][2]
-	 EndIf
-
-	 ; First check in global array, if file has already been read
-	 If _ArraySearch($Global_File_Content, $sFilePath, 0, 0, 1, 2, 0, 0) >= 0 Then
-	   Return $Global_File_Content[_ArraySearch($Global_File_Content, $sFilePath, 0, 0, 1, 2, 0, 0)][1]
-	 EndIf
-
-	If _WinAPI_PathFindExtension($sFilePath) = '.pdf' Then
-		$sText = __ReadPDF($sFilePath)
-	ElseIf _WinAPI_PathFindExtension($sFilePath) = '.docx' Then
-		$sText = __ReadDOCX($sFilePath)
-	EndIf
-	If $sText = '' Then
-		$sText = FileRead($sFilePath)
-	EndIf
-
-	If @error Or $sText = '' Then
-		Return SetError(1, 0, 0)
-	EndIf
-
-     Local $aItem[1][2] = [[$sFilePath, $sText]]
-     _ArrayAdd($Global_File_Content, $aItem)
-
-	Return $sText
-EndFunc   ;==>__ReadFile
-
-Func __ReadFileContentDate($sFilePath, $iNormalized)
-	#cs
-	    CK TODO
-		Description: Search for a datestring in a file.
-			$iNormalized = 0 (in unchanged date format), $iNormalized = 1 (in normalized date format YYYYMMDD)
-		Returns: Date string to be appended to filename
-	#ce
-
-	Local $bMatchFound = False, $iPosYear, $iPosMonth, $iPosDay, $bMonthLiteral, $iJulianDate, $iYear, $iMonth, $iDay, $aDate, $iDatePos = -1, $aDateTmp, $iDatePosTmp
-	Local $sContent = __ReadFile($sFilePath)
-
-	; 03.10.2011
-	$aDateTmp = StringRegExp($sContent, "(\d{1,2}) *\. *(\d{1,2}) *\. *(\d{4})[^\d]", $STR_REGEXPARRAYFULLMATCH)
-	If Not @error Then
-		$bMatchFound = True
-		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
-		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
-			$aDate = $aDateTmp
-			$iDatePos = $iDatePosTmp
-			$iPosDay = 1
-			$iPosMonth = 2
-			$iPosYear = 3
-			$bMonthLiteral = False
-		EndIf
-	EndIf
-
-	; 03-10-2011
-	$aDateTmp = StringRegExp($sContent, "(\d{1,2}) *- *(\d{1,2}) *- *(\d{4})[^\d]", $STR_REGEXPARRAYFULLMATCH)
-	If Not @error Then
-		$bMatchFound = True
-		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
-		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
-			$aDate = $aDateTmp
-			$iDatePos = $iDatePosTmp
-			$iPosDay = 1
-			$iPosMonth = 2
-			$iPosYear = 3
-			$bMonthLiteral = False
-		EndIf
-	EndIf
-
-	; 2011-10-03
-	$aDateTmp = StringRegExp($sContent, "(\d{4}) *- *(\d{1,2}) *- *(\d{1,2})[^\d]", $STR_REGEXPARRAYFULLMATCH)
-	If Not @error Then
-		$bMatchFound = True
-		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
-		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
-			$aDate = $aDateTmp
-			$iDatePos = $iDatePosTmp
-			$iPosDay = 3
-			$iPosMonth = 2
-			$iPosYear = 1
-			$bMonthLiteral = False
-		EndIf
-	EndIf
-
-	; 3. Oct 11
-	$aDateTmp = StringRegExp($sContent, "(?:(?:(\d{1,2}) *\. *)?(Jan|Feb|Mar|M..?z|Apr|Mai|May|Jun|Jul|Aug|Sep|Oct|Okt|Nov|Dez|Dec)[[:alpha:]]* +(\d{2}(?:\d{2})?))[^\d]", $STR_REGEXPARRAYFULLMATCH)
-	If Not @error Then
-		$bMatchFound = True
-		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
-		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
-			$aDate = $aDateTmp
-			$iDatePos = $iDatePosTmp
-			$iPosDay = 1
-			$iPosMonth = 2
-			$iPosYear = 3
-			$bMonthLiteral = True
-		EndIf
-	EndIf
-
-	; Oct 3, 2011
-	$aDateTmp = StringRegExp($sContent, "(Jan|Feb|Mar|M..?z|Apr|Mai|May|Jun|Jul|Aug|Sep|Oct|Okt|Nov|Dez|Dec)[[:alpha:]]* (\d{1,2}) *, *(\d{2}(?:\d{2})?))[^\d]", $STR_REGEXPARRAYFULLMATCH)
-	If Not @error Then
-		$bMatchFound = True
-		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
-		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
-			$aDate = $aDateTmp
-			$iDatePos = $iDatePosTmp
-			$iPosDay = 2
-			$iPosMonth = 1
-			$iPosYear = 3
-			$bMonthLiteral = True
-		EndIf
-	EndIf
-
-	; 03.10.11
-	$aDateTmp = StringRegExp($sContent, "(\d{1,2}) *\. *(\d{1,2}) *\. *(\d{2})[^\d]", $STR_REGEXPARRAYFULLMATCH)
-	If Not @error Then
-		$bMatchFound = True
-		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
-		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
-			$aDate = $aDateTmp
-			$iDatePos = $iDatePosTmp
-			$iPosDay = 1
-			$iPosMonth = 2
-			$iPosYear = 3
-			$bMonthLiteral = False
-		EndIf
-	EndIf
-
-	If Not $bMatchFound Then
-		Return ""
-	EndIf
-
-	If $iNormalized == 0 Then
-		Return $aDate[0]
-
-	Else
-		;Found date with literal month, so convert for further use
-		If $bMonthLiteral Then
-		   ;Convert literal month to month Number
-		   Switch $aDate[$iPosMonth]
-		   Case "Jan"
-			  $aDate[$iPosMonth] = 1
-		   Case "Feb"
-			  $aDate[$iPosMonth] = 2
-		   Case "Mar"
-			  $aDate[$iPosMonth] = 3
-		   Case "Apr"
-			  $aDate[$iPosMonth] = 4
-		   Case "Mai"
-			  $aDate[$iPosMonth] = 5
-		   Case "May"
-			  $aDate[$iPosMonth] = 5
-		   Case "Jun"
-			  $aDate[$iPosMonth] = 6
-		   Case "Jul"
-			  $aDate[$iPosMonth] = 7
-		   Case "Aug"
-			  $aDate[$iPosMonth] = 8
-		   Case "Sep"
-			  $aDate[$iPosMonth] = 9
-		   Case "Okt"
-			  $aDate[$iPosMonth] = 10
-		   Case "Oct"
-			  $aDate[$iPosMonth] = 10
-		   Case "Nov"
-			  $aDate[$iPosMonth] = 11
-		   Case "Dez"
-			  $aDate[$iPosMonth] = 12
-		   Case "Dec"
-			  $aDate[$iPosMonth] = 12
-		   Case Else
-			  $aDate[$iPosMonth] = 3 ;Set to March, as this has additional options
-		   EndSwitch
-		EndIf
-
-		;Convert date to have a common zerobased structure
-		If Int($aDate[$iPosYear]) < 100 Then
-			; Convert two digit years to four digit years according this logic: https://www.spss-tutorials.com/two-digit-year-in-string-cautionary-note/
-			 If (@YEAR + 30) - (Int(@YEAR / 100) * 100) - Int($aDate[$iPosYear]) >= 0 Then
-				 $iJulianDate = _DateToDayValue(Int($aDate[$iPosYear]) + (Int(@YEAR / 100) * 100), Int($aDate[$iPosMonth]), Int($aDate[$iPosDay]))
-			 Else
-				 $iJulianDate = _DateToDayValue(Int($aDate[$iPosYear]) + (Int(@YEAR / 100) * 100) - 100, Int($aDate[$iPosMonth]), Int($aDate[$iPosDay]))
-			 EndIf
-
-		Else
-		   $iJulianDate = _DateToDayValue(Int($aDate[$iPosYear]), Int($aDate[$iPosMonth]), Int($aDate[$iPosDay]))
-		EndIf
-
-		;convert to gregorian calendar
-		_DayValueToDate($iJulianDate, $iYear, $iMonth, $iDay)
-
-		Return $iYear & $iMonth & $iDay
-	EndIf
-
-	Return ""
-EndFunc   ;==>__ReadFileContentDate
 
 Func __FindInFolder($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 	#cs
@@ -618,17 +420,16 @@ Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gMode = 0) ; Modifie
 		Supported Global Numeration:
 		0 Name, 1 Size, 2 Type, 3 Date Modified, 4 Date Created, 5 Date Opened, 6 Attributes, 7 Status, 8 Owner, 9 Date Taken,
 		10 Dimensions, 11 Camera Model, 12 Authors, 13 Artists, 14 Title, 15 Album, 16 Genre, 17 Year, 18 Track Number,
-		19 Subject, 20 Category, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate, 25 Camera Maker, 26 Company, 27 Rating, 28 Product Name,
-		29 Keywords.
+		19 Subject, 20 Category, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate, 25 Camera Maker, 26 Company, 27 Rating, 28 Product Name.
 		This Numeration Is Automatically Converted For Win2000, WinXP, Win2003, WinVista, Win7, Win8, Win8.1.
 		More Properties And Relative Numeration Are Reported At The AutoIt Webpage.
 	#ce
 	Local $gFileName, $gFileDir, $gObjShell, $gObjFolder, $gObjFile, $gFileProperty, $gFileProperties[2]
 
 	If $gMode = 0 Then
-		Local $gArrayWin2000[30] = [0, 1, 2, 3, 6, 7, 4, 100, 8, 100, 100, 100, 10, 100, 11, 100, 100, 100, 100, 12, 13, 5, 15, 33, 30, 100, 100, 100, 19, 18]
-		Local $gArrayWinXP[30] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 25, 26, 24, 9, 16, 10, 17, 20, 18, 19, 11, 12, 14, 15, 21, 22, 100, 100, 100, 38, 18]
-		Local $gArrayWin7[30] = [0, 1, 2, 3, 4, 5, 6, 7, 10, 12, 31, 30, 20, 13, 21, 14, 16, 15, 26, 22, 23, 24, 25, 27, 28, 32, 33, 19, 270, 18]
+		Local $gArrayWin2000[29] = [0, 1, 2, 3, 6, 7, 4, 100, 8, 100, 100, 100, 10, 100, 11, 100, 100, 100, 100, 12, 13, 5, 15, 33, 30, 100, 100, 100, 19]
+		Local $gArrayWinXP[29] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 25, 26, 24, 9, 16, 10, 17, 20, 18, 19, 11, 12, 14, 15, 21, 22, 100, 100, 100, 38]
+		Local $gArrayWin7[29] = [0, 1, 2, 3, 4, 5, 6, 7, 10, 12, 31, 30, 20, 13, 21, 14, 16, 15, 26, 22, 23, 24, 25, 27, 28, 32, 33, 19, 270]
 		If @OSVersion == "WIN_XP" Or @OSVersion == "WIN_XPe" Or @OSVersion == "WIN_2003" Then
 			$gPropertyNumber = $gArrayWinXP[$gPropertyNumber]
 		ElseIf @OSVersion == "WIN_2000" Then

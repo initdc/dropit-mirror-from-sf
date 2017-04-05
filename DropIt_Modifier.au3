@@ -24,7 +24,7 @@
 
 
 ; #VARIABLES# ==============================================================================================
-Global $i_Modifier_ModifierRulesLength = 51  ;Note UBound($modifierRules) - 1 not used
+Global $i_Modifier_ModifierRulesLength = 50  ;Note UBound($modifierRules) - 1 not used
 Global Const $i_Modifier_ModifierRule = 0         ;Indexes of inner array
 Global Const $i_Modifier_ModifierWhat = 1
 Global Const $i_Modifier_ModifierAction = 2
@@ -61,7 +61,6 @@ Global $aas_Modifier_ModifierRules[$i_Modifier_ModifierRulesLength][6] = [ _
 	["[s][-][-][(](.+),(.+)[)]", "(.+)" , '_StringM_getStringBetween("/1", "\1", "\2")'], _
 	["[r][(](.+)[,](.+)[)]", "(.+)", 'StringReplace("/1", "\1", "\2")'], _
 	["[r][:](.+[,].+)([|].+[,].+)*", "(.+)", 'StringReplace("/1", "\1", "\2")', "|", "(.+)[,](.+)", 2], _ ; DEPRECATED.
-	["[r][e][g][e][x][(](.+),(.*)[)]", "(.+)", 'StringRegExpReplaceMod("\1", "\2")'], _ ; is to be used like StringRegExpReplace, except that the first parameter is automatically set
 	["[d][(](.+)[)]", "(.+)", 'StringReplace("/1", "\1", "")'], _
 	["[d][:](.+)([|].+)*", "(.+)", 'StringReplace("/1", "\1", "")', "|", "(.+)", 2], _ ; DEPRECATED.
 	["[d][>](.+)", "(.+)", 'StringTrimLeft("/1", \1)'], _
@@ -190,11 +189,7 @@ Func __Modifier_ActiveMonoModifier($sVarValue, $sModifierRequest, $iI, $sModifie
 										$activeAction), '"', "'"))
 
 	#ce
-	If StringInStr($activeAction, 'StringRegExpReplaceMod(') > 0 Then
-		Return Execute(StringReplace($activeAction, 'StringRegExpReplaceMod(', 'StringRegExpReplace("' & $sVarValue & '",'))
-	Else
-		Return Execute(StringRegExpReplace($sVarValue, $aas_Modifier_ModifierRules[$iI][$i_Modifier_ModifierWhat], $activeAction))
-	EndIf
+	Return Execute(StringRegExpReplace($sVarValue, $aas_Modifier_ModifierRules[$iI][$i_Modifier_ModifierWhat], $activeAction))
 EndFunc
 
 
@@ -330,7 +325,6 @@ Prompter modifier
 	- -d1,d2					;Retrive a string between d1 and d2 postions
 	- r(s1,s2)				;Rename all occurences of the string s1 with string s2
 	- r:s1,s2(|s1,s2)*	;Rename many string in couple divided by |
-	- regex(pattern,replace)				;Replace all occurences of the regular expression pattern with regular expression pattern replace (matched groups are referenced by \1-\9)
 	- d:s1(|s2)*			;Delete many string divided by |
 	- d(s1)					;Delete all occurences og the string s1
 	- d-(s1,s2)				;Delete a string between s1 and s2 exluded
