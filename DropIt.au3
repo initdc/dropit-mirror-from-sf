@@ -1710,6 +1710,8 @@ Func _Manage_Filters(ByRef $mFilters, $mHandle = -1)
 					$mText = __GetLang('MANAGE_FILTER_LABEL_2', 'All words in casual order')
 				Case "+"
 					$mText = __GetLang('MANAGE_FILTER_LABEL_3', 'All words in casual order (case sensitive)')
+				Case "~"
+					$mText = __GetLang('MANAGE_FILTER_LABEL_6', 'Regular expression')
 				Case "="
 					$mText = __GetLang('MANAGE_FILTER_LABEL_4', 'Literal string')
 				Case Else
@@ -1719,6 +1721,7 @@ Func _Manage_Filters(ByRef $mFilters, $mHandle = -1)
 					__GetLang('MANAGE_FILTER_LABEL_1', 'At least one of the words (case sensitive)') & "|" & _
 					__GetLang('MANAGE_FILTER_LABEL_2', 'All words in casual order') & "|" & _
 					__GetLang('MANAGE_FILTER_LABEL_3', 'All words in casual order (case sensitive)') & "|" & _
+					__GetLang('MANAGE_FILTER_LABEL_6', 'Regular expression') & "|" & _
 					__GetLang('MANAGE_FILTER_LABEL_4', 'Literal string') & "|" & _
 					__GetLang('MANAGE_FILTER_LABEL_5', 'Literal string (case sensitive)'), $mText)
 			$mGUI_Items[$A][2] = GUICtrlCreateInput($mFilters[$A][2], 20, 80 - 1 + (30 * $A) + 30, 440, 21)
@@ -1749,8 +1752,9 @@ Func _Manage_Filters(ByRef $mFilters, $mHandle = -1)
 			GUICtrlSetData($mGUI_Items[9][2], StringReplace(GUICtrlRead($mGUI_Items[9][2]), $STATIC_FILTERS_DIVIDER, ""))
 		EndIf
 		;check for | only if regular expression is not selected
-		If StringInStr(GUICtrlRead($mGUI_Items[10][2]), $STATIC_FILTERS_DIVIDER) And Not (GUICtrlRead($mGUI_Items[10][1]) == __GetLang('MANAGE_FILTER_LABEL_5', 'Literal string (case sensitive)')) And Not (GUICtrlRead($mGUI_Items[10][1]) == __GetLang('MANAGE_FILTER_LABEL_4', 'Literal string')) Then
-			MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_34', 'Character restrictions'), __GetLang('??', 'You cannot use "|" character in this field, unless literal string is selected.'), 0, __OnTop($mGUI))
+		If StringInStr(GUICtrlRead($mGUI_Items[10][2]), $STATIC_FILTERS_DIVIDER) And Not (GUICtrlRead($mGUI_Items[10][1]) == __GetLang('MANAGE_FILTER_LABEL_5', 'Literal string (case sensitive)')) _
+			And Not (GUICtrlRead($mGUI_Items[10][1]) == __GetLang('MANAGE_FILTER_LABEL_4', 'Literal string')) And Not (GUICtrlRead($mGUI_Items[10][1]) == __GetLang('MANAGE_FILTER_LABEL_6', 'Regular expression')) Then
+			MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_34', 'Character restrictions'), __GetLang('MANAGE_EDIT_MSGBOX_44', 'You cannot use "|" character in this field, unless literal string or regular expression is selected.'), 0, __OnTop($mGUI))
 			GUICtrlSetData($mGUI_Items[10][2], StringReplace(GUICtrlRead($mGUI_Items[10][2]), $STATIC_FILTERS_DIVIDER, ""))
 		EndIf
 
@@ -1839,6 +1843,8 @@ Func _Manage_Filters(ByRef $mFilters, $mHandle = -1)
 								$mText = "x"
 							Case __GetLang('MANAGE_FILTER_LABEL_3', 'All words in casual order (case sensitive)')
 								$mText = "+"
+							Case __GetLang('MANAGE_FILTER_LABEL_6', 'Regular expression')
+								$mText = "~"
 							Case __GetLang('MANAGE_FILTER_LABEL_4', 'Literal string')
 								$mText = "="
 							Case Else ; Literal string (case sensitive).
@@ -4622,6 +4628,9 @@ Func _Matches_Filter($mFilePath, $mFilters)
 					$mCaseSensitive = 0
 				Case "+" ; All Words In Casual Order (Case Sensitive).
 					$mAllWords = 1
+					$mCaseSensitive = 1
+				Case "~" ; Regular expression.
+					$mAllWords = 3
 					$mCaseSensitive = 1
 				Case "=" ; Literal String.
 					$mAllWords = 2

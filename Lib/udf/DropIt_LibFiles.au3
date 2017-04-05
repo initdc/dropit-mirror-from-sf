@@ -291,7 +291,7 @@ EndFunc   ;==>__ReadPDF
 Func __FindInFile($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 	#cs
 		Description: Search for a string in a file.
-			$iAllWords = 0 (At least one of the words), 1 (All words in casual order), 2 (Literal string)
+			$iAllWords = 0 (At least one of the words), 1 (All words in casual order), 2 (Literal string), 3 (Regular expression)
 		Returns: True or False
 	#ce
 	Local $sText = __ReadFile($sFilePath)
@@ -306,13 +306,21 @@ Func __FindInFile($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 		$sSearch = '(?=.*' & StringReplace($sSearch, ' ', ')(?=.*') & ')'
 		$sText = StringStripWS($sText, 8)
 	EndIf
-	If $iCaseSensitive = 0 Then
+	If $iCaseSensitive = 0 And $iAllWords <> 2 Then ; Do not add case insensitivity for Literal string search
 		$sSearch = '(?i)' & $sSearch
 	EndIf
 
-	If StringRegExp($sText, $sSearch) Then
-		Return 1
+	If $iAllWords = 2 Then
+		; Use StringInStr for Literal string search
+		If StringInStr($sText, $sSearch, $iCaseSensitive) > 0 Then
+			Return 1
+		EndIf
+	Else
+		If StringRegExp($sText, $sSearch) Then
+			Return 1
+		EndIf
 	EndIf
+
 	Return SetError(1, 0, 0)
 EndFunc   ;==>__FindInFile
 
