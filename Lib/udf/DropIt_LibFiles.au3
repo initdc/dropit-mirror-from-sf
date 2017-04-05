@@ -282,12 +282,8 @@ Func __ReadPDF($sFilePath)
 	If @error Then
 		Return SetError(1, 0, "")
 	EndIf
-	While 1
-		$sOutput &= StdoutRead($iPID)
-		If @error Then
-			ExitLoop
-		EndIf
-	WEnd
+	ProcessWaitClose($iPID)
+	$sOutput = StdoutRead($iPID)
 
 	Return $sOutput
 EndFunc   ;==>__ReadPDF
@@ -298,15 +294,8 @@ Func __FindInFile($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 			$iAllWords = 0 (At least one of the words), 1 (All words in casual order), 2 (Literal string)
 		Returns: True or False
 	#ce
-	Local $sText = ''
-	If _WinAPI_PathFindExtension($sFilePath) = '.pdf' Then
-		$sText = __ReadPDF($sFilePath)
-	ElseIf _WinAPI_PathFindExtension($sFilePath) = '.docx' Then
-		$sText = __ReadDOCX($sFilePath)
-	EndIf
-	If $sText = '' Then
-		$sText = FileRead($sFilePath)
-	EndIf
+	Local $sText = __ReadFile($sFilePath)
+
 	If @error Or $sText = '' Then
 		Return SetError(1, 0, 0)
 	EndIf
@@ -326,6 +315,37 @@ Func __FindInFile($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 	EndIf
 	Return SetError(1, 0, 0)
 EndFunc   ;==>__FindInFile
+
+Func __ReadFile($sFilePath)
+	Local $sText = ''
+
+	 If Not IsDeclared("Global_File_Content") Then
+		 Global $Global_File_Content[1][2]
+	 EndIf
+
+	 ; First check in global array, if file has already been read
+	 If _ArraySearch($Global_File_Content, $sFilePath, 0, 0, 1, 2, 0, 0) >= 0 Then
+	   Return $Global_File_Content[_ArraySearch($Global_File_Content, $sFilePath, 0, 0, 1, 2, 0, 0)][1]
+	 EndIf
+
+	If _WinAPI_PathFindExtension($sFilePath) = '.pdf' Then
+		$sText = __ReadPDF($sFilePath)
+	ElseIf _WinAPI_PathFindExtension($sFilePath) = '.docx' Then
+		$sText = __ReadDOCX($sFilePath)
+	EndIf
+	If $sText = '' Then
+		$sText = FileRead($sFilePath)
+	EndIf
+
+	If @error Or $sText = '' Then
+		Return SetError(1, 0, 0)
+	EndIf
+
+     Local $aItem[1][2] = [[$sFilePath, $sText]]
+     _ArrayAdd($Global_File_Content, $aItem)
+
+	Return $sText
+EndFunc   ;==>__ReadFile
 
 Func __FindInFolder($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 	#cs

@@ -149,6 +149,7 @@ Global $Global_NewDroppedFiles, $Global_DroppedFiles[1], $Global_PriorityActions
 Global $Global_AbortButton, $Global_PauseButton ; Process GUI.
 Global $Global_ResizeMinWidth, $Global_ResizeMinHeight, $Global_ResizeMaxWidth, $Global_ResizeMaxHeight ; Windows Size For Resizing.
 Global $Global_Slider, $Global_SliderLabel ; _Customize_GUI_Edit.
+Global $Global_File_Content[1][2]
 
 _WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
 __EnvironmentVariables() ; Set The Standard & User Assigned Environment Variables.
@@ -4374,6 +4375,8 @@ EndFunc   ;==>_Customize_ContextMenu_ListView
 #Region >>>>> Processing Functions <<<<<
 Func _DropEvent($dFiles, $dProfile, $dMonitored = 0)
 	Local $dFailed, $dEndCommandLine, $dMainArray[10][6]
+
+	Global $Global_File_Content[1][2]
 
 	; Start Process:
 	If IsArray($dFiles) = 0 Then
