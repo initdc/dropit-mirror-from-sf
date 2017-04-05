@@ -347,6 +347,136 @@ Func __ReadFile($sFilePath)
 	Return $sText
 EndFunc   ;==>__ReadFile
 
+Func __ReadFileContentDate($sFilePath, $iNormalized)
+	#cs
+	    CK TODO
+		Description: Search for a datestring in a file.
+			$iNormalized = 0 (in unchanged date format), $iNormalized = 1 (in normalized date format YYYYMMDD)
+		Returns: Date string to be appended to filename
+	#ce
+
+	Local $bMatchFound = False, $iPosYear = 3, $iPosMonth = 2, $iPosDay = 1, $bMonthLiteral = False, $iJulianDate, $iYear, $iMonth, $iDay
+	Local $sContent = __ReadFile($sFilePath)
+
+	; 03.10.2011
+	Local $aDate = StringRegExp($sContent, "(\d{1,2}) *\. *(\d{1,2}) *\. *(\d{4})[^\d]", $STR_REGEXPARRAYFULLMATCH)
+	If Not @error Then
+		$bMatchFound = True
+	EndIf
+
+	; 03-10-2011
+	Local $aDate = StringRegExp($sContent, "(\d{1,2}) *- *(\d{1,2}) *- *(\d{4})[^\d]", $STR_REGEXPARRAYFULLMATCH)
+	If Not @error Then
+		$bMatchFound = True
+	EndIf
+
+	; 2011-10-03
+	Local $aDate = StringRegExp($sContent, "(\d{4}) *- *(\d{1,2}) *- *(\d{1,2})[^\d]", $STR_REGEXPARRAYFULLMATCH)
+	If Not @error Then
+		$iPosDay = 3
+		$iPosMonth = 2
+		$iPosYear = 1
+		$bMatchFound = True
+	EndIf
+
+	; 3. Oct 11
+	If Not $bMatchFound Then
+		$aDate = StringRegExp($sContent, "(?:(?:(\d{1,2}) *\. *)?(Jan|Feb|Mar|M..?z|Apr|Mai|May|Jun|Jul|Aug|Sep|Oct|Okt|Nov|Dez|Dec)[[:alpha:]]* +(\d{2}(?:\d{2})?))[^\d]", $STR_REGEXPARRAYFULLMATCH)
+		If Not @error Then
+			$bMatchFound = True
+			$bMonthLiteral = True
+		EndIf
+	EndIf
+
+	; Oct 3, 2011
+	If Not $bMatchFound Then
+		$aDate = StringRegExp($sContent, "(Jan|Feb|Mar|M..?z|Apr|Mai|May|Jun|Jul|Aug|Sep|Oct|Okt|Nov|Dez|Dec)[[:alpha:]]* (\d{1,2}) *, *(\d{2}(?:\d{2})?))[^\d]", $STR_REGEXPARRAYFULLMATCH)
+		If Not @error Then
+			$iPosDay = 2
+			$iPosMonth = 1
+			$iPosYear = 3
+			$bMonthLiteral = True
+			$bMatchFound = True
+		EndIf
+	EndIf
+
+	; 03.10.11
+	If Not $bMatchFound Then
+		$aDate = StringRegExp($sContent, "(\d{1,2}) *\. *(\d{1,2}) *\. *(\d{2})[^\d]", $STR_REGEXPARRAYFULLMATCH)
+		If Not @error Then
+			$bMatchFound = True
+		EndIf
+	EndIf
+
+	If Not $bMatchFound Then
+		Return ""
+	EndIf
+
+	If $iNormalized = 0 Then
+		Return $aDate[0]
+
+	Else
+		;Found date with literal month, so convert for further use
+		If $bMonthLiteral Then
+		   ;Convert literal month to month Number
+		   Switch $aDate[$iPosMonth]
+		   Case "Jan"
+			  $aDate[$iPosMonth] = 1
+		   Case "Feb"
+			  $aDate[$iPosMonth] = 2
+		   Case "Mar"
+			  $aDate[$iPosMonth] = 3
+		   Case "Apr"
+			  $aDate[$iPosMonth] = 4
+		   Case "Mai"
+			  $aDate[$iPosMonth] = 5
+		   Case "May"
+			  $aDate[$iPosMonth] = 5
+		   Case "Jun"
+			  $aDate[$iPosMonth] = 6
+		   Case "Jul"
+			  $aDate[$iPosMonth] = 7
+		   Case "Aug"
+			  $aDate[$iPosMonth] = 8
+		   Case "Sep"
+			  $aDate[$iPosMonth] = 9
+		   Case "Okt"
+			  $aDate[$iPosMonth] = 10
+		   Case "Oct"
+			  $aDate[$iPosMonth] = 10
+		   Case "Nov"
+			  $aDate[$iPosMonth] = 11
+		   Case "Dez"
+			  $aDate[$iPosMonth] = 12
+		   Case "Dec"
+			  $aDate[$iPosMonth] = 12
+		   Case Else
+			  $aDate[$iPosMonth] = 3 ;Set to March, as this has additional options
+		   EndSwitch
+		EndIf
+
+		;Convert date to have a common zerobased structure
+		If Int($aDate[$iPosYear]) < 100 Then
+			; Convert two digit years to four digit years according this logic: https://www.spss-tutorials.com/two-digit-year-in-string-cautionary-note/
+			 If (@YEAR + 30) - (Int(@YEAR / 100) * 100) - Int($aDate[$iPosYear]) >= 0 Then
+				 $iJulianDate = _DateToDayValue(Int($aDate[$iPosYear]) + (Int(@YEAR / 100) * 100), Int($aDate[$iPosMonth]), Int($aDate[$iPosDay]))
+			 Else
+				 $iJulianDate = _DateToDayValue(Int($aDate[$iPosYear]) + (Int(@YEAR / 100) * 100) - 100, Int($aDate[$iPosMonth]), Int($aDate[$iPosDay]))
+			 EndIf
+
+		Else
+		   $iJulianDate = _DateToDayValue(Int($aDate[$iPosYear]), Int($aDate[$iPosMonth]), Int($aDate[$iPosDay]))
+		EndIf
+
+		;convert to gregorian calendar
+		_DayValueToDate($iJulianDate, $iYear, $iMonth, $iDay)
+
+		Return $iYear & $iMonth & $iDay
+	EndIf
+
+	Return ""
+EndFunc   ;==>__ReadFileContentDate
+
 Func __FindInFolder($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 	#cs
 		Description: Search for a string in files of a folder.
@@ -440,16 +570,17 @@ Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gMode = 0) ; Modifie
 		Supported Global Numeration:
 		0 Name, 1 Size, 2 Type, 3 Date Modified, 4 Date Created, 5 Date Opened, 6 Attributes, 7 Status, 8 Owner, 9 Date Taken,
 		10 Dimensions, 11 Camera Model, 12 Authors, 13 Artists, 14 Title, 15 Album, 16 Genre, 17 Year, 18 Track Number,
-		19 Subject, 20 Category, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate, 25 Camera Maker, 26 Company, 27 Rating, 28 Product Name.
+		19 Subject, 20 Category, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate, 25 Camera Maker, 26 Company, 27 Rating, 28 Product Name,
+		29 Keywords.
 		This Numeration Is Automatically Converted For Win2000, WinXP, Win2003, WinVista, Win7, Win8, Win8.1.
 		More Properties And Relative Numeration Are Reported At The AutoIt Webpage.
 	#ce
 	Local $gFileName, $gFileDir, $gObjShell, $gObjFolder, $gObjFile, $gFileProperty, $gFileProperties[2]
 
 	If $gMode = 0 Then
-		Local $gArrayWin2000[29] = [0, 1, 2, 3, 6, 7, 4, 100, 8, 100, 100, 100, 10, 100, 11, 100, 100, 100, 100, 12, 13, 5, 15, 33, 30, 100, 100, 100, 19]
-		Local $gArrayWinXP[29] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 25, 26, 24, 9, 16, 10, 17, 20, 18, 19, 11, 12, 14, 15, 21, 22, 100, 100, 100, 38]
-		Local $gArrayWin7[29] = [0, 1, 2, 3, 4, 5, 6, 7, 10, 12, 31, 30, 20, 13, 21, 14, 16, 15, 26, 22, 23, 24, 25, 27, 28, 32, 33, 19, 270]
+		Local $gArrayWin2000[30] = [0, 1, 2, 3, 6, 7, 4, 100, 8, 100, 100, 100, 10, 100, 11, 100, 100, 100, 100, 12, 13, 5, 15, 33, 30, 100, 100, 100, 19, 18]
+		Local $gArrayWinXP[30] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 25, 26, 24, 9, 16, 10, 17, 20, 18, 19, 11, 12, 14, 15, 21, 22, 100, 100, 100, 38, 18]
+		Local $gArrayWin7[30] = [0, 1, 2, 3, 4, 5, 6, 7, 10, 12, 31, 30, 20, 13, 21, 14, 16, 15, 26, 22, 23, 24, 25, 27, 28, 32, 33, 19, 270, 18]
 		If @OSVersion == "WIN_XP" Or @OSVersion == "WIN_XPe" Or @OSVersion == "WIN_2003" Then
 			$gPropertyNumber = $gArrayWinXP[$gPropertyNumber]
 		ElseIf @OSVersion == "WIN_2000" Then

@@ -1519,7 +1519,7 @@ Func _Manage_Crypt(ByRef $mSettings, $mHandle = -1)
 	$mStringSplit = StringSplit($mSettings, "|") ; 1 = Algorithm, 2 = Password, 3 = Remove Source.
 	ReDim $mStringSplit[4] ; Number Of Settings.
 	If $mStringSplit[1] = "" Then
-		$mStringSplit[1] = "3DES"
+		$mStringSplit[1] = "7ZIP"
 	EndIf
 	If $mStringSplit[2] <> "" Then
 		$mStringSplit[2] = __StringEncrypt(0, $mStringSplit[2], $mPassword_Code)
@@ -1529,7 +1529,7 @@ Func _Manage_Crypt(ByRef $mSettings, $mHandle = -1)
 
 	GUICtrlCreateLabel(__GetLang('MANAGE_CRYPT_LABEL_0', 'Algorithm') & ":", 15, 12, 200, 20)
 	$mCombo_Algorithm = GUICtrlCreateCombo("", 10, 30, 320, 22, $WS_VSCROLL + $CBS_DROPDOWNLIST)
-	GUICtrlSetData($mCombo_Algorithm, "3DES|AES (128bit)|AES (192bit)|AES (256bit)|DES|RC2|RC4", $mStringSplit[1])
+	GUICtrlSetData($mCombo_Algorithm, "7ZIP|3DES|AES (128bit)|AES (192bit)|AES (256bit)|DES|RC2|RC4", $mStringSplit[1])
 	GUICtrlCreateLabel(__GetLang('SITE_LABEL_3', 'Password') & ":", 15, 12 + 50, 200, 20)
 	$mInput_Password = GUICtrlCreateInput($mStringSplit[2], 10, 30 + 50, 320, 22, 0x0020)
 	$mCheckbox_Remove = GUICtrlCreateCheckbox(__GetLang('MANAGE_REMOVE_SOURCE', 'Remove source after processing it'), 15, 12 + 100, 310, 20)
@@ -2996,12 +2996,13 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["File", __GetLang('ENV_VAR_7', 'file full path') & ' ["C:\Docs\Text.txt"]'], _ ; Only By Open With.
 			["LinkAbsolute", __GetLang('ENV_VAR_103', 'file absolute link') & ' ["C:\Docs\Text.txt"]'], _
 			["LinkRelative", __GetLang('ENV_VAR_104', 'file relative link') & ' ["..\Text.txt"]']]
-	Local $mGroupInfo[15][3] = [ _
-			[14, 0, 0], _
+	Local $mGroupInfo[16][3] = [ _
+			[15, 0, 0], _
 			["Attributes", __GetLang('ENV_VAR_74', 'file attributes') & ' ["RA"]'], _
 			["Authors", __GetLang('ENV_VAR_8', 'file authors') & ' ["Lupo Team"]'], _
 			["Category", __GetLang('ENV_VAR_84', 'file category') & ' ["Personal"]'], _
 			["Comments", __GetLang('ENV_VAR_75', 'file comments') & ' ["Comment example"]'], _
+			["Keywords", __GetLang('ENV_VAR_134', 'file keywords') & ' ["Alternate,Bill"]'], _
 			["Company", __GetLang('ENV_VAR_85', 'file company') & ' ["Sourceforge"]'], _
 			["Copyright", __GetLang('ENV_VAR_76', 'file copyright') & ' ["Lupo PenSuite"]'], _
 			["FileBytes", __GetLang('ENV_VAR_100', 'file bytes') & ' ["' & __GetFileSize(@ScriptFullPath) & '"]'], _
@@ -3170,11 +3171,16 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["ProfileName", __GetLang('ENV_VAR_28', 'current DropIt profile name') & ' ["' & $mProfile & '"]'], _
 			["UserInput", __GetLang('ENV_VAR_82', 'custom input during process') & ' ["My photos"]'], _
 			["UserName", __GetLang('ENV_VAR_79', 'system user name') & ' ["' & @UserName & '"]']]
-	Local $mMenuGroup[15][3] = [ _
-			[14, 0, 0], _
+	Local $mGroupTextContent[3][3] = [ _
+			[2, 0, 0], _
+			["FirstFileContentDate", __GetLang('ENV_VAR_133', 'first date from file content in unchanged format') & ' ["' & @MDAY & "." & @MON & "." & (@YEAR - 2000) & '"]'], _
+			["FirstFileContentDateNormalized", __GetLang('ENV_VAR_132', 'first date from file content normalized') & ' ["' & @YEAR & @MON & @MDAY & '"]']]
+	Local $mMenuGroup[16][3] = [ _
+			[15, 0, 0], _
 			[__GetLang('ENV_VAR_TAB_4', 'Paths'), $mGroupPaths], _
 			[__GetLang('ENV_VAR_TAB_3', 'Info'), $mGroupInfo], _
 			[__GetLang('ENV_VAR_TAB_16', 'Images'), $mGroupImage], _
+			[__GetLang('ENV_VAR_TAB_17', 'Text Content'), $mGroupTextContent], _
 			[__GetLang('ENV_VAR_TAB_12', 'Media'), $mGroupMedia], _
 			[__GetLang('ENV_VAR_TAB_13', 'Hash'), $mGroupHash], _
 			[""], _ ; Separator.
@@ -3188,7 +3194,7 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			[__GetLang('ENV_VAR_TAB_15', 'Others'), $mGroupOthers]]
 
 	Local $mNumberAbbreviations = $mGroupCurrent[0][0] + $mGroupCreated[0][0] + $mGroupModified[0][0] + $mGroupOpened[0][0] + $mGroupTaken[0][0] + _
-			$mGroupPaths[0][0] + $mGroupFolders[0][0] + $mGroupOthers[0][0] + $mGroupImage[0][0] + $mGroupMedia[0][0] + $mGroupHash[0][0] + $mGroupInfo[0][0]
+			$mGroupPaths[0][0] + $mGroupFolders[0][0] + $mGroupOthers[0][0] + $mGroupImage[0][0] + $mGroupMedia[0][0] + $mGroupHash[0][0] + $mGroupInfo[0][0] + $mGroupTextContent[0][0]
 
 	Return _ContextMenuAbbreviations($mButton_Abbreviations, $mMenuGroup, $mNumberAbbreviations, $mCurrentAction, $mHandle)
 EndFunc   ;==>_Manage_ContextMenu_Abbreviations
@@ -5939,6 +5945,11 @@ Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 		$sPassword = __StringEncrypt(0, $sStringSplit[3], $sPassword_Code)
 	EndIf
 
+	If $sStringSplit[2] == "7ZIP" Then
+			$sMainArray[$sIndex][3] = $sStringSplit[1] & "|" & $sStringSplit[4]
+			Return _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword)
+	EndIf
+
 	$sDestination = $sStringSplit[1] & "\" & __GetFileName($sSource)
 	$sCryptDestination = $sDestination
 	If StringRight($sSource, 5) == $STATIC_CRYPT_FILE_EXT Then
@@ -6035,6 +6046,11 @@ Func _Sorting_EncryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	$sDestination = $sStringSplit[1]
 	$sAlgorithm = __GetAlgorithmString($sStringSplit[2], 1) ; Get Algorithm Code.
 	$sPassword = __StringEncrypt(0, $sStringSplit[3], $sPassword_Code)
+
+	If $sStringSplit[2] == "7ZIP" Then
+		$sMainArray[$sIndex][3] = $sStringSplit[1] & "|" & $sStringSplit[4] & ";7z;5;LZMA;AES-256;" & $sStringSplit[3]
+		Return _Sorting_CompressFile($sMainArray, $sIndex, $sIndex, $sElementsGUI, $sProfile)
+	EndIf
 
 	__EnsureDirExists($sDestination)
 	If @error Then
