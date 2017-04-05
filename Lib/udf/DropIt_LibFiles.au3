@@ -355,56 +355,96 @@ Func __ReadFileContentDate($sFilePath, $iNormalized)
 		Returns: Date string to be appended to filename
 	#ce
 
-	Local $bMatchFound = False, $iPosYear = 3, $iPosMonth = 2, $iPosDay = 1, $bMonthLiteral = False, $iJulianDate, $iYear, $iMonth, $iDay
+	Local $bMatchFound = False, $iPosYear, $iPosMonth, $iPosDay, $bMonthLiteral, $iJulianDate, $iYear, $iMonth, $iDay, $aDate, $iDatePos = -1, $aDateTmp, $iDatePosTmp
 	Local $sContent = __ReadFile($sFilePath)
 
 	; 03.10.2011
-	Local $aDate = StringRegExp($sContent, "(\d{1,2}) *\. *(\d{1,2}) *\. *(\d{4})[^\d]", $STR_REGEXPARRAYFULLMATCH)
+	$aDateTmp = StringRegExp($sContent, "(\d{1,2}) *\. *(\d{1,2}) *\. *(\d{4})[^\d]", $STR_REGEXPARRAYFULLMATCH)
 	If Not @error Then
 		$bMatchFound = True
+		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
+		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
+			$aDate = $aDateTmp
+			$iDatePos = $iDatePosTmp
+			$iPosDay = 1
+			$iPosMonth = 2
+			$iPosYear = 3
+			$bMonthLiteral = False
+		EndIf
 	EndIf
 
 	; 03-10-2011
-	Local $aDate = StringRegExp($sContent, "(\d{1,2}) *- *(\d{1,2}) *- *(\d{4})[^\d]", $STR_REGEXPARRAYFULLMATCH)
+	$aDateTmp = StringRegExp($sContent, "(\d{1,2}) *- *(\d{1,2}) *- *(\d{4})[^\d]", $STR_REGEXPARRAYFULLMATCH)
 	If Not @error Then
 		$bMatchFound = True
+		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
+		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
+			$aDate = $aDateTmp
+			$iDatePos = $iDatePosTmp
+			$iPosDay = 1
+			$iPosMonth = 2
+			$iPosYear = 3
+			$bMonthLiteral = False
+		EndIf
 	EndIf
 
 	; 2011-10-03
-	Local $aDate = StringRegExp($sContent, "(\d{4}) *- *(\d{1,2}) *- *(\d{1,2})[^\d]", $STR_REGEXPARRAYFULLMATCH)
+	$aDateTmp = StringRegExp($sContent, "(\d{4}) *- *(\d{1,2}) *- *(\d{1,2})[^\d]", $STR_REGEXPARRAYFULLMATCH)
 	If Not @error Then
-		$iPosDay = 3
-		$iPosMonth = 2
-		$iPosYear = 1
 		$bMatchFound = True
+		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
+		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
+			$aDate = $aDateTmp
+			$iDatePos = $iDatePosTmp
+			$iPosDay = 3
+			$iPosMonth = 2
+			$iPosYear = 1
+			$bMonthLiteral = False
+		EndIf
 	EndIf
 
 	; 3. Oct 11
-	If Not $bMatchFound Then
-		$aDate = StringRegExp($sContent, "(?:(?:(\d{1,2}) *\. *)?(Jan|Feb|Mar|M..?z|Apr|Mai|May|Jun|Jul|Aug|Sep|Oct|Okt|Nov|Dez|Dec)[[:alpha:]]* +(\d{2}(?:\d{2})?))[^\d]", $STR_REGEXPARRAYFULLMATCH)
-		If Not @error Then
-			$bMatchFound = True
+	$aDateTmp = StringRegExp($sContent, "(?:(?:(\d{1,2}) *\. *)?(Jan|Feb|Mar|M..?z|Apr|Mai|May|Jun|Jul|Aug|Sep|Oct|Okt|Nov|Dez|Dec)[[:alpha:]]* +(\d{2}(?:\d{2})?))[^\d]", $STR_REGEXPARRAYFULLMATCH)
+	If Not @error Then
+		$bMatchFound = True
+		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
+		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
+			$aDate = $aDateTmp
+			$iDatePos = $iDatePosTmp
+			$iPosDay = 1
+			$iPosMonth = 2
+			$iPosYear = 3
 			$bMonthLiteral = True
 		EndIf
 	EndIf
 
 	; Oct 3, 2011
-	If Not $bMatchFound Then
-		$aDate = StringRegExp($sContent, "(Jan|Feb|Mar|M..?z|Apr|Mai|May|Jun|Jul|Aug|Sep|Oct|Okt|Nov|Dez|Dec)[[:alpha:]]* (\d{1,2}) *, *(\d{2}(?:\d{2})?))[^\d]", $STR_REGEXPARRAYFULLMATCH)
-		If Not @error Then
+	$aDateTmp = StringRegExp($sContent, "(Jan|Feb|Mar|M..?z|Apr|Mai|May|Jun|Jul|Aug|Sep|Oct|Okt|Nov|Dez|Dec)[[:alpha:]]* (\d{1,2}) *, *(\d{2}(?:\d{2})?))[^\d]", $STR_REGEXPARRAYFULLMATCH)
+	If Not @error Then
+		$bMatchFound = True
+		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
+		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
+			$aDate = $aDateTmp
+			$iDatePos = $iDatePosTmp
 			$iPosDay = 2
 			$iPosMonth = 1
 			$iPosYear = 3
 			$bMonthLiteral = True
-			$bMatchFound = True
 		EndIf
 	EndIf
 
 	; 03.10.11
-	If Not $bMatchFound Then
-		$aDate = StringRegExp($sContent, "(\d{1,2}) *\. *(\d{1,2}) *\. *(\d{2})[^\d]", $STR_REGEXPARRAYFULLMATCH)
-		If Not @error Then
-			$bMatchFound = True
+	$aDateTmp = StringRegExp($sContent, "(\d{1,2}) *\. *(\d{1,2}) *\. *(\d{2})[^\d]", $STR_REGEXPARRAYFULLMATCH)
+	If Not @error Then
+		$bMatchFound = True
+		$iDatePosTmp = StringInStr($sContent, $aDateTmp[0])
+		If $iDatePos == -1 Or $iDatePosTmp < $iDatePos Then
+			$aDate = $aDateTmp
+			$iDatePos = $iDatePosTmp
+			$iPosDay = 1
+			$iPosMonth = 2
+			$iPosYear = 3
+			$bMonthLiteral = False
 		EndIf
 	EndIf
 
@@ -412,7 +452,7 @@ Func __ReadFileContentDate($sFilePath, $iNormalized)
 		Return ""
 	EndIf
 
-	If $iNormalized = 0 Then
+	If $iNormalized == 0 Then
 		Return $aDate[0]
 
 	Else

@@ -1744,9 +1744,13 @@ Func _Manage_Filters(ByRef $mFilters, $mHandle = -1)
 
 	While 1
 		Sleep(25)
-		If StringInStr(GUICtrlRead($mGUI_Items[9][2]) & GUICtrlRead($mGUI_Items[10][2]), $STATIC_FILTERS_DIVIDER) Then
+		If StringInStr(GUICtrlRead($mGUI_Items[9][2]), $STATIC_FILTERS_DIVIDER) Then
 			MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_34', 'Character restrictions'), __GetLang('MANAGE_EDIT_MSGBOX_37', 'You cannot use "|" character in this field.'), 0, __OnTop($mGUI))
 			GUICtrlSetData($mGUI_Items[9][2], StringReplace(GUICtrlRead($mGUI_Items[9][2]), $STATIC_FILTERS_DIVIDER, ""))
+		EndIf
+		;check for | only if regular expression is not selected
+		If StringInStr(GUICtrlRead($mGUI_Items[10][2]), $STATIC_FILTERS_DIVIDER) And Not (GUICtrlRead($mGUI_Items[10][1]) == __GetLang('MANAGE_FILTER_LABEL_5', 'Literal string (case sensitive)')) And Not (GUICtrlRead($mGUI_Items[10][1]) == __GetLang('MANAGE_FILTER_LABEL_4', 'Literal string')) Then
+			MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_34', 'Character restrictions'), __GetLang('??', 'You cannot use "|" character in this field, unless literal string is selected.'), 0, __OnTop($mGUI))
 			GUICtrlSetData($mGUI_Items[10][2], StringReplace(GUICtrlRead($mGUI_Items[10][2]), $STATIC_FILTERS_DIVIDER, ""))
 		EndIf
 

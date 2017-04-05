@@ -2,7 +2,7 @@
 ;TranslatorName=Lupo73
 ;TranslatorContact=http://www.lupopensuite.com/contact.htm
 ;TranslatorURL=http://www.lupopensuite.com/
-;LastUpdated=26/07/2015
+;LastUpdated=18/03/2017
 
 [English]
 ABOUT=About
@@ -444,6 +444,7 @@ MANAGE_EDIT_MSGBOX_40=common images
 MANAGE_EDIT_MSGBOX_41=common music
 MANAGE_EDIT_MSGBOX_42=common presentations and spreadsheets
 MANAGE_EDIT_MSGBOX_43=common videos
+MANAGE_EDIT_MSGBOX_44=You cannot use "|" character in this field, unless literal string is selected.
 MANAGE_EDIT_TIP_0=Choose a name for this association.
 MANAGE_EDIT_TIP_1=Write rules to define what process by name, extension and path.
 MANAGE_EDIT_TIP_2=As destination are supported absolute, relative and UNC paths.
