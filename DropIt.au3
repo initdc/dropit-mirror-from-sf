@@ -3181,10 +3181,19 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["ProfileName", __GetLang('ENV_VAR_28', 'current DropIt profile name') & ' ["' & $mProfile & '"]'], _
 			["UserInput", __GetLang('ENV_VAR_82', 'custom input during process') & ' ["My photos"]'], _
 			["UserName", __GetLang('ENV_VAR_79', 'system user name') & ' ["' & @UserName & '"]']]
-	Local $mGroupTextContent[3][3] = [ _
-			[2, 0, 0], _
+	Local $mGroupTextContent[12][3] = [ _
+			[11, 0, 0], _
 			["FirstFileContentDate", __GetLang('ENV_VAR_133', 'first date from file content in unchanged format') & ' ["' & @MDAY & "." & @MON & "." & (@YEAR - 2000) & '"]'], _
-			["FirstFileContentDateNormalized", __GetLang('ENV_VAR_132', 'first date from file content normalized') & ' ["' & @YEAR & @MON & @MDAY & '"]']]
+			["FirstFileContentDateNormalized", __GetLang('ENV_VAR_132', 'first date from file content normalized') & ' ["' & @YEAR & @MON & @MDAY & '"]'], _
+			["FileContentMatch1", __GetLang('ENV_VAR_134', '1st match from file content filter') & ' ["Bill"]'], _
+			["FileContentMatch2", __GetLang('ENV_VAR_135', '2nd match from file content filter') & ' ["Bill"]'], _
+			["FileContentMatch3", __GetLang('ENV_VAR_136', '3rd match from file content filter') & ' ["Bill"]'], _
+			["FileContentMatch4", __GetLang('ENV_VAR_137', '4th match from file content filter') & ' ["Bill"]'], _
+			["FileContentMatch5", __GetLang('ENV_VAR_138', '5th match from file content filter') & ' ["Bill"]'], _
+			["FileContentMatch6", __GetLang('ENV_VAR_139', '6th match from file content filter') & ' ["Bill"]'], _
+			["FileContentMatch7", __GetLang('ENV_VAR_140', '7th match from file content filter') & ' ["Bill"]'], _
+			["FileContentMatch8", __GetLang('ENV_VAR_141', '8th match from file content filter') & ' ["Bill"]'], _
+			["FileContentMatch9", __GetLang('ENV_VAR_142', '9th match from file content filter') & ' ["Bill"]']]
 	Local $mMenuGroup[16][3] = [ _
 			[15, 0, 0], _
 			[__GetLang('ENV_VAR_TAB_4', 'Paths'), $mGroupPaths], _
@@ -4390,7 +4399,7 @@ EndFunc   ;==>_Customize_ContextMenu_ListView
 
 #Region >>>>> Processing Functions <<<<<
 Func _DropEvent($dFiles, $dProfile, $dMonitored = 0)
-	Local $dFailed, $dEndCommandLine, $dMainArray[10][6]
+	Local $dFailed, $dEndCommandLine, $dMainArray[10][7]
 
 	Global $Global_File_Content[1][2]
 
@@ -4507,7 +4516,7 @@ Func _DropCreateMainDirArray($dMainArray)
 EndFunc   ;==>_DropCreateMainDirArray
 
 Func _DropSortMainArray($dMainArray)
-	ReDim $dMainArray[$dMainArray[0][0] + 1][6] ; Remove Empty Fields.
+	ReDim $dMainArray[$dMainArray[0][0] + 1][7] ; Remove Empty Fields.
 	_ArraySortEx($dMainArray, 1, 0, 2, 3, 5) ; Sort By Action, Then By Destination, Then By Defined Parameter.
 	Return $dMainArray
 EndFunc   ;==>_DropSortMainArray
@@ -4534,7 +4543,7 @@ Func _DropStop($dAborted = 0)
 EndFunc   ;==>_DropStop
 
 Func _Matches_Filter($mFilePath, $mFilters)
-	Local $mText[4], $mFileDate[6], $mAttributes, $mTemp, $mStringSplit, $mAllWords, $mCaseSensitive
+	Local $mText[4], $mFileDate[6], $mAttributes, $mTemp, $mStringSplit, $mAllWords, $mCaseSensitive, $aMatches
 	Local $mParamArray[$STATIC_FILTERS_NUMBER] = [0, 1, 0, 2, "A", "H", "R", "S", "T", 0, 0]
 	Local $mFilterArray = StringSplit($mFilters, $STATIC_FILTERS_DIVIDER, 2)
 	ReDim $mFilterArray[$STATIC_FILTERS_NUMBER] ; Number Of Filters.
@@ -4640,13 +4649,14 @@ Func _Matches_Filter($mFilePath, $mFilters)
 					$mCaseSensitive = 1
 			EndSwitch
 			If _WinAPI_PathIsDirectory($mFilePath) Then
-				__FindInFolder($mFilePath, $mText[1], $mAllWords, $mCaseSensitive)
+				$aMatches = __FindInFolder($mFilePath, $mText[1], $mAllWords, $mCaseSensitive)
 			Else
-				__FindInFile($mFilePath, $mText[1], $mAllWords, $mCaseSensitive)
+				$aMatches = __FindInFile($mFilePath, $mText[1], $mAllWords, $mCaseSensitive)
 			EndIf
 			If @error Then
 				Return 0
 			EndIf
+			Return $aMatches
 		EndIf
 	Next
 
@@ -4733,7 +4743,7 @@ Func _Matches_Select($mMatches, $mFilePath)
 EndFunc   ;==>_Matches_Select
 
 Func _Position_Checking($pMainArray, $pIndex, $pAssociations, $pProfileName)
-	Local $pMatch, $pCheck, $pAssociation, $pAssociationSplit, $pStringSplit, $pString, $pNoOthers, $pSomeFavourites, $pNumberMatchFields = 17
+	Local $pMatch, $pCheck, $pAssociation, $pAssociationSplit, $pStringSplit, $pString, $pNoOthers, $pSomeFavourites, $pNumberMatchFields = 17, $aMatches
 	Local $pFilePath = $pMainArray[$pIndex][0], $pMatches[1][$pNumberMatchFields + 1] = [[0, $pNumberMatchFields]]
 	$pNoOthers = 0 ; For Special Associations That Match All Files That Have Not Other Matches.
 
@@ -4745,7 +4755,13 @@ Func _Position_Checking($pMainArray, $pIndex, $pAssociations, $pProfileName)
 			If $pAssociations[$A][18] == "True" Then ; Consider Rules As Regular Expressions.
 				$pMatch = StringRegExp($pFilePath, $pAssociation)
 				If $pMatch = 1 Then
-					$pMatch = _Matches_Filter($pFilePath, $pAssociations[$A][5])
+					$aMatches = _Matches_Filter($pFilePath, $pAssociations[$A][5])
+					If IsArray($aMatches) Then
+						$pMatch = 1
+						$pMainArray[$pIndex][6] = $aMatches
+					Else
+						$pMatch = $aMatches
+					EndIf
 				EndIf
 			Else
 				$pAssociation = _ReplaceAbbreviation($pAssociation, 1, $pFilePath, $pProfileName, $pAssociations[$A][3], $pMainArray[0][2]) ; To Support Abbreviations In Rules.
@@ -4797,7 +4813,13 @@ Func _Position_Checking($pMainArray, $pIndex, $pAssociations, $pProfileName)
 						Next
 
 						If $pMatch = 1 Then
-							$pMatch = _Matches_Filter($pFilePath, $pAssociations[$A][5])
+							$aMatches = _Matches_Filter($pFilePath, $pAssociations[$A][5])
+							If IsArray($aMatches) Then
+								$pMatch = 1
+								$pMainArray[$pIndex][6] = $aMatches
+							Else
+								$pMatch = $aMatches
+							EndIf
 						EndIf
 						If $pMatch = 1 Then
 							ExitLoop
@@ -5016,7 +5038,7 @@ Func _Position_MainArrayAdd($pMainArray, $pFilePath, $pElementsGUI)
 
 	$pMainArray[0][0] += 1 ; [0][0] Counter, [0][1] Full Size, [0][2] Main Dirs Array, [$A][0] File Path, [$A][1] File Size, [$A][2] Action, [$A][3] Destination, [$A][4] Result.
 	If UBound($pMainArray) <= $pMainArray[0][0] Then
-		ReDim $pMainArray[UBound($pMainArray) * 2][6]
+		ReDim $pMainArray[UBound($pMainArray) * 2][7]
 	EndIf
 
 	$pFilePath = _WinAPI_PathRemoveBackslash($pFilePath)
@@ -5085,7 +5107,7 @@ Func _Position_Load($pMainArray, $pProfile, $pElementsGUI)
 				$A -= 1
 				GUICtrlSetData($pElementsGUI[6], $pMainArray[0][0]) ; Update Counter.
 			Case Else
-				$pMainArray[$A][3] = _Destination_Fix($pMainArray[$A][0], $pMainArray[$A][3], $pMainArray[$A][2], $pMainArray[0][2], $pProfile)
+				$pMainArray[$A][3] = _Destination_Fix($pMainArray[$A][0], $pMainArray[$A][3], $pMainArray[$A][2], $pMainArray[$A][6], $pMainArray[0][2], $pProfile)
 				If @error Then
 					$pMainArray[$A][4] = -1 ; Skip Item If %UserInput% Value Is Not Defined.
 				EndIf
@@ -5301,12 +5323,12 @@ Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
 	Return $pFailed
 EndFunc   ;==>_Position_ProcessGroup
 
-Func _Destination_Fix($dFilePath, $dDestination, $dAction, $dMainDirs, $dProfile)
+Func _Destination_Fix($dFilePath, $dDestination, $dAction, $aFileContentMatches, $dMainDirs, $dProfile)
 	Local $dStringSplit = StringSplit($dDestination, "|")
 
 	; Substitute Abbreviations In Destination Only:
 	If StringInStr($dStringSplit[1], "%") And StringInStr("$D" & "$E", $dAction) = 0 Then
-		$dStringSplit[1] = _ReplaceAbbreviation($dStringSplit[1], 1, $dFilePath, $dProfile, $dAction, $dMainDirs)
+		$dStringSplit[1] = _ReplaceAbbreviation($dStringSplit[1], 1, $dFilePath, $dProfile, $dAction, $dMainDirs, $aFileContentMatches)
 		If @error Then
 			Return SetError(1, 0, $dDestination) ; Skip Item If %UserInput% Value Is Not Defined.
 		EndIf

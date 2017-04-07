@@ -250,10 +250,10 @@ Func _ContextMenuAbbreviations($mButton_Abbreviations, $mMenuGroup, $mNumberAbbr
 	Return $mValue
 EndFunc   ;==>_ContextMenuAbbreviations
 
-Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDirs = 0)
+Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDirs = 0, $aFileContentMatches = 0)
 	Local $sLoadedProperty
-	Local $aEnvArray[153][3] = [ _
-			[152, 0, 0], _
+	Local $aEnvArray[162][3] = [ _
+			[161, 0, 0], _
 			["FileExt", 0, 1], _
 			["FileName", 0, 2], _
 			["FileNameExt", 0, 3], _
@@ -405,7 +405,16 @@ Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "",
 			["SHA1", 3, 4], _
 			["UserInput", 6, 0], _
 			["FirstFileContentDate", 0, 13], _
-			["FirstFileContentDateNormalized", 0, 14]]
+			["FirstFileContentDateNormalized", 0, 14], _
+			["FileContentMatch1", 7, 0], _
+			["FileContentMatch2", 7, 1], _
+			["FileContentMatch3", 7, 2], _
+			["FileContentMatch4", 7, 3], _
+			["FileContentMatch5", 7, 4], _
+			["FileContentMatch6", 7, 5], _
+			["FileContentMatch7", 7, 6], _
+			["FileContentMatch8", 7, 7], _
+			["FileContentMatch9", 7, 8]]
 
 	For $A = 1 To $aEnvArray[0][0]
 		If StringRegExp($sDestination, "(?i)%" & $aEnvArray[$A][0] & "%|%" & $aEnvArray[$A][0] & "#(.*?)%") Then
@@ -440,6 +449,14 @@ Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "",
 					EndIf
 					If $sFixInvalidChars Then
 						$sLoadedProperty = __GetValidFilename($sLoadedProperty)
+					EndIf
+				Case 7 ; File Content Match
+					If IsArray($aFileContentMatches) Then
+ 						If UBound($aFileContentMatches) >  $aEnvArray[$A][2] Then
+							$sLoadedProperty = $aFileContentMatches[$aEnvArray[$A][2]]
+						Else
+							$sLoadedProperty = ""
+						EndIf
 					EndIf
 			EndSwitch
 			If StringStripWS($sLoadedProperty, 8) == "" And $aEnvArray[$A][0] <> "SubDir" Then

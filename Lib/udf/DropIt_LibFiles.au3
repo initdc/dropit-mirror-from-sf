@@ -294,7 +294,7 @@ Func __FindInFile($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 			$iAllWords = 0 (At least one of the words), 1 (All words in casual order), 2 (Literal string), 3 (Regular expression)
 		Returns: True or False
 	#ce
-	Local $sText = __ReadFile($sFilePath)
+	Local $sText = __ReadFile($sFilePath), $aMatches[1]
 
 	If @error Or $sText = '' Then
 		Return SetError(1, 0, 0)
@@ -313,11 +313,13 @@ Func __FindInFile($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 	If $iAllWords = 2 Then
 		; Use StringInStr for Literal string search
 		If StringInStr($sText, $sSearch, $iCaseSensitive) > 0 Then
-			Return 1
+			$aMatches[0] = $sSearch
+			Return $aMatches
 		EndIf
 	Else
-		If StringRegExp($sText, $sSearch) Then
-			Return 1
+		$aMatches = StringRegExp($sText, $sSearch, $STR_REGEXPARRAYMATCH)
+		If Not @error Then
+			Return $aMatches
 		EndIf
 	EndIf
 
@@ -530,10 +532,11 @@ Func __FindInFolder($sFilePath, $sSearch, $iAllWords = 0, $iCaseSensitive = 0)
 		Description: Search for a string in files of a folder.
 		Returns: True or False
 	#ce
-	Local $aArray = _FileListToArrayRec($sFilePath, "*", 1, 1, 0, 2)
+	Local $aArray = _FileListToArrayRec($sFilePath, "*", 1, 1, 0, 2), $aResult
 	For $A = 1 To $aArray[0]
-		If __FindInFile($aArray[$A], $sSearch, $iAllWords, $iCaseSensitive) Then
-			Return 1
+		$aResult = __FindInFile($aArray[$A], $sSearch, $iAllWords, $iCaseSensitive)
+		If Not @error Then
+			Return $aResult
 		EndIf
 	Next
 	Return SetError(1, 0, 0)
