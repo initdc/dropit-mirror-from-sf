@@ -506,7 +506,7 @@ Func __ShellExecuteOnTop($sFilePath, $sWait = 0) ; Modified From: http://www.aut
 		Description: Open A File With Default Program And Set It On Top.
 		Returns: Nothing
 	#ce
-	Local $iPID, $aData, $hWnd, $iCounter, $aNewWinList, $aOldWinList = WinList()
+	Local $iPID, $aData, $hWnd, $hWndDropIt = WinGetHandle("[ACTIVE]"), $iCounter, $aNewWinList, $aOldWinList = WinList()
 
 	$iPID = ShellExecute($sFilePath)
 	If @error Then
@@ -540,9 +540,13 @@ Func __ShellExecuteOnTop($sFilePath, $sWait = 0) ; Modified From: http://www.aut
 		$hWnd = WinGetHandle("[ACTIVE]")
 	EndIf
 
-	WinSetOnTop($hWnd, "", 1)
-	If $sWait Then
-		WinWaitClose($hWnd)
+	If $hWnd <> $hWndDropIt And $hWnd Then
+		WinSetOnTop($hWnd, "", 1)
+		If $sWait Then
+			While WinExists($hWnd)
+				Sleep(100)
+			WEnd
+		EndIf
 	EndIf
 EndFunc   ;==>__ShellExecuteOnTop
 
