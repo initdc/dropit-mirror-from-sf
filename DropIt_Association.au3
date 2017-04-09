@@ -156,6 +156,8 @@ Func __GetActionString($gAction)
 				$gReturn = __GetLang('ACTION_SPLIT', 'Split')
 			Case "$J"
 				$gReturn = __GetLang('ACTION_JOIN', 'Join')
+			Case "$L"
+				$gReturn = __GetLang('ACTION_MULTI', 'Multi action')
 			Case Else ; Move.
 				$gReturn = __GetLang('ACTION_MOVE', 'Move')
 		EndSwitch
@@ -199,6 +201,8 @@ Func __GetActionString($gAction)
 				$gReturn = "$I"
 			Case __GetLang('ACTION_JOIN', 'Join'), 'Join'
 				$gReturn = "$J"
+			Case __GetLang('ACTION_MULTI', 'Multi action'), 'Multi action'
+				$gReturn = "$L"
 			Case Else ; __GetLang('ACTION_MOVE', 'Move').
 				$gReturn = "$0"
 		EndSwitch
