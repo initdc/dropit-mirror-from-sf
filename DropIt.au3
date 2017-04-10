@@ -329,7 +329,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Local $mLabel_Destination, $mInput_Destination, $mInput_DestinationRead, $mButton_Destination, $mCombo_Delete, $mRename, $mInput_Rename, $mClipboard, $mInput_Clipboard
 	Local $mSite, $mInput_Site, $mButton_Site, $mSiteSettings, $mList, $mInput_List, $mButton_List, $mListName, $mListProperties, $mHTMLTheme, $mListSettings, $mInput_Current
 	Local $mCrypt, $mInput_Crypt, $mButton_Crypt, $mCryptSettings, $mButton_Change, $mFileProperties, $mButton_Mail, $mMailSettings, $mStringSplit, $mNoOthers, $mCheck_Favourite
-	Local $mCompress, $mInput_Compress, $mButton_Compress, $mCompressSettings, $mCompressFormat, $mCompressFormatBis, $mButton_MultiAction
+	Local $mCompress, $mInput_Compress, $mButton_Compress, $mCompressSettings, $mCompressFormat, $mCompressFormatBis, $mButton_MultiAction, $mMultiAction
 	Local $mExtract, $mInput_Extract, $mButton_Extract, $mExtractSettings, $mJoin, $mInput_Join, $mButton_Join, $mJoinSettings
 	Local $mOpenWith, $mInput_OpenWith, $mButton_OpenWith, $mOpenWithSettings, $mSplit, $mInput_Split, $mButton_Split, $mSplitSettings = "10;MB;False"
 	Local $mInput_Ignore, $mGallery, $mInput_Gallery, $mButton_Gallery, $mGalleryProperties, $mGalleryTheme, $mGallerySettings = "2;1;"
@@ -485,7 +485,12 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Else
 		$mSite = "/"
 	EndIf
-	;TODO add ACTION_MULTI here
+	If $mInitialAction == __GetLang('ACTION_MULTI', 'Multi action') Then
+		$mMultiAction = __GetAssociationField($mProfile[0], $mAssociationName, "Destination")
+		$mDestination = "-"
+	Else
+		$mMultiAction = "-"
+	EndIf
 
 	Select
 		Case $mNewAssociation = 0 And $mDroppedEvent = 0
@@ -625,8 +630,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			GUICtrlSetData($mInput_Destination, "-")
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[10])
 		Case __GetLang('ACTION_MULTI', 'Multi action')
-			;GUICtrlSetState($mButton_MultiAction, $GUI_SHOW) ;TODO uncomment after configuration is properly realized
-			GUICtrlSetState($mInput_Destination, $GUI_SHOW) ; TODO remove this line after configuration is properly realized
+			GUICtrlSetState($mButton_MultiAction, $GUI_SHOW)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[11])
@@ -781,6 +785,9 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			If $mMailSettings = "" Then
 				$mMailSettings = "-"
 			EndIf
+			If $mMultiAction = "" Then
+				$mMultiAction = "-"
+			EndIf
 			$mCurrentAction = GUICtrlRead($mCombo_Action)
 			Switch $mCurrentAction
 				Case __GetLang('ACTION_DELETE', 'Delete')
@@ -788,8 +795,10 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 				Case __GetLang('ACTION_IGNORE', 'Ignore')
 					GUICtrlSetState($mInput_Ignore, $GUI_SHOW)
 				Case __GetLang('ACTION_MULTI', 'Multi action')
-					;GUICtrlSetState($mButton_MultiAction, $GUI_SHOW) ;TODO enable this
-					GUICtrlSetState($mInput_Destination, $GUI_SHOW) ; TODO disable this
+					If $mMultiAction = "-" Then
+						$mMultiAction = ""
+					EndIf
+					GUICtrlSetState($mButton_MultiAction, $GUI_SHOW)
 				Case __GetLang('ACTION_RENAME', 'Rename')
 					GUICtrlSetState($mInput_Rename, $GUI_SHOW)
 					GUICtrlSetState($mButton_Abbreviations, $GUI_SHOW)
@@ -915,14 +924,14 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 
 		; Enable/Disable Save Button:
 		$mTempString = GUICtrlRead($mInput_Destination) & GUICtrlRead($mInput_Rename) & GUICtrlRead($mInput_Compress) & GUICtrlRead($mInput_Extract) & GUICtrlRead($mInput_Split) & GUICtrlRead($mInput_Join) & GUICtrlRead($mInput_OpenWith) & GUICtrlRead($mInput_Crypt) & GUICtrlRead($mInput_Gallery) & GUICtrlRead($mInput_List)
-		If GUICtrlRead($mInput_Name) <> "" And GUICtrlRead($mInput_Rules) <> "" And $mFileProperties <> "" And $mCryptSettings <> "" And $mMailSettings <> "" And __StringIsValid($mTempString, '|') And Not StringIsSpace(GUICtrlRead($mInput_Rules)) Then
+		If GUICtrlRead($mInput_Name) <> "" And GUICtrlRead($mInput_Rules) <> "" And $mFileProperties <> "" And $mMultiAction <> "" And $mCryptSettings <> "" And $mMailSettings <> "" And __StringIsValid($mTempString, '|') And Not StringIsSpace(GUICtrlRead($mInput_Rules)) Then
 			If GUICtrlGetState($mSave) > 80 Then
 				GUICtrlSetState($mSave, 576) ; $GUI_ENABLE + $GUI_DEFBUTTON.
 			EndIf
 			If GUICtrlGetState($mCancel) = 512 Then
 				GUICtrlSetState($mCancel, 80) ; $GUI_ENABLE + $GUI_SHOW.
 			EndIf
-		ElseIf GUICtrlRead($mInput_Name) = "" Or GUICtrlRead($mInput_Rules) = "" Or $mFileProperties = "" Or $mCryptSettings = "" Or $mMailSettings = "" Or __StringIsValid($mTempString, '|') = 0 Or StringIsSpace(GUICtrlRead($mInput_Rules)) Then
+		ElseIf GUICtrlRead($mInput_Name) = "" Or GUICtrlRead($mInput_Rules) = "" Or $mFileProperties = "" Or $mMultiAction = "" Or $mCryptSettings = "" Or $mMailSettings = "" Or __StringIsValid($mTempString, '|') = 0 Or StringIsSpace(GUICtrlRead($mInput_Rules)) Then
 			If GUICtrlGetState($mSave) = 80 Then
 				GUICtrlSetState($mSave, 144) ; $GUI_DISABLE + $GUI_SHOW.
 			EndIf
@@ -1015,8 +1024,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 					Case "$2" ; Ignore.
 						$mInput_DestinationRead = "-"
 					Case "$L" ; Multi action.
-						;TODO save configuration of Multi action
-						;$mInput_DestinationRead =
+						$mInput_DestinationRead = $mMultiAction
 				EndSwitch
 
 				$mInput_NameRead = __SetAssociationName(GUICtrlRead($mInput_Name), $mAssociationName, $mProfile[0], $mNewAssociation, $mGUI)
@@ -1075,7 +1083,6 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 					$mGalleryProperties = ""
 					$mGalleryTheme = ""
 					$mGallerySettings = ""
-					;TODO check if Multi acion is necessary here
 				EndIf
 				__IniWriteEx($mProfile[0], $mInput_NameRead, "", "State=" & $mState & @LF & "Rules=" & $mInput_RulesRead & @LF & "Action=" & $mCurrentActionString & @LF & "Destination=" & $mInput_DestinationRead & _
 						__ComposeLineINI("Filters", $mStringFilters) & _
@@ -1157,7 +1164,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 				_Manage_Site($mSiteSettings, $mGUI) ; ByRef: $mSiteSettings.
 
 			Case $mButton_MultiAction
-				;TODO Add configuration window for Multi action
+				_Manage_MultiAction($mMultiAction, $mGUI) ; ByRef: $mMultiAction.
 
 			Case $mButton_Change
 				_Manage_Properties($mFileProperties, $mGUI) ; ByRef: $mFileProperties.
@@ -2621,6 +2628,83 @@ Func _Manage_Mail(ByRef $mSettings, $mHandle = -1)
 
 	Return 1 ; ByRef: $mSettings.
 EndFunc   ;==>_Manage_Mail
+
+Func _Manage_MultiAction(ByRef $mSettings, $mHandle = -1)
+	Local $mGUI, $mSave, $mCancel, $mListAssoc, $mListSelected, $mButtonAdd, $mButtonRemove, $aAssociations, $i, $aListAvailableItems[0], $aSelectedAssoc[0], $aSelected[0], $pos
+
+	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 484, 356, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
+
+	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_0', 'Available actions') & ":", 15, 12 + 4, 200, 20)
+	$mListAssoc = GUICtrlCreateList("", 15, 12 + 30, 200, 260, $LBS_STANDARD)
+	$mButtonAdd = GUICtrlCreateButton(">", 242 - 12, 12 + 30 + 130 - 20 - 7, 24, 20)
+	$mButtonRemove = GUICtrlCreateButton("<", 242 - 12, 12 + 30 + 130 + 7, 24, 20)
+	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_1', 'Selected actions') & ":", 269, 12 + 4, 200, 20)
+	$mListSelected = GUICtrlCreateList("", 269, 12 + 30, 200, 260, BitOR($WS_TABSTOP, $LBS_NOTIFY))
+
+ 	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 242 - 40 - 90, 356 - 24 - 15, 90, 24)
+ 	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 242 + 40, 356 - 24 - 15, 90, 24)
+ 	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
+ 	GUISetState(@SW_SHOW)
+
+	;TODO use doubleclick to add to list and to remove from list
+	;TODO update multi action if selected action has been renamed
+	;TODO handle delete of an selected action
+	;TODO handle modification of action of an selected action
+	;TODO hide actions which are not allowed in multi action
+	;TODO allow several actions only as last action, from where no further processing is possible (e.g. delete, decompress, ...)
+
+	; add available actions to list
+	$aAssociations = __GetAssociations()
+	For $i = 1 to UBound($aAssociations) - 1
+		_ArrayAdd($aListAvailableItems, __GetActionString($aAssociations[$i][3]) & ": " & $aAssociations[$i][0])
+	Next
+	GUICtrlSetData($mListAssoc, _ArrayToString($aListAvailableItems))
+
+	; add selected actions to list
+	$aSelected = StringSplit($mSettings, ";")
+	_GUICtrlListBox_BeginUpdate($mListSelected)
+	For $i = 1 to UBound($aSelected) - 1
+		$pos = _ArraySearch($aAssociations, $aSelected[$i])
+		If $pos > -1 Then
+			_GUICtrlListBox_AddString($mListSelected, __GetActionString($aAssociations[$pos][3]) & ": " & $aAssociations[$pos][0])
+		EndIf
+	Next
+	_GUICtrlListBox_EndUpdate($mListSelected)
+
+	While 1
+ 		Switch GUIGetMsg()
+ 			Case $GUI_EVENT_CLOSE, $mCancel
+ 				ExitLoop
+
+			Case $mButtonAdd
+				If GUICtrlRead($mListAssoc) <> "" Then
+					_GUICtrlListBox_BeginUpdate($mListSelected)
+					_GUICtrlListBox_AddString($mListSelected, GUICtrlRead($mListAssoc))
+					_GUICtrlListBox_EndUpdate($mListSelected)
+				EndIf
+
+			Case $mButtonRemove
+				For $i = 0 to _GUICtrlListBox_GetCount($mListSelected) - 1
+					If _GUICtrlListBox_GetSel($mListSelected, $i) Then
+						_GUICtrlListBox_DeleteString($mListSelected, $i)
+						ExitLoop
+					EndIf
+				Next
+
+			Case $mSave
+				For $i = 0 to _GUICtrlListBox_GetCount($mListSelected) - 1
+					_ArrayAdd($aSelectedAssoc, StringRegExpReplace(_GUICtrlListBox_GetText($mListSelected, $i), "^[^:]*: ", "", 1))
+				Next
+				$mSettings = _ArrayToString($aSelectedAssoc, ";")
+				ExitLoop
+
+		EndSwitch
+	WEnd
+
+	GUIDelete($mGUI)
+
+	Return 1 ; ByRef: $mSettings.
+EndFunc   ;==>_Manage_MultiAction
 
 Func _Manage_OpenWith(ByRef $mSettings, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mStringSplit, $mCheckbox_Wait, $mWait, $mCheckbox_Remove, $mRemove
@@ -6649,10 +6733,6 @@ EndFunc   ;==>_Sorting_OpenFile
 Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	Local $aAssociationNames, $i, $j, $aAssociations, $aTmp, $aTmpMainArray
 
-	;TODO this has to be removed after the configuration of MultiAction is properly realized
-	$sMainArray[$sIndex][3] = StringReplace($sMainArray[$sIndex][3], "D:\Entwicklung\DropIt\", "")
-
-	;TODO check if $sProfile is $sProfileName
 	;TODO allow single associations to be disabled
 
 	;Find corresponding association
