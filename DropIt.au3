@@ -5462,7 +5462,7 @@ Func _Destination_Fix($dFilePath, $dDestination, $dAction, $aFileContentMatches,
 	EndIf
 
 	; Fix Relative Destination If Needed:
-	If StringInStr("$5" & "$6" & "$B" & "$C" & "$D" & "$E", $dAction) = 0 And StringInStr(StringLeft($dStringSplit[1], 2), "\\") = 0 And StringInStr(StringLeft($dStringSplit[1], 2), ":") = 0 Then
+	If StringInStr("$5" & "$6" & "$B" & "$C" & "$D" & "$E" & "$L", $dAction) = 0 And StringInStr(StringLeft($dStringSplit[1], 2), "\\") = 0 And StringInStr(StringLeft($dStringSplit[1], 2), ":") = 0 Then
 		$dStringSplit[1] = _WinAPI_GetFullPathName(__GetParentFolder($dFilePath) & "\" & $dStringSplit[1])
 	EndIf
 
@@ -6733,8 +6733,6 @@ EndFunc   ;==>_Sorting_OpenFile
 Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	Local $aAssociationNames, $i, $j, $aAssociations, $aTmp, $aTmpMainArray
 
-	;TODO allow single associations to be disabled
-
 	;Find corresponding association
 	$aAssociations = __GetAssociations($sProfile)
 
@@ -6747,17 +6745,18 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 		$aTmp = $aAssociations
 		For $j = UBound($aTmp) - 1 to 1 Step -1
 			If $aTmp[$j][0] = $aAssociationNames[$i] Then
-				; do nothing
+				; enable association, so that it is definitely applied
+				$aTmp[$j][1] = $G_Global_StateEnabled
 			Else
 				; remove association from temporary array
 				_ArrayDelete($aTmp, $j)
 			EndIf
 		Next
+
 		$aTmp[0][0] = 1
 		; TODO handle returned errors
 		$sMainArray = _Position_Checking($sMainArray, $sIndex, $aTmp, $sProfile)
 		$sMainArray[$sIndex][3] = _Destination_Fix($sMainArray[$sIndex][0], $sMainArray[$sIndex][3], $sMainArray[$sIndex][2], $sMainArray[$sIndex][6], $sMainArray[0][2], $sProfile)
-;		_ArrayDisplay($sMainArray)
 		If _Position_ProcessGroup($sMainArray, $sIndex, $sIndex, $sProfile, $sElementsGUI) = 0 Then
 			If $i < UBound($aAssociationNames) - 1 Then
 				; copy destination name as source name for the next association to work on
