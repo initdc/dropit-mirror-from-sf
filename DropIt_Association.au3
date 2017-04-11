@@ -615,7 +615,7 @@ Func __SetAssociationName($sNewAssociationName, $sOldAssociationName, $sProfileP
 		Description: Define New Association And Report If The Name Already Exists.
 		Return: 1
 	#ce
-	Local $iMsgBox = 6
+	Local $iMsgBox = 6, $aAssociations, $i, $j, $aMultiActionIni
 
 	If __StringIsValid($sNewAssociationName, ';#|[]') = 0 Then
 		MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_4', 'Association Error'), __GetLang('MANAGE_EDIT_MSGBOX_36', 'You cannot use the following characters in association name:') & @LF & "; # | [ ]", 0, __OnTop($hGUI))
@@ -635,6 +635,21 @@ Func __SetAssociationName($sNewAssociationName, $sOldAssociationName, $sProfileP
 	EndIf
 	If $iIsNewAssociation = 0 Then
 		IniDelete($sProfilePath, $sOldAssociationName) ; Remove The Old Section Name.
+
+		;update the name in the multi action associations
+		$aAssociations = __GetAssociations()
+		For $i = 1 To UBound($aAssociations) - 1
+				If $aAssociations[$i][3] = "$L" Then
+					$aMultiActionIni = __IniReadSection($sProfilePath, $aAssociations[$i][0])
+					For $j = 1 To UBound($aMultiActionIni) - 1
+						If $aMultiActionIni[$j][0] = "Destination" Then
+							$aMultiActionIni[$j][1] = StringRegExpReplace($aMultiActionIni[$j][1], "(^|;)" & $sOldAssociationName & "(;|$)", "\1" & $sNewAssociationName & "\2")
+							ExitLoop
+						EndIf
+					Next
+					__IniWriteEx($sProfilePath, $aAssociations[$i][0], "", _ArrayToString($aMultiActionIni, "=", 1))
+				EndIf
+		Next
 	EndIf
 
 	Return $sNewAssociationName
