@@ -2631,13 +2631,16 @@ EndFunc   ;==>_Manage_Mail
 
 Func _Manage_MultiAction(ByRef $mSettings, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mListAssoc, $mListSelected, $mButtonAdd, $mButtonRemove, $aAssociations, $i, $aListAvailableItems[0], $aSelectedAssoc[0], $aSelected[0], $pos
+	Local $mButtonMoveUp, $mButtonMoveDown
 
 	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 484, 356, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
 	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_0', 'Available actions') & ":", 15, 12 + 4, 200, 20)
 	$mListAssoc = GUICtrlCreateList("", 15, 12 + 30, 200, 260, $LBS_STANDARD)
+	$mButtonMoveUp = GUICtrlCreateButton("^", 242 - 12, 12 + 30 + 130 - 20 - 7 - 20 - 14, 24, 20)
 	$mButtonAdd = GUICtrlCreateButton(">", 242 - 12, 12 + 30 + 130 - 20 - 7, 24, 20)
 	$mButtonRemove = GUICtrlCreateButton("<", 242 - 12, 12 + 30 + 130 + 7, 24, 20)
+	$mButtonMoveDown = GUICtrlCreateButton("v", 242 - 12, 12 + 30 + 130 + 7 + 20 + 14, 24, 20)
 	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_1', 'Selected actions') & ":", 269, 12 + 4, 200, 20)
 	$mListSelected = GUICtrlCreateList("", 269, 12 + 30, 200, 260, BitOR($WS_TABSTOP, $LBS_NOTIFY))
 
@@ -2687,6 +2690,22 @@ Func _Manage_MultiAction(ByRef $mSettings, $mHandle = -1)
 				For $i = 0 to _GUICtrlListBox_GetCount($mListSelected) - 1
 					If _GUICtrlListBox_GetSel($mListSelected, $i) Then
 						_GUICtrlListBox_DeleteString($mListSelected, $i)
+						ExitLoop
+					EndIf
+				Next
+
+			Case $mButtonMoveUp
+				For $i = 1 to _GUICtrlListBox_GetCount($mListSelected) - 1
+					If _GUICtrlListBox_GetSel($mListSelected, $i) Then
+						_GUICtrlListBox_SwapString($mListSelected, $i, $i - 1)
+						ExitLoop
+					EndIf
+				Next
+
+			Case $mButtonMoveDown
+				For $i = 0 to _GUICtrlListBox_GetCount($mListSelected) - 2
+					If _GUICtrlListBox_GetSel($mListSelected, $i) Then
+						_GUICtrlListBox_SwapString($mListSelected, $i, $i + 1)
 						ExitLoop
 					EndIf
 				Next
