@@ -2646,9 +2646,9 @@ Func _Manage_MultiAction(ByRef $mSettings, $mHandle = -1)
  	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
  	GUISetState(@SW_SHOW)
 
-	;TODO ass option "Proceed with next association, if an association skips"
-	;TODO use doubleclick to add to list and to remove from list
 	;TODO handle delete of an selected action
+	;TODO add option "Proceed with next association, if an association skips"
+	;TODO use doubleclick to add to list and to remove from list
 	;TODO handle modification of action of an selected action (e.g. type change etc.)
 	;TODO hide actions which are not allowed in multi action
 	;TODO allow several actions only as last action, from where no further processing is possible (e.g. delete, decompress, ...), or proceed with file before that action?

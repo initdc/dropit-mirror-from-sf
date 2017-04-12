@@ -359,7 +359,6 @@ EndFunc   ;==>__ReadFile
 
 Func __ReadFileContentDate($sFilePath, $iNormalized)
 	#cs
-	    CK TODO
 		Description: Search for a datestring in a file.
 			$iNormalized = 0 (in unchanged date format), $iNormalized = 1 (in normalized date format YYYYMMDD)
 		Returns: Date string to be appended to filename
