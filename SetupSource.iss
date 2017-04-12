@@ -1,4 +1,4 @@
-#define MyAppVer "8.2"
+#define MyAppVer "8.3"
 
 [Setup]
 AppName=DropIt
