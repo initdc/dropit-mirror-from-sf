@@ -388,6 +388,7 @@ MANAGE_DELETE_MODE=Deletion Mode
 MANAGE_DELETE_MSGBOX_0=Delete association
 MANAGE_DELETE_MSGBOX_1=Selected association:
 MANAGE_DELETE_MSGBOX_2=Are you sure to delete this association?
+MANAGE_DELETE_MSGBOX_3=Cannot be deleted, as it is used in the following associations
 MANAGE_DESTINATION_ARCHIVE=Destination Archive
 MANAGE_DESTINATION_ARCHIVE_SELECT=Choose a destination archive:
 MANAGE_DESTINATION_FILE_NAME=DropIt List

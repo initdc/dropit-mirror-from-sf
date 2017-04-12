@@ -1300,7 +1300,25 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 EndFunc   ;==>_Manage_Edit_GUI
 
 Func _Manage_Delete($mProfilePath, $mAssociationName, $mHandle = -1)
-	Local $mMsgBox = MsgBox(0x4, __GetLang('MANAGE_DELETE_MSGBOX_0', 'Delete association'), __GetLang('MANAGE_DELETE_MSGBOX_1', 'Selected association:') & "  " & $mAssociationName & @LF & __GetLang('MANAGE_DELETE_MSGBOX_2', 'Are you sure to delete this association?'), 0, __OnTop($mHandle))
+	Local $mMsgBox, $aAssociations, $i, $mInUse = ""
+
+	; Deny delete if used in multi associations
+	$aAssociations = __GetAssociations()
+	For $i = 1 to UBound($aAssociations) - 1
+		If $aAssociations[$i][3] = "$L" Then
+			If StringRegExp($aAssociations[$i][4], "(?:^|;)" & $mAssociationName & "(?:;|$)") Then
+				If $mInUse <> "" Then $mInUse = ", " & $mInUse
+				$mInUse = $mInUse & $aAssociations[$i][0]
+			EndIf
+		EndIf
+	Next
+
+	If $mInUse <> "" Then
+		MsgBox(0x10, __GetLang('MANAGE_DELETE_MSGBOX_0', 'Delete association'), __GetLang('MANAGE_DELETE_MSGBOX_1', 'Selected association:') & "  " & $mAssociationName & @LF & __GetLang('MANAGE_DELETE_MSGBOX_3', 'Cannot be deleted, as it is used in the following associations') & ": " & $mInUse, 0, __OnTop($mHandle))
+		Return SetError(1, 0, 0)
+	EndIf
+
+	$mMsgBox = MsgBox(BitOR(0x4, 0x20), __GetLang('MANAGE_DELETE_MSGBOX_0', 'Delete association'), __GetLang('MANAGE_DELETE_MSGBOX_1', 'Selected association:') & "  " & $mAssociationName & @LF & __GetLang('MANAGE_DELETE_MSGBOX_2', 'Are you sure to delete this association?'), 0, __OnTop($mHandle))
 
 	If $mMsgBox <> 6 Then
 		Return SetError(1, 0, 0)
@@ -2649,7 +2667,6 @@ Func _Manage_MultiAction(ByRef $mSettings, $mHandle = -1)
  	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
  	GUISetState(@SW_SHOW)
 
-	;TODO handle delete of an selected action
 	;TODO add option "Proceed with next association, if an association skips"
 	;TODO use doubleclick to add to list and to remove from list
 	;TODO handle modification of action of an selected action (e.g. type change etc.)
