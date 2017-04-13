@@ -294,7 +294,7 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 	Switch $gAction
 		Case "$6"
 			$gDestination = __GetDeleteString($gDestination)
-		Case "$3", "$4", "$5", "$8", "$F", "$G", "$H", "$I", "$J"
+		Case "$3", "$4", "$5", "$8", "$F", "$G", "$H", "$I", "$J", "$L"
 			$gStringSplit = StringSplit($gDestination, "|")
 			$gDestination = $gStringSplit[1]
 		Case "$C"
@@ -506,12 +506,13 @@ Func __GetAssociationKey($gParameter = -1, $gType = 0)
 		Description: Get A Key String ($gParameter = Number) Or A Key Number ($gParameter = String).
 		Returns: Key $gType = 0 [ExtractSettings] Or Key $gType = 1 [EXTRACT SETTINGS]
 	#ce
-	Local $gIsNumber = StringIsDigit($gParameter), $gNumberFields = 21
+	Local $gIsNumber = StringIsDigit($gParameter), $gNumberFields = 22
 	If $gParameter = -1 Then
 		Return $gNumberFields
 	EndIf
 	Local $gFields[$gNumberFields] = ["Name", "State", "Rules", "Action", "Destination", "Filters", "List Properties", "HTML Theme", "Site Settings", "Crypt Settings", "Gallery Properties", _
-			"Gallery Theme", "Gallery Settings", "Compress Settings", "Extract Settings", "Open With Settings", "List Settings", "Favourite Association", "Use RegEx", "Split Settings", "Join Settings"]
+			"Gallery Theme", "Gallery Settings", "Compress Settings", "Extract Settings", "Open With Settings", "List Settings", "Favourite Association", "Use RegEx", "Split Settings", "Join Settings", _
+			"Multi Action Settings"]
 	For $A = 0 To $gNumberFields
 		If $gType = 0 Then
 			$gFields[$A] = StringStripWS($gFields[$A], 8)
@@ -555,6 +556,7 @@ Func __GetAssociations($gProfile = -1)
 		[A][18] - Consider As Regular Expressions [False]
 		[A][19] - Split Settings [10MB]
 		[A][20] - Join Settings [False]
+		[A][21] - Multi Action Settings [True]
 	#ce
 	$gProfile = __IsProfile($gProfile, 0) ; Get Array Of Selected Profile.
 
