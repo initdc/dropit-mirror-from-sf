@@ -2655,20 +2655,53 @@ Func _Manage_Mail(ByRef $mSettings, $mHandle = -1)
 	Return 1 ; ByRef: $mSettings.
 EndFunc   ;==>_Manage_Mail
 
+Func _CheckForceSelectionOfItems(ByRef $mList)
+	Local $i, $bLastItemForcesSelect
+
+	For $i = 0 To _GUICtrlListView_GetItemCount($mList) - 1
+		If $i > 0 Then
+			If $bLastItemForcesSelect Then
+				_GUICtrlListView_SetItemChecked($mList, $i)
+			EndIf
+		EndIf
+
+#CS
+;			For these associations, the previous source file is used instead of current destination, as the destination might be multiple files or folders
+; 			Case "$4"
+; 				$gReturn = __GetLang('ACTION_EXTRACT', 'Extract')
+; 			Case "$G"
+; 				$gReturn = __GetLang('ACTION_DECRYPT', 'Decrypt')
+; 			Case "$5"
+; 				$gReturn = __GetLang('ACTION_OPEN_WITH', 'Open With')
+; 			Case "$I"
+; 				$gReturn = __GetLang('ACTION_SPLIT', 'Split')
+; 			Case "$A"
+; 				$gReturn = __GetLang('ACTION_SHORTCUT', 'Create Shortcut')
+ #CE
+		If StringInStr("$4" & "$G" & "$5" & "$I" & "$A", __GetActionString(_GUICtrlListView_GetItemText($mList, $i, 1))) > 0 Then
+			$bLastItemForcesSelect = True
+		Else
+			$bLastItemForcesSelect = False
+		EndIf
+	Next
+EndFunc
+
 Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandle = -1)
-	Local $mGUI, $mSave, $mCancel, $mListAssoc, $mListSelected, $mButtonAdd, $mButtonRemove, $aAssociations, $i, $aListAvailableItems[0], $aSelectedAssoc[0], $aSelected[0], $pos
+	Local $mGUI, $mSave, $mCancel, $mListAssoc, $mListSelected, $mButtonAdd, $mButtonRemove, $aAssociations, $i, $aSelectedAssoc[0], $aSelected[0], $pos, $sItemText, $iItemIndex
 	Local $mButtonMoveUp, $mButtonMoveDown, $mCheckboxProceedNext
 
 	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 484, 380, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
 	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_0', 'Available actions') & ":", 15, 12 + 4, 200, 20)
-	$mListAssoc = GUICtrlCreateList("", 15, 12 + 30, 200, 260, $LBS_STANDARD)
+	$mListAssoc = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action'), 15, 12 + 30, 200, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS, $LVS_SORTASCENDING))
+	_GUICtrlListView_SetExtendedListViewStyle($mListAssoc, $LVS_EX_FULLROWSELECT)
 	$mButtonMoveUp = GUICtrlCreateButton("^", 242 - 12, 12 + 30 + 130 - 20 - 7 - 20 - 14, 24, 20)
 	$mButtonAdd = GUICtrlCreateButton(">", 242 - 12, 12 + 30 + 130 - 20 - 7, 24, 20)
 	$mButtonRemove = GUICtrlCreateButton("<", 242 - 12, 12 + 30 + 130 + 7, 24, 20)
 	$mButtonMoveDown = GUICtrlCreateButton("v", 242 - 12, 12 + 30 + 130 + 7 + 20 + 14, 24, 20)
 	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_1', 'Selected actions') & ":", 269, 12 + 4, 200, 20)
-	$mListSelected = GUICtrlCreateList("", 269, 12 + 30, 200, 260, BitOR($WS_TABSTOP, $LBS_NOTIFY))
+	$mListSelected = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action'), 269, 12 + 30, 200, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS))
+	_GUICtrlListView_SetExtendedListViewStyle($mListSelected, BitOr($LVS_EX_FULLROWSELECT, $LVS_EX_CHECKBOXES))
 	$mCheckboxProceedNext = GUICtrlCreateCheckbox(__GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Proceed with next association, if an association does not match'), 15, 380 - 48 - 30, 400, 24)
 
  	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 242 - 40 - 90, 380 - 24 - 15, 90, 24)
@@ -2678,15 +2711,16 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 
 	;TODO use doubleclick to add to list and to remove from list
 	;TODO handle modification of action of an selected action (e.g. type change etc.)
-	;TODO hide actions which are not allowed in multi action
-	;TODO allow several actions only as last action, from where no further processing is possible (e.g. delete, decompress, ...), or proceed with file before that action?
 
 	; add available actions to list
 	$aAssociations = __GetAssociations()
 	For $i = 1 to UBound($aAssociations) - 1
-		_ArrayAdd($aListAvailableItems, __GetActionString($aAssociations[$i][3]) & ": " & $aAssociations[$i][0])
+		; filter out all associations with an invalid action type
+		If StringInStr("$0" & "$1" & "$2" & "$3" & "$4" & "$5" & "$6" & "$7" & "$A" & "$B" & "$C" & "$D" & "$E" & "$F" & "$G" & "$I" & "$J" & "$L", $aAssociations[$i][3]) > 0 Then
+			$iItemIndex = _GUICtrlListView_AddItem($mListAssoc, $aAssociations[$i][0])
+			_GUICtrlListView_AddSubItem($mListAssoc, $iItemIndex, __GetActionString($aAssociations[$i][3]), 1)
+		EndIf
 	Next
-	GUICtrlSetData($mListAssoc, _ArrayToString($aListAvailableItems))
 
 	; set checkbox
 	If $mSettings = "True" Then
@@ -2695,14 +2729,17 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 
 	; add selected actions to list
 	$aSelected = StringSplit($mSelectedAssociations, ";")
-	_GUICtrlListBox_BeginUpdate($mListSelected)
-	For $i = 1 to UBound($aSelected) - 1
+	For $i = 1 to UBound($aSelected) - 2 Step 2
 		$pos = _ArraySearch($aAssociations, $aSelected[$i])
 		If $pos > -1 Then
-			_GUICtrlListBox_AddString($mListSelected, __GetActionString($aAssociations[$pos][3]) & ": " & $aAssociations[$pos][0])
+			$iItemIndex = _GUICtrlListView_AddItem($mListSelected, $aAssociations[$pos][0])
+			_GUICtrlListView_AddSubItem($mListSelected, _GUICtrlListView_GetItemCount($mListSelected) - 1, __GetActionString($aAssociations[$pos][3]), 1)
+			If $aSelected[$i + 1] = "True" Then
+				_GUICtrlListView_SetItemChecked($mListSelected, $iItemIndex)
+			EndIf
 		EndIf
 	Next
-	_GUICtrlListBox_EndUpdate($mListSelected)
+	_CheckForceSelectionOfItems($mListSelected)
 
 	While 1
  		Switch GUIGetMsg()
@@ -2710,39 +2747,43 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
  				ExitLoop
 
 			Case $mButtonAdd
-				If GUICtrlRead($mListAssoc) <> "" Then
-					_GUICtrlListBox_BeginUpdate($mListSelected)
-					_GUICtrlListBox_AddString($mListSelected, GUICtrlRead($mListAssoc))
-					_GUICtrlListBox_EndUpdate($mListSelected)
+				If _GUICtrlListView_GetSelectedCount($mListAssoc) > 0 Then
+					_GUICtrlListView_AddItem($mListSelected, _GUICtrlListView_GetItemText($mListAssoc, _GUICtrlListView_GetSelectionMark($mListAssoc)))
+					_GUICtrlListView_AddSubItem($mListSelected, _GUICtrlListView_GetItemCount($mListSelected) - 1, _GUICtrlListView_GetItemText($mListAssoc, _GUICtrlListView_GetSelectionMark($mListAssoc), 1), 1)
 				EndIf
 
 			Case $mButtonRemove
-				For $i = 0 to _GUICtrlListBox_GetCount($mListSelected) - 1
-					If _GUICtrlListBox_GetSel($mListSelected, $i) Then
-						_GUICtrlListBox_DeleteString($mListSelected, $i)
-						ExitLoop
-					EndIf
-				Next
+				_GUICtrlListView_DeleteItemsSelected($mListSelected)
 
 			Case $mButtonMoveUp
-				For $i = 1 to _GUICtrlListBox_GetCount($mListSelected) - 1
-					If _GUICtrlListBox_GetSel($mListSelected, $i) Then
-						_GUICtrlListBox_SwapString($mListSelected, $i, $i - 1)
-						ExitLoop
+				If _GUICtrlListView_GetSelectedCount($mListSelected) > 0 Then
+					$pos = _GUICtrlListView_GetSelectedIndices($mListSelected, True)[1]
+					If $pos > 0 Then
+						$sItemText = _GUICtrlListView_GetItemText($mListSelected, $pos) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 1)
+						_GUICtrlListView_DeleteItem($mListSelected, $pos)
+						_GUICtrlListView_InsertItem($mListSelected, StringSplit($sItemText, "|")[1], $pos - 1)
+						_GUICtrlListView_AddSubItem($mListSelected, $pos - 1, StringSplit($sItemText, "|")[2], 1)
+						_GUICtrlListView_SetItemSelected($mListSelected, $pos - 1)
 					EndIf
-				Next
+				EndIf
 
 			Case $mButtonMoveDown
-				For $i = 0 to _GUICtrlListBox_GetCount($mListSelected) - 2
-					If _GUICtrlListBox_GetSel($mListSelected, $i) Then
-						_GUICtrlListBox_SwapString($mListSelected, $i, $i + 1)
-						ExitLoop
+				If _GUICtrlListView_GetSelectedCount($mListSelected) > 0 Then
+					$pos = _GUICtrlListView_GetSelectedIndices($mListSelected, True)[1]
+					If $pos < _GUICtrlListView_GetItemCount($mListSelected) - 1 Then
+						$sItemText = _GUICtrlListView_GetItemText($mListSelected, $pos) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 1)
+						_GUICtrlListView_DeleteItem ($mListSelected, $pos)
+						_GUICtrlListView_InsertItem($mListSelected, StringSplit($sItemText, "|")[1], $pos + 1)
+						_GUICtrlListView_AddSubItem($mListSelected, $pos + 1, StringSplit($sItemText, "|")[2], 1)
+						_GUICtrlListView_SetItemSelected($mListSelected, $pos + 1)
 					EndIf
-				Next
+				EndIf
 
 			Case $mSave
-				For $i = 0 to _GUICtrlListBox_GetCount($mListSelected) - 1
-					_ArrayAdd($aSelectedAssoc, StringRegExpReplace(_GUICtrlListBox_GetText($mListSelected, $i), "^[^:]*: ", "", 1))
+				_CheckForceSelectionOfItems($mListSelected)
+				For $i = 0 to _GUICtrlListView_GetItemCount($mListSelected) - 1
+					_ArrayAdd($aSelectedAssoc, _GUICtrlListView_GetItemText($mListSelected, $i))
+					_ArrayAdd($aSelectedAssoc, _GUICtrlListView_GetItemChecked($mListSelected, $i))
 				Next
 				$mSelectedAssociations = _ArrayToString($aSelectedAssoc, ";")
 				If BitAND(GUICtrlRead($mCheckboxProceedNext), $GUI_CHECKED) = $GUI_CHECKED Then
@@ -6788,7 +6829,7 @@ Func _Sorting_OpenFile($sMainArray, $sIndex, $sElementsGUI)
 EndFunc   ;==>_Sorting_OpenFile
 
 Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
-	Local $aAssociationNames, $i, $j, $aAssociations, $aTmp, $sSplitString, $bNextPositionOnSkip = False
+	Local $aAssociationNames, $i, $j, $aAssociations, $aTmp, $sSplitString, $bNextPositionOnSkip = False, $bUsePreviousDestinationAsNextSource
 
 	$sSplitString = StringSplit($sMainArray[$sIndex][3], "|")
 
@@ -6798,7 +6839,7 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	$aAssociations = __GetAssociations($sProfile)
 
 	$aAssociationNames = StringSplit($sSplitString[1], ";")
-	For $i = 1 to UBound($aAssociationNames) - 1
+	For $i = 1 to UBound($aAssociationNames) - 2 Step 2
 		$aTmp = $aAssociations
 		For $j = UBound($aTmp) - 1 to 1 Step -1
 			If $aTmp[$j][0] = $aAssociationNames[$i] Then
@@ -6813,6 +6854,11 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 		; TODO show results of individual multi action steps in resulting main array
 
 		$aTmp[0][0] = 1
+		If $aAssociationNames[$i + 1] = "True" Then
+			$bUsePreviousDestinationAsNextSource = True
+		Else
+			$bUsePreviousDestinationAsNextSource = False
+		EndIf
 		$sMainArray = _Position_Checking($sMainArray, $sIndex, $aTmp, $sProfile)
 		$sMainArray[$sIndex][3] = _Destination_Fix($sMainArray[$sIndex][0], $sMainArray[$sIndex][3], $sMainArray[$sIndex][2], $sMainArray[$sIndex][6], $sMainArray[0][2], $sProfile)
 
@@ -6832,8 +6878,10 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 				; Main Array structure:
 				; Original file name | File Size | Action | Destination file name | Status (0 = OK) | ??? original file name ??? | ??? file content stuff ???
 
-				; copy destination name as source name for the next association to work on
-				$sMainArray[$sIndex][0] = StringRegExpReplace($sMainArray[$sIndex][3], "([^|]*)|.*", "\1")
+				; copy destination name as source name for the next association to work on, if the user wants it
+				If $bUsePreviousDestinationAsNextSource Then
+					$sMainArray[$sIndex][0] = StringRegExpReplace($sMainArray[$sIndex][3], "([^|]*)|.*", "\1")
+				EndIf
 			EndIf
 		Else
 			$sMainArray[$sIndex][3] = __GetLang('POSITIONPROCESS_MULTI_FAILED_2', 'An association failed during execution for the current input file') & ": Step #" & $i & ", '" & $aAssociationNames[$i] & "' -> '" & $sMainArray[$sIndex][0] & "'"
