@@ -2682,12 +2682,31 @@ Func _Manage_Mail(ByRef $mSettings, $mHandle = -1)
 EndFunc   ;==>_Manage_Mail
 
 Func _CheckForceSelectionOfItems(ByRef $mList)
-	Local $i, $bLastItemForcesSelect
+	Local $i, $bLastItemForcesProcessingOnPreviousSource
 
 	For $i = 0 To _GUICtrlListView_GetItemCount($mList) - 1
-		If $i > 0 Then
-			If $bLastItemForcesSelect Then
-				_GUICtrlListView_SetItemChecked($mList, $i)
+		If $i = 0 Then
+			If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("SOURCE", "Source") Then
+				_GUICtrlListView_SetItemText($mList, $i, __GetLang("SOURCE", "Source"), 2)
+			EndIf
+			_GUICtrlListView_SetItemChecked($mList, $i, True)
+		Else
+			If $bLastItemForcesProcessingOnPreviousSource Then
+				If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("SOURCE", "Source") Then
+					_GUICtrlListView_SetItemText($mList, $i, __GetLang("SOURCE", "Source"), 2)
+				EndIf
+				_GUICtrlListView_SetItemChecked($mList, $i, True)
+			Else
+				;respect selection of checkbox here
+				If _GUICtrlListView_GetItemChecked($mList, $i) Then
+					If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("SOURCE", "Source") Then
+						_GUICtrlListView_SetItemText($mList, $i, __GetLang("SOURCE", "Source"), 2)
+					EndIf
+				Else
+					If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("DESTINATION", "Destination") Then
+						_GUICtrlListView_SetItemText($mList, $i, __GetLang("DESTINATION", "Destination"), 2)
+					EndIf
+				EndIf
 			EndIf
 		EndIf
 
@@ -2705,16 +2724,16 @@ Func _CheckForceSelectionOfItems(ByRef $mList)
 ; 				$gReturn = __GetLang('ACTION_SHORTCUT', 'Create Shortcut')
  #CE
 		If StringInStr("$4" & "$G" & "$5" & "$I" & "$A", __GetActionString(_GUICtrlListView_GetItemText($mList, $i, 1))) > 0 Then
-			$bLastItemForcesSelect = True
+			$bLastItemForcesProcessingOnPreviousSource = True
 		Else
-			$bLastItemForcesSelect = False
+			$bLastItemForcesProcessingOnPreviousSource = False
 		EndIf
 	Next
 EndFunc
 
 Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mListAssoc, $mListSelected, $mButtonAdd, $mButtonRemove, $aAssociations, $i, $aSelectedAssoc[0], $aSelected[0], $pos, $sItemText, $iItemIndex
-	Local $mButtonMoveUp, $mButtonMoveDown, $mCheckboxProceedNext
+	Local $mButtonMoveUp, $mButtonMoveDown, $mCheckboxProceedNext, $bItemChecked
 
 	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 484, 380, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
@@ -2726,13 +2745,14 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	$mButtonRemove = GUICtrlCreateButton("<", 242 - 12, 12 + 30 + 130 + 7, 24, 20)
 	$mButtonMoveDown = GUICtrlCreateButton("v", 242 - 12, 12 + 30 + 130 + 7 + 20 + 14, 24, 20)
 	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_1', 'Selected actions') & ":", 269, 12 + 4, 200, 20)
-	$mListSelected = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action'), 269, 12 + 30, 200, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS))
+	$mListSelected = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('PREVIOUS', 'Previous'), 269, 12 + 30, 200, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS))
 	_GUICtrlListView_SetExtendedListViewStyle($mListSelected, BitOr($LVS_EX_FULLROWSELECT, $LVS_EX_CHECKBOXES))
 	$mCheckboxProceedNext = GUICtrlCreateCheckbox(__GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Proceed with next association, if an association does not match'), 15, 380 - 48 - 30, 400, 24)
 
  	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 242 - 40 - 90, 380 - 24 - 15, 90, 24)
  	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 242 + 40, 380 - 24 - 15, 90, 24)
  	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
+
  	GUISetState(@SW_SHOW)
 
 	;TODO use doubleclick to add to list and to remove from list
@@ -2763,6 +2783,7 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 			_GUICtrlListView_AddSubItem($mListSelected, _GUICtrlListView_GetItemCount($mListSelected) - 1, __GetActionString($aAssociations[$pos][3]), 1)
 			If $aSelected[$i + 1] = "True" Then
 				_GUICtrlListView_SetItemChecked($mListSelected, $iItemIndex)
+				_GUICtrlListView_SetItemText($mListSelected, $iItemIndex, __GetLang("SOURCE", "Source"), 2)
 			EndIf
 		EndIf
 	Next
@@ -2788,9 +2809,11 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 				If _GUICtrlListView_GetSelectedCount($mListSelected) > 0 Then
 					$pos = _GUICtrlListView_GetSelectedIndices($mListSelected, True)[1]
 					If $pos > 0 Then
-						$sItemText = _GUICtrlListView_GetItemText($mListSelected, $pos) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 1)
+						$sItemText = _GUICtrlListView_GetItemText($mListSelected, $pos) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 1) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 2)
+						$bItemChecked = _GUICtrlListView_GetItemSelected($mListSelected, $pos)
 						_GUICtrlListView_DeleteItem($mListSelected, $pos)
 						_GUICtrlListView_InsertItem($mListSelected, StringSplit($sItemText, "|")[1], $pos - 1)
+						_GUICtrlListView_SetItemChecked($mListSelected, $pos - 1, $bItemChecked)
 						_GUICtrlListView_AddSubItem($mListSelected, $pos - 1, StringSplit($sItemText, "|")[2], 1)
 						_GUICtrlListView_SetItemSelected($mListSelected, $pos - 1)
 					EndIf
@@ -2800,9 +2823,11 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 				If _GUICtrlListView_GetSelectedCount($mListSelected) > 0 Then
 					$pos = _GUICtrlListView_GetSelectedIndices($mListSelected, True)[1]
 					If $pos < _GUICtrlListView_GetItemCount($mListSelected) - 1 Then
-						$sItemText = _GUICtrlListView_GetItemText($mListSelected, $pos) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 1)
+						$sItemText = _GUICtrlListView_GetItemText($mListSelected, $pos) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 1) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 2)
+						$bItemChecked = _GUICtrlListView_GetItemSelected($mListSelected, $pos)
 						_GUICtrlListView_DeleteItem ($mListSelected, $pos)
 						_GUICtrlListView_InsertItem($mListSelected, StringSplit($sItemText, "|")[1], $pos + 1)
+						_GUICtrlListView_SetItemChecked($mListSelected, $pos + 1, $bItemChecked)
 						_GUICtrlListView_AddSubItem($mListSelected, $pos + 1, StringSplit($sItemText, "|")[2], 1)
 						_GUICtrlListView_SetItemSelected($mListSelected, $pos + 1)
 					EndIf
