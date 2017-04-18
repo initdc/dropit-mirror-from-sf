@@ -489,6 +489,7 @@ MANAGE_MAIL_TIP_1=To send several files with a single mail, up to the defined si
 MANAGE_MULTI_ACTION_LABEL_0=Available actions
 MANAGE_MULTI_ACTION_LABEL_1=Selected actions
 MANAGE_MULTI_ACTION_OPTION_1=Proceed with next association, if an association does not match
+MANAGE_MULTI_ACTION_MSGBOX_0=This association is used in a multi action. Changing the action to that kind is not permitted. Please remove association from multi action first.
 MANAGE_NEW_NAME=New Name
 MANAGE_NEW_PROPERTIES=New Properties
 MANAGE_REMOTE_DESTINATION=Remote Destination

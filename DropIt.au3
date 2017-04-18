@@ -330,9 +330,9 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Local $mSite, $mInput_Site, $mButton_Site, $mSiteSettings, $mList, $mInput_List, $mButton_List, $mListName, $mListProperties, $mHTMLTheme, $mListSettings, $mInput_Current
 	Local $mCrypt, $mInput_Crypt, $mButton_Crypt, $mCryptSettings, $mButton_Change, $mFileProperties, $mButton_Mail, $mMailSettings, $mStringSplit, $mNoOthers, $mCheck_Favourite
 	Local $mCompress, $mInput_Compress, $mButton_Compress, $mCompressSettings, $mCompressFormat, $mCompressFormatBis, $mButton_MultiAction, $mMultiAction, $mMultiActionSettings
-	Local $mExtract, $mInput_Extract, $mButton_Extract, $mExtractSettings, $mJoin, $mInput_Join, $mButton_Join, $mJoinSettings
+	Local $mExtract, $mInput_Extract, $mButton_Extract, $mExtractSettings, $mJoin, $mInput_Join, $mButton_Join, $mJoinSettings, $iActionTypeChangedForMultiAction, $mAssociations
 	Local $mOpenWith, $mInput_OpenWith, $mButton_OpenWith, $mOpenWithSettings, $mSplit, $mInput_Split, $mButton_Split, $mSplitSettings = "10;MB;False"
-	Local $mInput_Ignore, $mGallery, $mInput_Gallery, $mButton_Gallery, $mGalleryProperties, $mGalleryTheme, $mGallerySettings = "2;1;"
+	Local $mInput_Ignore, $mGallery, $mInput_Gallery, $mButton_Gallery, $mGalleryProperties, $mGalleryTheme, $mGallerySettings = "2;1;", $i
 
 	Local $mAssociationType = __GetLang('MANAGE_ASSOCIATION_NEW', 'New Association')
 	Local $mLogAssociation = __GetLang('MANAGE_LOG_0', 'Association Created')
@@ -711,8 +711,34 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	ControlClick($mGUI, "", $mInput_Name)
 
 	While 1
-		; Enable/Disable Destination Input And Switch Folder/Program Label:
+		$iActionTypeChangedForMultiAction = 1
 		If GUICtrlRead($mCombo_Action) <> $mCurrentAction And _GUICtrlComboBox_GetDroppedState($mCombo_Action) = False Then
+			;action changed, so go on with processing (this is done because of probable race conditions)
+			$iActionTypeChangedForMultiAction = 0
+		EndIf
+
+		; If the action type significantly changed and the association is used in a multi action, force the user to remove it there first
+		If $iActionTypeChangedForMultiAction = 0 Then
+			;TODO filter multi actions in a exported function instead of everywhere
+			If (StringInStr("$4" & "$5" & "$G" & "$I" & "$A", __GetActionString(GUICtrlRead($mCombo_Action))) > 0 And StringInStr("$4" & "$5" & "$G" & "$I" & "$A", __GetActionString($mInitialAction)) = 0) Or _
+					(StringInStr("$8" & "$9" & "$H", __GetActionString(GUICtrlRead($mCombo_Action))) > 0 And StringInStr("$8" & "$9" & "$H", __GetActionString($mInitialAction)) = 0) Then
+				; check if the current association is in a multi action
+				$mAssociations = __GetAssociations($mProfileName)
+				For $i = 1 To UBound($mAssociations) - 1
+					If $mAssociations[$i][3] = "$L" Then
+						If StringRegExp($mAssociations[$i][4], "" & $mAssociationName & ";") Then
+							MsgBox(0x10, __GetLang('MANAGE_EDIT_MSGBOX_4', 'Association Error'), __GetLang('MANAGE_MULTI_ACTION_MSGBOX_0', 'This association is used in a multi action. Changing the action to that kind is not permitted. Please remove association from multi action first.') & "(" & $mAssociations[$i][0] & ")", 0, __OnTop($mGUI))
+							GUICtrlSetData($mCombo_Action, $mCurrentAction)
+							$iActionTypeChangedForMultiAction = -1
+							ExitLoop
+						EndIf
+					EndIf
+				Next
+			EndIf
+		EndIf
+
+		; Enable/Disable Destination Input And Switch Folder/Program Label:
+		If GUICtrlRead($mCombo_Action) <> $mCurrentAction And _GUICtrlComboBox_GetDroppedState($mCombo_Action) = False And $iActionTypeChangedForMultiAction = 0 Then
 			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_MultiAction, $GUI_HIDE)
@@ -2710,7 +2736,6 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
  	GUISetState(@SW_SHOW)
 
 	;TODO use doubleclick to add to list and to remove from list
-	;TODO handle modification of action of an selected action (e.g. type change etc.)
 
 	; add available actions to list
 	$aAssociations = __GetAssociations()
@@ -2719,6 +2744,8 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 		If StringInStr("$0" & "$1" & "$2" & "$3" & "$4" & "$5" & "$6" & "$7" & "$A" & "$B" & "$C" & "$D" & "$E" & "$F" & "$G" & "$I" & "$J" & "$L", $aAssociations[$i][3]) > 0 Then
 			$iItemIndex = _GUICtrlListView_AddItem($mListAssoc, $aAssociations[$i][0])
 			_GUICtrlListView_AddSubItem($mListAssoc, $iItemIndex, __GetActionString($aAssociations[$i][3]), 1)
+		ElseIf StringInStr("$8" & "$9" & "$H", $aAssociations[$i][3]) > 0 Then
+			; do not add these actions, as they are not possible in multi actions
 		EndIf
 	Next
 
@@ -2742,7 +2769,9 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	_CheckForceSelectionOfItems($mListSelected)
 
 	While 1
- 		Switch GUIGetMsg()
+		_CheckForceSelectionOfItems($mListSelected)
+
+		Switch GUIGetMsg()
  			Case $GUI_EVENT_CLOSE, $mCancel
  				ExitLoop
 
