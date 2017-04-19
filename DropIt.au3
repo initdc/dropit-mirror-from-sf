@@ -362,7 +362,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Local $mCombo_ActionData = __GetLang('ACTION_MOVE', 'Move') & '|' & __GetLang('ACTION_COPY', 'Copy') & '|' & __GetLang('ACTION_COMPRESS', 'Compress') & '|' & _
 			__GetLang('ACTION_EXTRACT', 'Extract') & '|' & __GetLang('ACTION_RENAME', 'Rename') & '|' & __GetLang('ACTION_DELETE', 'Delete') & '|' & _
 			__GetLang('ACTION_SPLIT', 'Split') & '|' & __GetLang('ACTION_JOIN', 'Join') & '|' & __GetLang('ACTION_ENCRYPT', 'Encrypt') & '|' & __GetLang('ACTION_DECRYPT', 'Decrypt') & '|' & _
-			__GetLang('ACTION_OPEN_WITH', 'Open With') & '|' & __GetLang('ACTION_UPLOAD', 'Upload') & '|' & __GetLang('ACTION_SEND_MAIL', 'Send by Mail') & '|' & _
+			__GetLang('ACTION_OPEN_WITH', 'Open With') & '|' & __GetLang('ACTION_PRINT', 'Print') & "|" & __GetLang('ACTION_UPLOAD', 'Upload') & '|' & __GetLang('ACTION_SEND_MAIL', 'Send by Mail') & '|' & _
 			__GetLang('ACTION_GALLERY', 'Create Gallery') & '|' & __GetLang('ACTION_LIST', 'Create List') & '|' & __GetLang('ACTION_PLAYLIST', 'Create Playlist') & '|' & _
 			__GetLang('ACTION_SHORTCUT', 'Create Shortcut') & '|' & __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard') & '|' & _
 			__GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties') & '|' & __GetLang('ACTION_IGNORE', 'Ignore')
@@ -664,6 +664,8 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mInput_Rename, $GUI_SHOW)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[4])
+		Case __GetLang('ACTION_PRINT', 'Print')
+			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 		Case __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard')
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mInput_Clipboard, $GUI_SHOW)
@@ -779,6 +781,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 				Case __GetLang('ACTION_RENAME', 'Rename')
 					GUICtrlSetState($mInput_Rename, $GUI_SHOW)
 					GUICtrlSetState($mButton_Abbreviations, $GUI_SHOW)
+				Case __GetLang('ACTION_PRINT', 'Print')
 				Case __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard')
 					GUICtrlSetState($mInput_Clipboard, $GUI_SHOW)
 					GUICtrlSetState($mButton_Abbreviations, $GUI_SHOW)
@@ -899,7 +902,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 
 		; Enable/Disable Save Button:
 		$mTempString = GUICtrlRead($mInput_Destination) & GUICtrlRead($mInput_Rename) & GUICtrlRead($mInput_Compress) & GUICtrlRead($mInput_Extract) & GUICtrlRead($mInput_Split) & GUICtrlRead($mInput_Join) & GUICtrlRead($mInput_OpenWith) & GUICtrlRead($mInput_Crypt) & GUICtrlRead($mInput_Gallery) & GUICtrlRead($mInput_List)
-		If GUICtrlRead($mInput_Name) <> "" And GUICtrlRead($mInput_Rules) <> "" And $mFileProperties <> "" And $mCryptSettings <> "" And $mMailSettings <> "" And __StringIsValid($mTempString, '|') And Not StringIsSpace(GUICtrlRead($mInput_Rules)) Then
+		If (GUICtrlRead($mInput_Name) <> "" And GUICtrlRead($mInput_Rules) <> "" And $mFileProperties <> "" And $mCryptSettings <> "" And $mMailSettings <> "" And __StringIsValid($mTempString, '|') And Not StringIsSpace(GUICtrlRead($mInput_Rules))) Or $mCurrentAction = __GetLang('ACTION_PRINT', 'Print') Then
 			If GUICtrlGetState($mSave) > 80 Then
 				GUICtrlSetState($mSave, 576) ; $GUI_ENABLE + $GUI_DEFBUTTON.
 			EndIf
@@ -5286,6 +5289,9 @@ Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
 					Case "$K" ; Convert Image Action.
 						$pMainArray = _Sorting_ConvertFile($pMainArray, $A, $pElementsGUI, $pProfile)
 
+					Case "$M" ; Convert Image Action.
+						$pMainArray = _Sorting_PrintFile($pMainArray, $A, $pElementsGUI)
+
 					Case Else ; Move Or Copy Action.
 						$pMainArray = _Sorting_CopyFile($pMainArray, $A, $pElementsGUI, $pProfile)
 
@@ -5352,7 +5358,7 @@ Func _Destination_Fix($dFilePath, $dDestination, $dAction, $aFileContentMatches,
 	EndIf
 
 	; Fix Relative Destination If Needed:
-	If StringInStr("$5" & "$6" & "$B" & "$C" & "$D" & "$E", $dAction) = 0 And StringInStr(StringLeft($dStringSplit[1], 2), "\\") = 0 And StringInStr(StringLeft($dStringSplit[1], 2), ":") = 0 Then
+	If StringInStr("$5" & "$6" & "$B" & "$C" & "$D" & "$E" & "$M", $dAction) = 0 And StringInStr(StringLeft($dStringSplit[1], 2), "\\") = 0 And StringInStr(StringLeft($dStringSplit[1], 2), ":") = 0 Then
 		$dStringSplit[1] = _WinAPI_GetFullPathName(__GetParentFolder($dFilePath) & "\" & $dStringSplit[1])
 	EndIf
 
@@ -6619,6 +6625,30 @@ Func _Sorting_OpenFile($sMainArray, $sIndex, $sElementsGUI)
 
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_OpenFile
+
+Func _Sorting_PrintFile($sMainArray, $sIndex, $sElementsGUI)
+	Local $sSource = $sMainArray[$sIndex][0], $sFileExtension, $sAppName, $sAppCommand
+
+	$sFileExtension = __GetFileExtension($sSource)
+
+	$sAppName = RegRead("HKCR\\." & $sFileExtension, "")
+	If @error Or $sAppName = "" Then
+		Return SetError(2, 0, $sMainArray) ; Failed.
+	EndIf
+
+	$sAppCommand = RegRead("HKCR\\" & $sAppName & "\\shell\\print\\command", "")
+	If @error Or $sAppCommand = "" Then
+		Return SetError(2, 0, $sMainArray) ; Failed.
+	EndIf
+	$sDestination = StringReplace($sAppCommand, "%1", $sSource)
+
+	Run($sDestination, @ScriptDir)
+	If @error Then
+		Return SetError(2, 0, $sMainArray) ; Failed.
+	EndIf
+
+	Return $sMainArray ; OK.
+EndFunc   ;==>_Sorting_PrintFile
 
 Func _Sorting_PlaylistFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Local $sSkipped, $sSubArray[$sTo - $sFrom + 2], $sPlaylistFile = $sMainArray[$sFrom][3]
