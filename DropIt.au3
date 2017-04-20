@@ -666,6 +666,8 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[4])
 		Case __GetLang('ACTION_PRINT', 'Print')
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
+			GUICtrlSetState($mLabel_Destination, $GUI_HIDE)
+			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
 		Case __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard')
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mInput_Clipboard, $GUI_SHOW)
@@ -700,6 +702,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	While 1
 		; Enable/Disable Destination Input And Switch Folder/Program Label:
 		If GUICtrlRead($mCombo_Action) <> $mCurrentAction And _GUICtrlComboBox_GetDroppedState($mCombo_Action) = False Then
+			GUICtrlSetState($mLabel_Destination, $GUI_SHOW)
 			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
@@ -782,6 +785,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 					GUICtrlSetState($mInput_Rename, $GUI_SHOW)
 					GUICtrlSetState($mButton_Abbreviations, $GUI_SHOW)
 				Case __GetLang('ACTION_PRINT', 'Print')
+					GUICtrlSetState($mLabel_Destination, $GUI_HIDE)
 				Case __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard')
 					GUICtrlSetState($mInput_Clipboard, $GUI_SHOW)
 					GUICtrlSetState($mButton_Abbreviations, $GUI_SHOW)
@@ -999,7 +1003,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 						$mInput_DestinationRead = $mFileProperties
 					Case "$E" ; Send by Mail.
 						$mInput_DestinationRead = $mMailSettings
-					Case "$2" ; Ignore.
+					Case "$2", "$M" ; Ignore Or Print.
 						$mInput_DestinationRead = "-"
 				EndSwitch
 
@@ -5289,7 +5293,7 @@ Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
 					Case "$K" ; Convert Image Action.
 						$pMainArray = _Sorting_ConvertFile($pMainArray, $A, $pElementsGUI, $pProfile)
 
-					Case "$M" ; Convert Image Action.
+					Case "$M" ; Print Action.
 						$pMainArray = _Sorting_PrintFile($pMainArray, $A, $pElementsGUI)
 
 					Case Else ; Move Or Copy Action.
