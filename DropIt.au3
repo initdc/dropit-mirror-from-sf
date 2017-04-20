@@ -131,6 +131,7 @@
 #include "Lib\udf\SMTPMailer.au3"
 #include "Lib\udf\Startup.au3"
 #include "Lib\udf\WM_COPYDATA.au3"
+#include "Lib\udf\RDC.au3"
 
 Opt("TrayMenuMode", 3)
 Opt("TrayOnEventMode", 1)
@@ -143,7 +144,7 @@ Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Export, $Global
 Global $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New ; ListView Variables.
 Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1, $Global_ListViewProcess_Open, $Global_ListViewProcess_Info, $Global_ListViewProcess_Skip ; ListView Variables.
 Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
-Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
+Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringChanges[1], $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
 Global $Global_Clipboard, $Global_Wheel, $Global_ScriptRefresh, $Global_ScriptRestart, $Global_ListViewCreateGallery, $Global_ListViewCreateList ; Misc.
 Global $Global_NewDroppedFiles, $Global_DroppedFiles[1], $Global_PriorityActions[1], $Global_SendTo_ControlID ; Misc.
 Global $Global_AbortButton, $Global_PauseButton ; Process GUI.
@@ -7152,16 +7153,16 @@ EndFunc   ;==>_Sorting_RunDelete
 Func _Main()
 	Local $mProfileList, $mCurrentProfile, $mMsg
 	Local $mINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Local $mMonitoringTime_Now = TimerInit()
+	Local $mMonitoringTime_Now = TimerInit(), $mForceMonitoringNow = 0
 	Local $mHidingTime_Now = $mMonitoringTime_Now
 
 	DragDropEvent_Startup() ; Enable Drag & Drop.
+	_RDC_OpenDll(@ScriptDir & '\Lib\udf\RDC.dll')
 	_SetFeaturesWithTimer($mINI) ; Load Global Monitoring Configuration.
 	__InstalledCheck() ; Check To See If DropIt Is Installed.
 	__IsProfile() ; Check If A Default Profile Is Available.
 	_Main_Create() ; Create The Main GUI, ContextMenu & TrayMenu.
 
-	GUIRegisterMsg($WM_CONTEXTMENU, "_WM_CONTEXTMENU")
 	GUIRegisterMsg($WM_MOUSEWHEEL, "_WM_MOUSEWHEEL")
 	GUIRegisterMsg($WM_SYSCOMMAND, "_WM_SYSCOMMAND")
 	GUIRegisterMsg($WM_POWERBROADCAST, "_WM_SLEEPMODE")
@@ -7183,7 +7184,11 @@ Func _Main()
 			$mHidingTime_Now = _HidingTargetImage($mHidingTime_Now)
 		EndIf
 		If $Global_Monitoring <> 0 Then
-			$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now)
+			$mForceMonitoringNow = 0
+			If $Global_MonitoringTimer = 9999 Then
+				$mForceMonitoringNow = _MonitoringChanges()
+			EndIf
+			$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now, $mForceMonitoringNow)
 		EndIf
 		If $Global_Wheel <> 0 Then ; Switch Profiles With Mouse Scroll Wheel.
 			If __Is("MouseScroll") Then
@@ -7272,6 +7277,9 @@ Func _Main()
 
 		EndSwitch
 	WEnd
+
+	_RDC_Destroy()
+	_RDC_CloseDll()
 EndFunc   ;==>_Main
 
 Func _Main_Create()
@@ -7322,6 +7330,8 @@ Func _Main_Create()
 EndFunc   ;==>_Main_Create
 
 Func _SetFeaturesWithTimer($mINI)
+	Local $mMonitored, $iId
+
 	$Global_GraduallyHide = 0
 	If __Is("GraduallyHide") Then
 		$Global_GraduallyHide = 1
@@ -7349,8 +7359,44 @@ Func _SetFeaturesWithTimer($mINI)
 		If $Global_MonitoringSizer < 0 Then
 			$Global_MonitoringSizer = 0 ; KB.
 		EndIf
+		If $Global_MonitoringTimer = 9999 Then
+			$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
+			If @error = 0 Then
+				_RDC_Destroy()
+				Dim $Global_MonitoringChanges[1]
+				For $A = 1 To $mMonitored[0][0]
+					$iId = _RDC_Create($mMonitored[$A][0], 0, $FILE_NOTIFY_CHANGE_FILE_NAME)
+					If @error = 0 Then
+						_ArrayAdd($Global_MonitoringChanges, $iId)
+					EndIf
+				Next
+			EndIf
+		EndIf
 	EndIf
 EndFunc   ;==>_SetFeaturesWithTimer
+
+Func _MonitoringChanges()
+	Local $iId, $i, $j, $aData
+
+	For $i = 1 to UBound($Global_MonitoringChanges) - 1
+		$iId = $Global_MonitoringChanges[$i]
+		$aData = _RDC_GetData($iId)
+		If @error Then
+			_RDC_Delete($iId)
+			_ArrayDelete($Global_MonitoringChanges, _ArraySearch($Global_MonitoringChanges, $iId))
+			Return 0
+		EndIf
+
+		For $j = 1 to $aData[0][0]
+			If $aData[$j][0] = 1 Then ; only force execution on file creation
+				;MsgBox(0,"",$aData[$i][0] & " - " & $aData[$i][1] & " - " ) ;& _RDC_GetDirectory($iId))
+				Return 1
+			EndIf
+		Next
+	Next
+
+	Return 0
+EndFunc   ;==>WM_RDC
 
 Func _HidingTargetImage($mTime_Now)
 	Switch $Global_GraduallyHide
