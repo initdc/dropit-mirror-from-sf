@@ -332,7 +332,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Local $mCompress, $mInput_Compress, $mButton_Compress, $mCompressSettings, $mCompressFormat, $mCompressFormatBis
 	Local $mExtract, $mInput_Extract, $mButton_Extract, $mExtractSettings, $mJoin, $mInput_Join, $mButton_Join, $mJoinSettings
 	Local $mOpenWith, $mInput_OpenWith, $mButton_OpenWith, $mOpenWithSettings, $mSplit, $mInput_Split, $mButton_Split, $mSplitSettings = "10;MB;False"
-	Local $mInput_Ignore, $mGallery, $mInput_Gallery, $mButton_Gallery, $mGalleryProperties, $mGalleryTheme, $mGallerySettings = "2;1;"
+	Local $mInput_Ignore, $mGallery, $mInput_Gallery, $mButton_Gallery, $mGalleryProperties, $mGalleryTheme, $mGallerySettings = "2;1;", $mInput_Print
 
 	Local $mAssociationType = __GetLang('MANAGE_ASSOCIATION_NEW', 'New Association')
 	Local $mLogAssociation = __GetLang('MANAGE_LOG_0', 'Association Created')
@@ -587,7 +587,9 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	$mButton_Change = GUICtrlCreateButton(__GetLang('MANAGE_EDIT_CONFIGURE', 'Configure this action'), 10, 65 * 3 + 30, 440, 25)
 	$mButton_Mail = GUICtrlCreateButton(__GetLang('MANAGE_EDIT_CONFIGURE', 'Configure this action'), 10, 65 * 3 + 30, 440, 25)
 	$mInput_Ignore = GUICtrlCreateInput(__GetLang('MANAGE_EDIT_MSGBOX_15', 'Skip them during process'), 10, 65 * 3 + 32, 440, 22)
+	$mInput_Print = GUICtrlCreateInput(__GetLang('MANAGE_EDIT_MSGBOX_55', 'This action does not prove a destination.'), 10, 65 * 3 + 32, 440, 22)
 
+	GUICtrlSetState($mInput_Print, $GUI_DISABLE + $GUI_HIDE) ; Always Disabled In The Code.
 	GUICtrlSetState($mInput_Ignore, $GUI_DISABLE + $GUI_HIDE) ; Always Disabled In The Code.
 	GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 	GUICtrlSetState($mInput_Compress, $GUI_HIDE)
@@ -665,9 +667,10 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			GUICtrlSetState($mInput_Rename, $GUI_SHOW)
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[4])
 		Case __GetLang('ACTION_PRINT', 'Print')
+			GUICtrlSetState($mInput_Print, $GUI_SHOW)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
-			GUICtrlSetState($mLabel_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
+			GUICtrlSetData($mLabel_Destination, $mDestination_Label[10])
 		Case __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard')
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mInput_Clipboard, $GUI_SHOW)
@@ -702,7 +705,6 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	While 1
 		; Enable/Disable Destination Input And Switch Folder/Program Label:
 		If GUICtrlRead($mCombo_Action) <> $mCurrentAction And _GUICtrlComboBox_GetDroppedState($mCombo_Action) = False Then
-			GUICtrlSetState($mLabel_Destination, $GUI_SHOW)
 			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
@@ -720,6 +722,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			GUICtrlSetState($mInput_Clipboard, $GUI_HIDE)
 			GUICtrlSetState($mButton_Change, $GUI_HIDE)
 			GUICtrlSetState($mButton_Mail, $GUI_HIDE)
+			GUICtrlSetState($mInput_Print, $GUI_HIDE)
 			GUICtrlSetState($mInput_Ignore, $GUI_HIDE)
 			GUICtrlSetState($mInput_Site, $GUI_HIDE)
 			GUICtrlSetState($mButton_Site, $GUI_HIDE)
@@ -785,7 +788,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 					GUICtrlSetState($mInput_Rename, $GUI_SHOW)
 					GUICtrlSetState($mButton_Abbreviations, $GUI_SHOW)
 				Case __GetLang('ACTION_PRINT', 'Print')
-					GUICtrlSetState($mLabel_Destination, $GUI_HIDE)
+					GUICtrlSetState($mInput_Print, $GUI_SHOW)
 				Case __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard')
 					GUICtrlSetState($mInput_Clipboard, $GUI_SHOW)
 					GUICtrlSetState($mButton_Abbreviations, $GUI_SHOW)
