@@ -950,6 +950,12 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 							MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_4', 'Association Error'), __GetLang('MANAGE_EDIT_MSGBOX_11', 'You cannot use this action for folders.'), 0, __OnTop($mGUI))
 							ContinueLoop
 						EndIf
+					Case "$M" ; Print.
+						$mInput_DestinationRead = "-"
+						If StringInStr($mInput_RulesRead, "**") And $mUseRegEx <> "True" Then
+							MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_4', 'Association Error'), __GetLang('MANAGE_EDIT_MSGBOX_11', 'You cannot use this action for folders.'), 0, __OnTop($mGUI))
+							ContinueLoop
+						EndIf
 					Case "$J" ; Join.
 						$mInput_DestinationRead = GUICtrlRead($mInput_Join)
 						If StringInStr($mInput_RulesRead, "**") And $mUseRegEx <> "True" Then
@@ -1006,7 +1012,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 						$mInput_DestinationRead = $mFileProperties
 					Case "$E" ; Send by Mail.
 						$mInput_DestinationRead = $mMailSettings
-					Case "$2", "$M" ; Ignore Or Print.
+					Case "$2" ; Ignore.
 						$mInput_DestinationRead = "-"
 				EndSwitch
 
