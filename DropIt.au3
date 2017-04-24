@@ -1325,11 +1325,21 @@ Func _Manage_Populate($mListView, $mProfileName)
 EndFunc   ;==>_Manage_Populate
 
 Func _Manage_ExtractFilters($mProfile, $mAssociationName, $mFilters)
+	Local $aMatch
 	Local $mStringFilters = __GetAssociationField($mProfile, $mAssociationName, "Filters")
 	Local $mStringSplit = StringSplit($mStringFilters, $STATIC_FILTERS_DIVIDER, 2)
 	If @error Then
 		Return SetError(1, 0, $mFilters)
 	EndIf
+
+	;Make sure the last filter is always kept as is, without splitting at $STATIC_FILTERS_DIVIDER (necessary for regex file content matches)
+	If UBound($mStringSplit) >= $STATIC_FILTERS_NUMBER Then
+		$aMatch = StringRegExp($mStringFilters, "(?:[^|]+\|){10}(.*)$", $STR_REGEXPARRAYMATCH)
+		If @error = 0 Then
+			$mStringSplit[$STATIC_FILTERS_NUMBER - 1] = $aMatch[0]
+		EndIf
+	EndIf
+
 	ReDim $mStringSplit[$STATIC_FILTERS_NUMBER] ; Number Of Filters.
 
 	For $A = 0 To $STATIC_FILTERS_NUMBER - 1
@@ -4543,9 +4553,18 @@ Func _DropStop($dAborted = 0)
 EndFunc   ;==>_DropStop
 
 Func _Matches_Filter($mFilePath, $mFilters)
-	Local $mText[4], $mFileDate[6], $mAttributes, $mTemp, $mStringSplit, $mAllWords, $mCaseSensitive, $aMatches
+	Local $mText[4], $mFileDate[6], $mAttributes, $mTemp, $mStringSplit, $mAllWords, $mCaseSensitive, $aMatches, $aMatch
 	Local $mParamArray[$STATIC_FILTERS_NUMBER] = [0, 1, 0, 2, "A", "H", "R", "S", "T", 0, 0]
 	Local $mFilterArray = StringSplit($mFilters, $STATIC_FILTERS_DIVIDER, 2)
+
+	;Make sure the last filter is always kept as is, without splitting at $STATIC_FILTERS_DIVIDER (necessary for regex file content matches)
+	If UBound($mFilterArray) >= $STATIC_FILTERS_NUMBER Then
+		$aMatch = StringRegExp($mFilters, "(?:[^|]+\|){10}(.*)$", $STR_REGEXPARRAYMATCH)
+		If @error = 0 Then
+			$mFilterArray[$STATIC_FILTERS_NUMBER - 1] = $aMatch[0]
+		EndIf
+	EndIf
+
 	ReDim $mFilterArray[$STATIC_FILTERS_NUMBER] ; Number Of Filters.
 
 	For $A = 0 To $STATIC_FILTERS_NUMBER - 1
