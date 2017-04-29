@@ -2,8 +2,8 @@
 	Application Name: DropIt
 	License: Open Source GPL
 	Language: English
-	AutoIt Version: 3.3.12.0
-	Authors: Lupo73 and guinness
+	AutoIt Version: 3.3.14.2
+	Authors: Lupo73, divinity666, guinness
 	Website: http://www.dropitproject.com/
 	Contact: http://www.lupopensuite.com/contact.htm
 
@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt: Personal Assistant to Automatically Manage Your Files
-#AutoIt3Wrapper_Res_Fileversion=8.2.0.0
-#AutoIt3Wrapper_Res_ProductVersion=8.2.0.0
+#AutoIt3Wrapper_Res_Fileversion=8.3.0.0
+#AutoIt3Wrapper_Res_ProductVersion=8.3.0.0
 #AutoIt3Wrapper_Res_LegalCopyright=Andrea Luparia
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.dropitproject.com
@@ -3028,13 +3028,13 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["Authors", __GetLang('ENV_VAR_8', 'file authors') & ' ["Lupo Team"]'], _
 			["Category", __GetLang('ENV_VAR_84', 'file category') & ' ["Personal"]'], _
 			["Comments", __GetLang('ENV_VAR_75', 'file comments') & ' ["Comment example"]'], _
-			["Keywords", __GetLang('ENV_VAR_134', 'file keywords') & ' ["Alternate,Bill"]'], _
 			["Company", __GetLang('ENV_VAR_85', 'file company') & ' ["Sourceforge"]'], _
 			["Copyright", __GetLang('ENV_VAR_76', 'file copyright') & ' ["Lupo PenSuite"]'], _
 			["FileBytes", __GetLang('ENV_VAR_100', 'file bytes') & ' ["' & __GetFileSize(@ScriptFullPath) & '"]'], _
 			["FileVersion", __GetLang('ENV_VAR_109', 'file version') & ' ["' & FileGetVersion(@ScriptFullPath) & '"]'], _
 			["FileSize", __GetLang('ENV_VAR_101', 'file size') & ' ["' & __ByteSuffix(__GetFileSize(@ScriptFullPath)) & '"]'], _
 			["FileType", __GetLang('ENV_VAR_12', 'file type') & ' ["Text document"]'], _
+			["Keywords", __GetLang('ENV_VAR_134', 'file keywords') & ' ["Alternate,Bill"]'], _
 			["Owner", __GetLang('ENV_VAR_77', 'file owner') & ' ["Lupo73"]'], _
 			["ProductName", __GetLang('ENV_VAR_130', 'file product name') & ' ["DropIt"]'], _
 			["Rating", __GetLang('ENV_VAR_129', 'file rating') & ' ["4"]'], _
@@ -3058,7 +3058,7 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["FocalLength", __GetLang('ENV_VAR_93', 'camera focal length') & ' ["35"]'], _
 			["ImageComments", __GetLang('ENV_VAR_107', 'image comments') & ' ["funny"]'], _
 			["ImageDescription", __GetLang('ENV_VAR_108', 'image description') & ' ["moon"]'], _
-			["ImageOrientation", __GetLang('ENV_VAR_115', 'image orientation') & ' ["90° left"]'], _
+			["ImageOrientation", __GetLang('ENV_VAR_115', 'image orientation') & ' ["90Â° left"]'], _
 			["ISO", __GetLang('ENV_VAR_94', 'image ISO') & ' ["400"]'], _
 			[""], _ ; Separator.
 			["Brightness", __GetLang('ENV_VAR_87', 'image brightness') & ' ["1.24"]'], _
@@ -3215,7 +3215,7 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			[__GetLang('ENV_VAR_TAB_4', 'Paths'), $mGroupPaths], _
 			[__GetLang('ENV_VAR_TAB_3', 'Info'), $mGroupInfo], _
 			[__GetLang('ENV_VAR_TAB_16', 'Images'), $mGroupImage], _
-			[__GetLang('ENV_VAR_TAB_17', 'Text Content'), $mGroupTextContent], _
+			[__GetLang('ENV_VAR_TAB_17', 'Content'), $mGroupTextContent], _
 			[__GetLang('ENV_VAR_TAB_12', 'Media'), $mGroupMedia], _
 			[__GetLang('ENV_VAR_TAB_13', 'Hash'), $mGroupHash], _
 			[""], _ ; Separator.
