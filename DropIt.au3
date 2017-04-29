@@ -365,7 +365,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			__GetLang('ACTION_OPEN_WITH', 'Open With') & '|' & __GetLang('ACTION_UPLOAD', 'Upload') & '|' & __GetLang('ACTION_SEND_MAIL', 'Send by Mail') & '|' & _
 			__GetLang('ACTION_GALLERY', 'Create Gallery') & '|' & __GetLang('ACTION_LIST', 'Create List') & '|' & __GetLang('ACTION_PLAYLIST', 'Create Playlist') & '|' & _
 			__GetLang('ACTION_SHORTCUT', 'Create Shortcut') & '|' & __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard') & '|' & _
-			__GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties') & '|' & __GetLang('ACTION_MULTI', 'Multi action') & '|' & __GetLang('ACTION_IGNORE', 'Ignore')
+			__GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties') & '|' & __GetLang('ACTION_MULTI', 'Multi Action') & '|' & __GetLang('ACTION_IGNORE', 'Ignore')
 	Local $mCombo_DeleteData = __GetLang('DELETE_MODE_1', 'Directly Remove') & '|' & __GetLang('DELETE_MODE_2', 'Safely Erase') & '|' & __GetLang('DELETE_MODE_3', 'Send to Recycle Bin')
 	Local $mDestination_Label[12] = [ _
 			__GetLang('MANAGE_DESTINATION_FOLDER', 'Destination Folder'), _
@@ -485,7 +485,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Else
 		$mSite = "/"
 	EndIf
-	If $mInitialAction == __GetLang('ACTION_MULTI', 'Multi action') Then
+	If $mInitialAction == __GetLang('ACTION_MULTI', 'Multi Action') Then
 		$mMultiActionSettings = __GetAssociationField($mProfile[0], $mAssociationName, "MultiActionSettings")
 		$mMultiAction = $mDestination
 		$mDestination = "-"
@@ -630,7 +630,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
 			GUICtrlSetData($mInput_Destination, "-")
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[10])
-		Case __GetLang('ACTION_MULTI', 'Multi action')
+		Case __GetLang('ACTION_MULTI', 'Multi Action')
 			GUICtrlSetState($mButton_MultiAction, $GUI_SHOW)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
@@ -824,7 +824,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 					GUICtrlSetState($mCombo_Delete, $GUI_SHOW)
 				Case __GetLang('ACTION_IGNORE', 'Ignore')
 					GUICtrlSetState($mInput_Ignore, $GUI_SHOW)
-				Case __GetLang('ACTION_MULTI', 'Multi action')
+				Case __GetLang('ACTION_MULTI', 'Multi Action')
 					If $mMultiActionSettings = "-" Then
 						$mMultiActionSettings = ""
 					EndIf
@@ -930,7 +930,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			Switch $mCurrentAction
 				Case __GetLang('ACTION_IGNORE', 'Ignore')
 					GUICtrlSetData($mLabel_Destination, $mDestination_Label[10])
-				Case __GetLang('ACTION_MULTI', 'Multi action')
+				Case __GetLang('ACTION_MULTI', 'Multi Action')
 					GUICtrlSetData($mLabel_Destination, $mDestination_Label[11])
 				Case __GetLang('ACTION_OPEN_WITH', 'Open With')
 					GUICtrlSetData($mLabel_Destination, $mDestination_Label[1])
@@ -1056,7 +1056,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 						$mInput_DestinationRead = $mMailSettings
 					Case "$2" ; Ignore.
 						$mInput_DestinationRead = "-"
-					Case "$L" ; Multi action.
+					Case "$L" ; Multi Action.
 						$mInput_DestinationRead = $mMultiAction
 				EndSwitch
 
@@ -2729,28 +2729,34 @@ Func _CheckForceSelectionOfItems(ByRef $mList)
 			$bLastItemForcesProcessingOnPreviousSource = False
 		EndIf
 	Next
-EndFunc
+EndFunc   ;==>_CheckForceSelectionOfItems
 
 Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mListAssoc, $mListSelected, $mButtonAdd, $mButtonRemove, $aAssociations, $i, $aSelectedAssoc[0], $aSelected[0], $pos, $sItemText, $iItemIndex
 	Local $mButtonMoveUp, $mButtonMoveDown, $mCheckboxProceedNext, $bItemChecked
 
-	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 484, 380, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
+	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 624, 380, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
-	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_0', 'Available actions') & ":", 15, 12 + 4, 200, 20)
-	$mListAssoc = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action'), 15, 12 + 30, 200, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS, $LVS_SORTASCENDING))
+	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_0', 'Available actions') & ":", 15, 12 + 4, 230, 20)
+	$mListAssoc = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action'), 15, 12 + 28, 230, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS, $LVS_SORTASCENDING))
 	_GUICtrlListView_SetExtendedListViewStyle($mListAssoc, $LVS_EX_FULLROWSELECT)
-	$mButtonMoveUp = GUICtrlCreateButton("^", 242 - 12, 12 + 30 + 130 - 20 - 7 - 20 - 14, 24, 20)
-	$mButtonAdd = GUICtrlCreateButton(">", 242 - 12, 12 + 30 + 130 - 20 - 7, 24, 20)
-	$mButtonRemove = GUICtrlCreateButton("<", 242 - 12, 12 + 30 + 130 + 7, 24, 20)
-	$mButtonMoveDown = GUICtrlCreateButton("v", 242 - 12, 12 + 30 + 130 + 7 + 20 + 14, 24, 20)
-	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_1', 'Selected actions') & ":", 269, 12 + 4, 200, 20)
-	$mListSelected = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('PREVIOUS', 'Previous'), 269, 12 + 30, 200, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS))
+	_GUICtrlListView_SetColumnWidth($mListAssoc, 0, 90)
+	_GUICtrlListView_SetColumnWidth($mListAssoc, 1, 90)
+	; TODO: use icons for the following buttons
+	$mButtonMoveUp = GUICtrlCreateButton("^", 272 - 12, 12 + 28 + 130 - 20 - 7 - 20 - 14, 24, 20)
+	$mButtonAdd = GUICtrlCreateButton(">", 272 - 12, 12 + 28 + 130 - 20 - 7, 24, 20)
+	$mButtonRemove = GUICtrlCreateButton("<", 272 - 12, 12 + 28 + 130 + 7, 24, 20)
+	$mButtonMoveDown = GUICtrlCreateButton("v", 272 - 12, 12 + 28 + 130 + 7 + 20 + 14, 24, 20)
+	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_1', 'Selected actions') & ":", 299, 12 + 4, 310, 20)
+	$mListSelected = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('FROM_PREVIOUS', 'From Previous'), 299, 12 + 28, 310, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS))
 	_GUICtrlListView_SetExtendedListViewStyle($mListSelected, BitOr($LVS_EX_FULLROWSELECT, $LVS_EX_CHECKBOXES))
-	$mCheckboxProceedNext = GUICtrlCreateCheckbox(__GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Proceed with next association, if an association does not match'), 15, 380 - 48 - 30, 400, 24)
+	_GUICtrlListView_SetColumnWidth($mListSelected, 0, 90)
+	_GUICtrlListView_SetColumnWidth($mListSelected, 1, 90)
+	_GUICtrlListView_SetColumnWidth($mListSelected, 2, 100)
+	$mCheckboxProceedNext = GUICtrlCreateCheckbox(__GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Proceed with next association, if an association does not match'), 15, 380 - 50 - 28, 540, 24)
 
- 	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 242 - 40 - 90, 380 - 24 - 15, 90, 24)
- 	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 242 + 40, 380 - 24 - 15, 90, 24)
+ 	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 312 - 40 - 90, 380 - 24 - 15, 90, 24)
+ 	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 312 + 40, 380 - 24 - 15, 90, 24)
  	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
 
  	GUISetState(@SW_SHOW)
