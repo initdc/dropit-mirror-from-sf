@@ -909,6 +909,36 @@ Func __GetDuplicateMode($gMode, $gForCombo = 0)
 	Return $gReturnValue
 EndFunc   ;==>__GetDuplicateMode
 
+Func __GetImmediateMonitorMode($gMode, $gForCombo = 0)
+	Local $gReturnValue
+
+	If $gForCombo Then
+		Switch $gMode
+			Case "Never"
+				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
+			Case "OnCreate"
+				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_1', 'creating files')
+			Case "OnCreateOrChange"
+				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_2', 'creating or changing files')
+			Case Else ; Never
+				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
+		EndSwitch
+	Else
+		Switch $gMode
+			Case __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
+				$gReturnValue = "Never"
+			Case __GetLang('IMMEDIATE_MONITOR_MODE_1', 'creating files')
+				$gReturnValue = "OnCreate"
+			Case __GetLang('IMMEDIATE_MONITOR_MODE_2', 'creating or changing files')
+				$gReturnValue = "OnCreateOrChange"
+			Case Else ; __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
+				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
+		EndSwitch
+	EndIf
+
+	Return $gReturnValue
+EndFunc   ;==>__GetImmediateMonitorMode
+
 Func __GetOrderMode($gMode, $gForCombo = 0)
 	#cs
 		Description: Get Group Mode Code [Name] Or Group Mode String [File Name].

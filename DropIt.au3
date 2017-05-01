@@ -7679,11 +7679,11 @@ EndFunc   ;==>_About
 Func _Options($oHandle = -1)
 	Local $oINI = __IsSettingsFile() ; Get Default Settings INI File.
 
-	Local $oCheckItems[29] = [28], $oCheckModeItems[3] = [2], $oComboItems[3] = [2], $oGroup[3] = [2], $oCurrent[3] = [2]
+	Local $oCheckItems[29] = [28], $oCheckModeItems[3] = [2], $oComboItems[4] = [3], $oGroup[4] = [3], $oCurrent[4] = [3]
 	Local $oINI_TrueOrFalse_Array[29] = [28, "OnTop", "LockPosition", "MultipleInstances", "UseSendTo", "CreateLog", "FolderAsFile", "IgnoreNew", "AutoDup", "ShowSorting", _
 			"ProfileEncryption", "CustomTrayIcon", "StartAtStartup", "AlertSize", "AlertDelete", "Monitoring", "CheckUpdates", "Minimized", "ScanSubfolders", "AmbiguitiesCheck", _
 			"PlaySound", "AutoStart", "AutoClose", "ShowMonitored", "AlertFailed", "GraduallyHide", "IgnoreInUse", "AutoBackup", "MouseScroll"]
-	Local $oINI_Various_Array[7] = [6, "SendToMode", "DupMode", "MasterPassword", "MonitoringTime", "MonitoringSize", "GroupOrder"]
+	Local $oINI_Various_Array[8] = [7, "SendToMode", "DupMode", "MasterPassword", "MonitoringTime", "MonitoringSize", "GroupOrder", "ImmediateMonitorMode"]
 	Local $oPW, $oPW_Code = $G_Global_PasswordKey
 	Local $oBackupDirectory = __GetDefault(32) ; Get Default Backup Directory.
 	Local $oLogFile = __GetDefault(513) ; Get Default Directory & LogFile File Name.
@@ -7734,7 +7734,7 @@ Func _Options($oHandle = -1)
 	; MONITORING Tab:
 	GUICtrlCreateTabItem(__GetLang('OPTIONS_TAB_4', 'Monitoring'))
 
-	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_15', 'Folder Monitoring'), 10, 30, 399, 430)
+	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_15', 'Folder Monitoring'), 10, 30, 399, 455)
 	$oCheckItems[15] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_36', 'Enable scan of monitored folders'), 20, 30 + 15 + 2, 270, 20)
 	$oScanTime = GUICtrlCreateInput("", 20, 30 + 15 + 25, 70, 20, 0x2002)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_10', 'Scan monitored folders with a defined time interval.'))
@@ -7742,13 +7742,15 @@ Func _Options($oHandle = -1)
 	$oScanSize = GUICtrlCreateInput("", 20, 30 + 15 + 50, 70, 20, 0x2002)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_21', 'Scan monitored folders if bigger than defined size.'))
 	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_20', 'Minimum size in KB'), 20 + 80, 30 + 15 + 50 + 3, 270, 20)
-	$oCheckItems[23] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_35', 'Show progress window for monitored folders'), 20, 30 + 15 + 80 + 1)
-	$oListView = GUICtrlCreateListView(__GetLang('MONITORED_FOLDER', 'Monitored Folder') & "|" & __GetLang('ASSOCIATED_PROFILE', 'Associated Profile'), 20, 30 + 15 + 110, 380, 260, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
-	$oMn_Add = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_4', 'Add'), 20, 405 + 15 + 3, 110, 22)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_25', 'Monitor folders immediately on-line'), 20, 30 + 15 + 75 + 2, 270, 20)
+	$oComboItems[3] = GUICtrlCreateCombo("", 20, 30 + 15 + 95 + 2, 380, 20, 0x0003)
+	$oCheckItems[23] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_35', 'Show progress window for monitored folders'), 20, 30 + 15 + 125 + 1)
+	$oListView = GUICtrlCreateListView(__GetLang('MONITORED_FOLDER', 'Monitored Folder') & "|" & __GetLang('ASSOCIATED_PROFILE', 'Associated Profile'), 20, 30 + 15 + 160, 380, 235, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
+	$oMn_Add = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_4', 'Add'), 20, 430 + 15 + 3, 110, 22)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_BUTTON_4', 'Add'))
-	$oMn_Edit = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_5', 'Edit'), 210 - 55, 405 + 15 + 3, 110, 22)
+	$oMn_Edit = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_5', 'Edit'), 210 - 55, 430 + 15 + 3, 110, 22)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_BUTTON_5', 'Edit'))
-	$oMn_Remove = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_3', 'Remove'), 420 - 20 - 110, 405 + 15 + 3, 110, 22)
+	$oMn_Remove = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_3', 'Remove'), 420 - 20 - 110, 430 + 15 + 3, 110, 22)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_BUTTON_3', 'Remove'))
 	GUICtrlCreateGroup("", -99, -99, 1, 1)
 
@@ -7820,7 +7822,10 @@ Func _Options($oHandle = -1)
 			__GetLang('DATE_CREATED', 'Date Created') & "|" & __GetLang('DATE_MODIFIED', 'Date Modified') & "|" & __GetLang('DATE_OPENED', 'Date Opened')
 	$oCurrent[2] = __GetOrderMode(IniRead($oINI, $G_Global_GeneralSection, "GroupOrder", "Path"), 1)
 
-	For $A = 1 To 2
+	$oGroup[3] = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never') & "|" & __GetLang('IMMEDIATE_MONITOR_MODE_1', 'creating files') & "|" & __GetLang('IMMEDIATE_MONITOR_MODE_2', 'creating or changing files')
+	$oCurrent[3] = __GetImmediateMonitorMode(IniRead($oINI, $G_Global_GeneralSection, "ImmediateMonitorMode", "Never"), 1)
+
+	For $A = 1 To $oComboItems[0]
 		GUICtrlSetData($oComboItems[$A], $oGroup[$A], $oCurrent[$A])
 	Next
 
@@ -7897,7 +7902,7 @@ Func _Options($oHandle = -1)
 
 	; Monitoring Settings:
 	$oState = $GUI_DISABLE
-	If GUICtrlRead($oCheckItems[15]) = 1 Then
+	If GUICtrlRead($oCheckItems[15]) = 1 Or __GetImmediateMonitorMode(GUICtrlRead($oComboItems[3])) <> "Never" Then
 		$oState = $GUI_ENABLE
 	EndIf
 	GUICtrlSetState($oScanTime, $oState)
@@ -7963,7 +7968,7 @@ Func _Options($oHandle = -1)
 			If GUICtrlGetState($oMn_Remove) = 80 Then
 				GUICtrlSetState($oMn_Remove, 144) ; $GUI_DISABLE + $GUI_SHOW.
 			EndIf
-		ElseIf GUICtrlRead($oCheckItems[15]) = 1 Then ; Monitoring Enabled.
+		ElseIf GUICtrlRead($oCheckItems[15]) = 1 Or __GetImmediateMonitorMode(GUICtrlRead($oComboItems[3])) <> "Never" Then ; Monitoring Enabled.
 			If GUICtrlGetState($oMn_Edit) > 80 Then
 				GUICtrlSetState($oMn_Edit, 80) ; $GUI_ENABLE + $GUI_SHOW.
 			EndIf
@@ -8035,9 +8040,9 @@ Func _Options($oHandle = -1)
 				GUICtrlSetState($oMasterPassword, $oState)
 				GUICtrlSetState($oShowMasterPassword, $oState)
 
-			Case $oCheckItems[15] ; Monitoring Checkbox.
+			Case $oCheckItems[15], $oComboItems[3] ; Monitoring Checkbox.
 				$oState = $GUI_DISABLE
-				If GUICtrlRead($oCheckItems[15]) = 1 Then
+				If GUICtrlRead($oCheckItems[15]) = 1 Or __GetImmediateMonitorMode(GUICtrlRead($oComboItems[3])) <> "Never" Then
 					$oState = $GUI_ENABLE
 				EndIf
 				GUICtrlSetState($oScanTime, $oState)
@@ -8102,6 +8107,7 @@ Func _Options($oHandle = -1)
 			Case $oOK
 				__IniWriteEx($oINI, $G_Global_GeneralSection, $oINI_Various_Array[2], __GetDuplicateMode(GUICtrlRead($oComboItems[1])))
 				__IniWriteEx($oINI, $G_Global_GeneralSection, $oINI_Various_Array[6], __GetOrderMode(GUICtrlRead($oComboItems[2])))
+				__IniWriteEx($oINI, $G_Global_GeneralSection, $oINI_Various_Array[7], __GetImmediateMonitorMode(GUICtrlRead($oComboItems[3])))
 
 				If __Is("CreateLog", $oINI) And GUICtrlRead($oCheckItems[5]) <> 1 And FileExists($oLogFile[1][0] & $oLogFile[2][0]) Then
 					__Log_Write("===== " & __GetLang('LOG_DISABLED', 'Log Disabled') & " =====")
