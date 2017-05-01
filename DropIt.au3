@@ -149,7 +149,7 @@ Global $Global_NewDroppedFiles, $Global_DroppedFiles[1], $Global_PriorityActions
 Global $Global_AbortButton, $Global_PauseButton ; Process GUI.
 Global $Global_ResizeMinWidth, $Global_ResizeMinHeight, $Global_ResizeMaxWidth, $Global_ResizeMaxHeight ; Windows Size For Resizing.
 Global $Global_Slider, $Global_SliderLabel ; _Customize_GUI_Edit.
-Global $Global_File_Content[1][2]
+Global $Global_File_Content[1][2], $Global_ListViewMultiActionLeft, $Global_ListViewMultiActionRight
 
 _WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
 __EnvironmentVariables() ; Set The Standard & User Assigned Environment Variables.
@@ -2684,6 +2684,9 @@ EndFunc   ;==>_Manage_Mail
 Func _CheckForceSelectionOfItems(ByRef $mList)
 	Local $i, $bLastItemForcesProcessingOnPreviousSource
 
+	;TODO no more actions after Delete action
+	;TODO no "from previous source" after a Move action
+
 	For $i = 0 To _GUICtrlListView_GetItemCount($mList) - 1
 		If $i = 0 Then
 			If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("SOURCE", "Source") Then
@@ -2737,11 +2740,13 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 
 	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 624, 380, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
+	;TODO add a button for explanation on how to use multi action
 	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_0', 'Available actions') & ":", 15, 12 + 4, 230, 20)
 	$mListAssoc = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action'), 15, 12 + 28, 230, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS, $LVS_SORTASCENDING))
 	_GUICtrlListView_SetExtendedListViewStyle($mListAssoc, $LVS_EX_FULLROWSELECT)
 	_GUICtrlListView_SetColumnWidth($mListAssoc, 0, 90)
 	_GUICtrlListView_SetColumnWidth($mListAssoc, 1, 90)
+	$Global_ListViewMultiActionLeft = $mListAssoc
 	; TODO: use icons for the following buttons
 	$mButtonMoveUp = GUICtrlCreateButton("^", 272 - 12, 12 + 28 + 130 - 20 - 7 - 20 - 14, 24, 20)
 	$mButtonAdd = GUICtrlCreateButton(">", 272 - 12, 12 + 28 + 130 - 20 - 7, 24, 20)
@@ -2753,6 +2758,7 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	_GUICtrlListView_SetColumnWidth($mListSelected, 0, 90)
 	_GUICtrlListView_SetColumnWidth($mListSelected, 1, 90)
 	_GUICtrlListView_SetColumnWidth($mListSelected, 2, 100)
+	$Global_ListViewMultiActionRight = $mListSelected
 	$mCheckboxProceedNext = GUICtrlCreateCheckbox(__GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Proceed with next association, if an association does not match'), 15, 380 - 50 - 28, 540, 24)
 
  	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 312 - 40 - 90, 380 - 24 - 15, 90, 24)
@@ -2760,8 +2766,6 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
  	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
 
  	GUISetState(@SW_SHOW)
-
-	;TODO use doubleclick to add to list and to remove from list
 
 	; add available actions to list
 	$aAssociations = __GetAssociations()
@@ -9006,6 +9010,12 @@ Func _WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 	If IsHWnd($nListViewCreateList) = 0 Then
 		$nListViewCreateList = GUICtrlGetHandle($nListViewCreateList)
 	EndIf
+	If IsHWnd($Global_ListViewMultiActionLeft) = 0 Then
+		$Global_ListViewMultiActionLeft = GUICtrlGetHandle($Global_ListViewMultiActionLeft)
+	EndIf
+	If IsHWnd($Global_ListViewMultiActionRight) = 0 Then
+		$Global_ListViewMultiActionRight = GUICtrlGetHandle($Global_ListViewMultiActionRight)
+	EndIf
 
 	Local $tNMHDR = DllStructCreate($tagNMHDR, $ilParam)
 	Local $nWndFrom = HWnd(DllStructGetData($tNMHDR, "hWndFrom"))
@@ -9016,6 +9026,21 @@ Func _WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 	Local $nSubItem = DllStructGetData($nInfo, "SubItem") ; The 'Column' Number Selected E.G. Select The 2nd Item Will Return 1
 
 	Switch $nWndFrom
+		Case $Global_ListViewMultiActionLeft
+			Switch $nCode
+				Case $NM_DBLCLK
+					; add item to the right list
+					_GUICtrlListView_AddItem($Global_ListViewMultiActionRight, _GUICtrlListView_GetItemText($Global_ListViewMultiActionLeft, _GUICtrlListView_GetSelectionMark($Global_ListViewMultiActionLeft)))
+					_GUICtrlListView_AddSubItem($Global_ListViewMultiActionRight, _GUICtrlListView_GetItemCount($Global_ListViewMultiActionRight) - 1, _GUICtrlListView_GetItemText($Global_ListViewMultiActionLeft, _GUICtrlListView_GetSelectionMark($Global_ListViewMultiActionLeft), 1), 1)
+			EndSwitch
+
+		Case $Global_ListViewMultiActionRight
+			Switch $nCode
+				Case $NM_DBLCLK
+					; remove item from the right list
+					_GUICtrlListView_DeleteItemsSelected($Global_ListViewMultiActionRight)
+			EndSwitch
+
 		Case $nListViewProfiles
 			Switch $nCode
 				Case $NM_CLICK
