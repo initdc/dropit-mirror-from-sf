@@ -711,32 +711,6 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	ControlClick($mGUI, "", $mInput_Name)
 
 	While 1
-		$iActionTypeChangedForMultiAction = 1
-		If GUICtrlRead($mCombo_Action) <> $mCurrentAction And _GUICtrlComboBox_GetDroppedState($mCombo_Action) = False Then
-			;action changed, so go on with processing (this is done because of probable race conditions)
-			$iActionTypeChangedForMultiAction = 0
-		EndIf
-
-		; If the action type significantly changed and the association is used in a multi action, force the user to remove it there first
-		If $iActionTypeChangedForMultiAction = 0 Then
-			;TODO filter multi actions in a exported function instead of everywhere
-			If (StringInStr("$4" & "$5" & "$G" & "$I" & "$A", __GetActionString(GUICtrlRead($mCombo_Action))) > 0 And StringInStr("$4" & "$5" & "$G" & "$I" & "$A", __GetActionString($mInitialAction)) = 0) Or _
-					(StringInStr("$8" & "$9" & "$H", __GetActionString(GUICtrlRead($mCombo_Action))) > 0 And StringInStr("$8" & "$9" & "$H", __GetActionString($mInitialAction)) = 0) Then
-				; check if the current association is in a multi action
-				$mAssociations = __GetAssociations($mProfileName)
-				For $i = 1 To UBound($mAssociations) - 1
-					If $mAssociations[$i][3] = "$L" Then
-						If StringRegExp($mAssociations[$i][4], "" & $mAssociationName & ";") Then
-							MsgBox(0x10, __GetLang('MANAGE_EDIT_MSGBOX_4', 'Association Error'), __GetLang('MANAGE_MULTI_ACTION_MSGBOX_0', 'This association is used in a multi action. Changing the action to that kind is not permitted. Please remove association from multi action first.') & "(" & $mAssociations[$i][0] & ")", 0, __OnTop($mGUI))
-							GUICtrlSetData($mCombo_Action, $mCurrentAction)
-							$iActionTypeChangedForMultiAction = -1
-							ExitLoop
-						EndIf
-					EndIf
-				Next
-			EndIf
-		EndIf
-
 		; Enable/Disable Destination Input And Switch Folder/Program Label:
 		If GUICtrlRead($mCombo_Action) <> $mCurrentAction And _GUICtrlComboBox_GetDroppedState($mCombo_Action) = False And $iActionTypeChangedForMultiAction = 0 Then
 			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
@@ -2682,51 +2656,50 @@ Func _Manage_Mail(ByRef $mSettings, $mHandle = -1)
 EndFunc   ;==>_Manage_Mail
 
 Func _CheckForceSelectionOfItems(ByRef $mList)
-	Local $i, $bLastItemForcesProcessingOnPreviousSource
-
-	;TODO no more actions after Delete action
-	;TODO no "from previous source" after a Move action
+	Local $i, $bLastItemForcesProcessingOnPreviousSource, $bLastItemForcesProcessingOnPreviousDestination, $sCurrentAction
 
 	For $i = 0 To _GUICtrlListView_GetItemCount($mList) - 1
 		If $i = 0 Then
-			If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("SOURCE", "Source") Then
-				_GUICtrlListView_SetItemText($mList, $i, __GetLang("SOURCE", "Source"), 2)
-			EndIf
+			;always enable "on previous source" for the first list element
 			_GUICtrlListView_SetItemChecked($mList, $i, True)
 		Else
 			If $bLastItemForcesProcessingOnPreviousSource Then
-				If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("SOURCE", "Source") Then
-					_GUICtrlListView_SetItemText($mList, $i, __GetLang("SOURCE", "Source"), 2)
-				EndIf
 				_GUICtrlListView_SetItemChecked($mList, $i, True)
-			Else
-				;respect selection of checkbox here
-				If _GUICtrlListView_GetItemChecked($mList, $i) Then
-					If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("SOURCE", "Source") Then
-						_GUICtrlListView_SetItemText($mList, $i, __GetLang("SOURCE", "Source"), 2)
-					EndIf
-				Else
-					If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("DESTINATION", "Destination") Then
-						_GUICtrlListView_SetItemText($mList, $i, __GetLang("DESTINATION", "Destination"), 2)
-					EndIf
-				EndIf
+			ElseIf $bLastItemForcesProcessingOnPreviousDestination Then
+				_GUICtrlListView_SetItemChecked($mList, $i, False)
 			EndIf
 		EndIf
 
-#CS
-;			For these associations, the previous source file is used instead of current destination, as the destination might be multiple files or folders
-; 			Case "$4"
-; 				$gReturn = __GetLang('ACTION_EXTRACT', 'Extract')
-; 			Case "$G"
-; 				$gReturn = __GetLang('ACTION_DECRYPT', 'Decrypt')
-; 			Case "$5"
-; 				$gReturn = __GetLang('ACTION_OPEN_WITH', 'Open With')
-; 			Case "$I"
-; 				$gReturn = __GetLang('ACTION_SPLIT', 'Split')
-; 			Case "$A"
-; 				$gReturn = __GetLang('ACTION_SHORTCUT', 'Create Shortcut')
- #CE
-		If StringInStr("$4" & "$G" & "$5" & "$I" & "$A", __GetActionString(_GUICtrlListView_GetItemText($mList, $i, 1))) > 0 Then
+		; Update text in list item based on the selection status, if necessary
+		If _GUICtrlListView_GetItemChecked($mList, $i) Then
+			If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("SOURCE", "Source") Then
+				_GUICtrlListView_SetItemText($mList, $i, __GetLang("SOURCE", "Source"), 2)
+			EndIf
+		Else
+			If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("DESTINATION", "Destination") Then
+				_GUICtrlListView_SetItemText($mList, $i, __GetLang("DESTINATION", "Destination"), 2)
+			EndIf
+		EndIf
+
+		; force selections for the next items, depending on the current and/or last action in the list
+		$sCurrentAction = __GetActionString(_GUICtrlListView_GetItemText($mList, $i, 1))
+
+;		For these associations, the previous SOURCE has to be used
+;		Case "$2"
+;			$gReturn = __GetLang('ACTION_IGNORE', 'Ignore')
+;		Case "$5"
+;			$gReturn = __GetLang('ACTION_OPEN_WITH', 'Open With')
+;		Case "$6"
+;			$gReturn = __GetLang('ACTION_DELETE', 'Delete')
+; 		Case "$B"
+; 			$gReturn = __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard')
+; 		Case "$C"
+; 			$gReturn = __GetLang('ACTION_UPLOAD', 'Upload')
+; 		Case "$D"
+; 			$gReturn = __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties')
+; 		Case "$E"
+; 			$gReturn = __GetLang('ACTION_SEND_MAIL', 'Send by Mail')
+		If StringInStr("$2" & "$5" & "$6" & "$B" & "$C" & "$D" & "$E", $sCurrentAction) > 0 Then
 			$bLastItemForcesProcessingOnPreviousSource = True
 		Else
 			$bLastItemForcesProcessingOnPreviousSource = False
@@ -2736,7 +2709,7 @@ EndFunc   ;==>_CheckForceSelectionOfItems
 
 Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mListAssoc, $mListSelected, $mButtonAdd, $mButtonRemove, $aAssociations, $i, $aSelectedAssoc[0], $aSelected[0], $pos, $sItemText, $iItemIndex
-	Local $mButtonMoveUp, $mButtonMoveDown, $mCheckboxProceedNext, $bItemChecked
+	Local $mButtonMoveUp, $mButtonMoveDown, $mComboProceedNext, $bItemChecked, $sDefaultSetting
 
 	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 624, 380, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
@@ -2759,7 +2732,21 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	_GUICtrlListView_SetColumnWidth($mListSelected, 1, 90)
 	_GUICtrlListView_SetColumnWidth($mListSelected, 2, 100)
 	$Global_ListViewMultiActionRight = $mListSelected
-	$mCheckboxProceedNext = GUICtrlCreateCheckbox(__GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Proceed with next association, if an association does not match'), 15, 380 - 50 - 28, 540, 24)
+
+
+	; set default settings combo box
+	Switch $mSettings
+		Case "StopError"
+			$sDefaultSetting = __GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)')
+		Case "StopOk"
+			$sDefaultSetting = __GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Stop processing multi action WITHOUT error if association rule does not match (use with care)')
+		Case "ProceedNext"
+			$sDefaultSetting = __GetLang('MANAGE_MULTI_ACTION_OPTION_2', 'Proceed with next association, if the rules of an association do not match')
+		Case Else ;use StopError by default
+			$sDefaultSetting = __GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)')
+	EndSwitch
+	$mComboProceedNext = GUICtrlCreateCombo(__GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)'), 15, 380 - 50 - 28, 540, 24)
+	GUICtrlSetData($mComboProceedNext, __GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Stop processing multi action WITHOUT error if association rule does not match (use with care)') & "|" & __GetLang('MANAGE_MULTI_ACTION_OPTION_2', 'Proceed with next association, if the rules of an association do not match'), $sDefaultSetting)
 
  	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 312 - 40 - 90, 380 - 24 - 15, 90, 24)
  	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 312 + 40, 380 - 24 - 15, 90, 24)
@@ -2770,19 +2757,8 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	; add available actions to list
 	$aAssociations = __GetAssociations()
 	For $i = 1 to UBound($aAssociations) - 1
-		; filter out all associations with an invalid action type
-		If StringInStr("$0" & "$1" & "$2" & "$3" & "$4" & "$5" & "$6" & "$7" & "$A" & "$B" & "$C" & "$D" & "$E" & "$F" & "$G" & "$I" & "$J" & "$L", $aAssociations[$i][3]) > 0 Then
-			$iItemIndex = _GUICtrlListView_AddItem($mListAssoc, $aAssociations[$i][0])
-			_GUICtrlListView_AddSubItem($mListAssoc, $iItemIndex, __GetActionString($aAssociations[$i][3]), 1)
-		ElseIf StringInStr("$8" & "$9" & "$H", $aAssociations[$i][3]) > 0 Then
-			; do not add these actions, as they are not possible in multi actions
-		EndIf
+		_GUICtrlListView_AddSubItem($mListAssoc, $iItemIndex, __GetActionString($aAssociations[$i][3]), 1)
 	Next
-
-	; set checkbox
-	If $mSettings = "True" Then
-		GUICtrlSetState($mCheckboxProceedNext, $GUI_CHECKED)
-	EndIf
 
 	; add selected actions to list
 	$aSelected = StringSplit($mSelectedAssociations, ";")
@@ -2845,18 +2821,26 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 
 			Case $mSave
 				_CheckForceSelectionOfItems($mListSelected)
+
 				For $i = 0 to _GUICtrlListView_GetItemCount($mListSelected) - 1
 					_ArrayAdd($aSelectedAssoc, _GUICtrlListView_GetItemText($mListSelected, $i))
 					_ArrayAdd($aSelectedAssoc, _GUICtrlListView_GetItemChecked($mListSelected, $i))
 				Next
 				$mSelectedAssociations = _ArrayToString($aSelectedAssoc, ";")
-				If BitAND(GUICtrlRead($mCheckboxProceedNext), $GUI_CHECKED) = $GUI_CHECKED Then
-					$mSettings = "True"
-				Else
-					$mSettings = "False"
-				EndIf
-				ExitLoop
 
+				Switch GUICtrlRead($mComboProceedNext)
+					Case __GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)')
+						$mSettings = "StopError"
+
+					Case __GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Stop processing multi action WITHOUT error if association rule does not match (use with care)')
+						$mSettings = "StopOk"
+
+					Case __GetLang('MANAGE_MULTI_ACTION_OPTION_2', 'Proceed with next association, if the rules of an association do not match')
+						$mSettings = "ProceedNext"
+
+				EndSwitch
+
+				ExitLoop
 		EndSwitch
 	WEnd
 
@@ -6893,11 +6877,11 @@ Func _Sorting_OpenFile($sMainArray, $sIndex, $sElementsGUI)
 EndFunc   ;==>_Sorting_OpenFile
 
 Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
-	Local $aAssociationNames, $i, $j, $aAssociations, $aTmp, $sSplitString, $bNextPositionOnSkip = False, $bUsePreviousDestinationAsNextSource
+	Local $aAssociationNames, $i, $j, $aAssociations, $aTmp, $sSplitString, $sSettings = "StopError", $bUsePreviousDestinationAsNextSource
 
 	$sSplitString = StringSplit($sMainArray[$sIndex][3], "|")
 
-	If $sSplitString[2] = "True" Then $bNextPositionOnSkip = True
+	$sSettings = $sSplitString[2]
 
 	;Find corresponding associations
 	$aAssociations = __GetAssociations($sProfile)
@@ -6915,8 +6899,6 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 			EndIf
 		Next
 
-		; TODO show results of individual multi action steps in resulting main array
-
 		$aTmp[0][0] = 1
 		If $aAssociationNames[$i + 1] = "True" Then
 			$bUsePreviousDestinationAsNextSource = True
@@ -6927,12 +6909,21 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 		$sMainArray[$sIndex][3] = _Destination_Fix($sMainArray[$sIndex][0], $sMainArray[$sIndex][3], $sMainArray[$sIndex][2], $sMainArray[$sIndex][6], $sMainArray[0][2], $sProfile)
 
 		If $sMainArray[$sIndex][4] < 0 Then
-			; respect option "Proceed with next association, if an association does not match"
-			If Not $bNextPositionOnSkip Then
+			; respect options (StopError, StopOk, ProceedNext)
+			If $sSettings = "StopError" Then
 				$sMainArray[$sIndex][3] = __GetLang('POSITIONPROCESS_MULTI_FAILED_1', 'The rules of an association of the multi action did not match the current input file') & ": Step #" & $i & ", '" & $aAssociationNames[$i] & "' -> '" & $sMainArray[$sIndex][0] & "'"
 				Return SetError(2, 0, $sMainArray) ; Failed.
-			Else
+
+			ElseIf $sSettings = "StopOk" Then
+				Return $sMainArray ; OK.
+
+			ElseIf $sSettings = "ProceedNext" Then
 				ContinueLoop
+
+			Else ; use StopError by default
+				$sMainArray[$sIndex][3] = __GetLang('POSITIONPROCESS_MULTI_FAILED_1', 'The rules of an association of the multi action did not match the current input file') & ": Step #" & $i & ", '" & $aAssociationNames[$i] & "' -> '" & $sMainArray[$sIndex][0] & "'"
+				Return SetError(2, 0, $sMainArray) ; Failed.
+
 			EndIf
 		EndIf
 
