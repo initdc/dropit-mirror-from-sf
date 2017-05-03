@@ -916,10 +916,10 @@ Func __GetImmediateMonitorMode($gMode, $gForCombo = 0)
 		Switch $gMode
 			Case "Never"
 				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
-			Case "OnCreate"
-				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_1', 'creating files')
-			Case "OnCreateOrChange"
-				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_2', 'creating or changing files')
+			Case "OnCreateFiles"
+				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_1', 'on creating files (excluding files in subfolders)')
+			Case "OnCreateFilesRecursive"
+				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_2', 'on creating files (including files in subfolders)')
 			Case Else ; Never
 				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
 		EndSwitch
@@ -927,12 +927,12 @@ Func __GetImmediateMonitorMode($gMode, $gForCombo = 0)
 		Switch $gMode
 			Case __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
 				$gReturnValue = "Never"
-			Case __GetLang('IMMEDIATE_MONITOR_MODE_1', 'creating files')
-				$gReturnValue = "OnCreate"
-			Case __GetLang('IMMEDIATE_MONITOR_MODE_2', 'creating or changing files')
-				$gReturnValue = "OnCreateOrChange"
-			Case Else ; __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
-				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
+			Case __GetLang('IMMEDIATE_MONITOR_MODE_1', 'on creating files (excluding files in subfolders)')
+				$gReturnValue = "OnCreateFiles"
+			Case __GetLang('IMMEDIATE_MONITOR_MODE_2', 'on creating files (including files in subfolders)')
+				$gReturnValue = "OnCreateFilesRecursive"
+			Case Else ; Never
+				$gReturnValue = "Never"
 		EndSwitch
 	EndIf
 

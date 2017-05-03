@@ -144,7 +144,7 @@ Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Export, $Global
 Global $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New ; ListView Variables.
 Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1, $Global_ListViewProcess_Open, $Global_ListViewProcess_Info, $Global_ListViewProcess_Skip ; ListView Variables.
 Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
-Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringChanges[1], $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
+Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringImmediate, $Global_MonitoringChanges[1], $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
 Global $Global_Clipboard, $Global_Wheel, $Global_ScriptRefresh, $Global_ScriptRestart, $Global_ListViewCreateGallery, $Global_ListViewCreateList ; Misc.
 Global $Global_NewDroppedFiles, $Global_DroppedFiles[1], $Global_PriorityActions[1], $Global_SendTo_ControlID ; Misc.
 Global $Global_AbortButton, $Global_PauseButton ; Process GUI.
@@ -7153,7 +7153,7 @@ EndFunc   ;==>_Sorting_RunDelete
 Func _Main()
 	Local $mProfileList, $mCurrentProfile, $mMsg
 	Local $mINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Local $mMonitoringTime_Now = TimerInit(), $mForceMonitoringNow = 0
+	Local $mMonitoringTime_Now = TimerInit(), $mForceMonitoringNowOn[1] = [0]
 	Local $mHidingTime_Now = $mMonitoringTime_Now
 
 	DragDropEvent_Startup() ; Enable Drag & Drop.
@@ -7184,11 +7184,11 @@ Func _Main()
 			$mHidingTime_Now = _HidingTargetImage($mHidingTime_Now)
 		EndIf
 		If $Global_Monitoring <> 0 Then
-			$mForceMonitoringNow = 0
-			If $Global_MonitoringTimer = 9999 Then
-				$mForceMonitoringNow = _MonitoringChanges()
+			Dim $mForceMonitoringNowOn[1] = [0]
+			If $Global_MonitoringImmediate <> "Never" Then
+				$mForceMonitoringNowOn = _MonitoringChanges()
 			EndIf
-			$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now, $mForceMonitoringNow)
+			$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now, $mForceMonitoringNowOn)
 		EndIf
 		If $Global_Wheel <> 0 Then ; Switch Profiles With Mouse Scroll Wheel.
 			If __Is("MouseScroll") Then
@@ -7330,7 +7330,7 @@ Func _Main_Create()
 EndFunc   ;==>_Main_Create
 
 Func _SetFeaturesWithTimer($mINI)
-	Local $mMonitored, $iId
+	Local $mMonitored, $iId, $mStringSplit
 
 	$Global_GraduallyHide = 0
 	If __Is("GraduallyHide") Then
@@ -7352,20 +7352,31 @@ Func _SetFeaturesWithTimer($mINI)
 	If __Is("Monitoring") Then
 		$Global_Monitoring = 1
 		$Global_MonitoringTimer = Number(IniRead($mINI, $G_Global_GeneralSection, "MonitoringTime", ""))
-		If $Global_MonitoringTimer < 1 Then
-			$Global_MonitoringTimer = 30 ; Seconds.
+		If $Global_MonitoringTimer < 0 Then
+			$Global_MonitoringTimer = 0 ; disable monitoring by fixed time
 		EndIf
 		$Global_MonitoringSizer = Number(IniRead($mINI, $G_Global_GeneralSection, "MonitoringSize", ""))
 		If $Global_MonitoringSizer < 0 Then
 			$Global_MonitoringSizer = 0 ; KB.
 		EndIf
-		If $Global_MonitoringTimer = 9999 Then
+		$Global_MonitoringImmediate = IniRead($mINI, $G_Global_GeneralSection, "ImmediateMonitorMode", "")
+		If $Global_MonitoringImmediate <> "Never" Then
 			$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
 			If @error = 0 Then
 				_RDC_Destroy()
 				Dim $Global_MonitoringChanges[1]
 				For $A = 1 To $mMonitored[0][0]
-					$iId = _RDC_Create($mMonitored[$A][0], 0, $FILE_NOTIFY_CHANGE_FILE_NAME)
+					$mStringSplit = StringSplit($mMonitored[$A][1], "|")
+					ReDim $mStringSplit[3]
+					If $mStringSplit[2] == $G_Global_StateDisabled Then
+						ContinueLoop
+					EndIf
+
+					If $Global_MonitoringImmediate = "OnCreateFiles" Then
+						$iId = _RDC_Create($mMonitored[$A][0], False, $FILE_NOTIFY_CHANGE_FILE_NAME)
+					ElseIf $Global_MonitoringImmediate = "OnCreateFilesRecursive" Then
+						$iId = _RDC_Create($mMonitored[$A][0], True, $FILE_NOTIFY_CHANGE_FILE_NAME)
+					EndIf
 					If @error = 0 Then
 						_ArrayAdd($Global_MonitoringChanges, $iId)
 					EndIf
@@ -7376,7 +7387,7 @@ Func _SetFeaturesWithTimer($mINI)
 EndFunc   ;==>_SetFeaturesWithTimer
 
 Func _MonitoringChanges()
-	Local $iId, $i, $j, $aData
+	Local $iId, $i, $j, $aData, $sResult = ""
 
 	For $i = 1 to UBound($Global_MonitoringChanges) - 1
 		$iId = $Global_MonitoringChanges[$i]
@@ -7384,19 +7395,22 @@ Func _MonitoringChanges()
 		If @error Then
 			_RDC_Delete($iId)
 			_ArrayDelete($Global_MonitoringChanges, _ArraySearch($Global_MonitoringChanges, $iId))
-			Return 0
+			ContinueLoop
 		EndIf
 
 		For $j = 1 to $aData[0][0]
 			If $aData[$j][0] = 1 Then ; only force execution on file creation
-				;MsgBox(0,"",$aData[$i][0] & " - " & $aData[$i][1] & " - " ) ;& _RDC_GetDirectory($iId))
-				Return 1
+				If $sResult = "" Then
+					$sResult = _RDC_GetDirectory($iId) & "\\" & $aData[$i][1]
+				Else
+					$sResult &= "|" & _RDC_GetDirectory($iId) & "\\" & $aData[$i][1]
+				EndIf
 			EndIf
 		Next
 	Next
 
-	Return 0
-EndFunc   ;==>WM_RDC
+	Return StringSplit($sResult, "|")
+EndFunc   ;==>_MonitoringChanges
 
 Func _HidingTargetImage($mTime_Now)
 	Switch $Global_GraduallyHide
@@ -7416,10 +7430,12 @@ Func _HidingTargetImage($mTime_Now)
 	Return $mTime_Now
 EndFunc   ;==>_HidingTargetImage
 
-Func _MonitoringFolders($mINI, $mTime_Now, $mDoNow = 0)
-	Local $mMonitored, $mStringSplit, $mLoadedFolder[2] = [1, 0]
+Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
+	Local $mMonitored, $mStringSplit, $mLoadedFolder[2] = [1, 0], $i
 
-	If TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Or $mDoNow = 1 Then
+	If $mForceExecutionOn = "" Then Dim $mForceExecutionOn[1] = [0]
+
+	If ($Global_MonitoringTimer > 0 And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000)) Or $mForceExecutionOn[0] > 0 Then
 		$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
 		If @error = 0 Then
 			$Global_MenuDisable = 1
@@ -7437,15 +7453,31 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mDoNow = 0)
 						ContinueLoop ; Skip Folder If %UserInput% Value Is Not Defined.
 					EndIf
 				EndIf
+				; TODO handle folder size configuration properly for immediate monitoring
 				If FileExists($mLoadedFolder[1]) = 0 Or DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer Then
 					ContinueLoop ; Skip Folder If Does Not Exist Or Smaller Than Defined Size.
 				EndIf
-				__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1])
-				If $Global_GUI_State = 1 Then ; GUI Is Visible.
-					GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
+				If $Global_MonitoringTimer > 0 And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
+					;always execute drop event for whole folder with priority over the force execution files
+					__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1])
+					If $Global_GUI_State = 1 Then ; GUI Is Visible.
+						GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
+					EndIf
+					_DropEvent($mLoadedFolder, $mStringSplit[1], 1)
+				Else
+					;execute drop on given force execution items
+					For $i = 1 to $mForceExecutionOn[0]
+						If StringInStr($mForceExecutionOn[$i], $mLoadedFolder[1]) > 0 Then
+							__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1] & " -> " & $mForceExecutionOn[$i])
+							$mLoadedFolder[1] = $mForceExecutionOn[$i]
+							If $Global_GUI_State = 1 Then ; GUI Is Visible.
+								GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
+							EndIf
+							_DropEvent($mLoadedFolder, $mStringSplit[1], 1)
+						EndIf
+					Next
 				EndIf
-				_DropEvent($mLoadedFolder, $mStringSplit[1], 1)
-				GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
+					GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
 			Next
 			TraySetClick(8)
 			$Global_MenuDisable = 0
@@ -7822,7 +7854,7 @@ Func _Options($oHandle = -1)
 			__GetLang('DATE_CREATED', 'Date Created') & "|" & __GetLang('DATE_MODIFIED', 'Date Modified') & "|" & __GetLang('DATE_OPENED', 'Date Opened')
 	$oCurrent[2] = __GetOrderMode(IniRead($oINI, $G_Global_GeneralSection, "GroupOrder", "Path"), 1)
 
-	$oGroup[3] = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never') & "|" & __GetLang('IMMEDIATE_MONITOR_MODE_1', 'creating files') & "|" & __GetLang('IMMEDIATE_MONITOR_MODE_2', 'creating or changing files')
+	$oGroup[3] = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never') & "|" & __GetLang('IMMEDIATE_MONITOR_MODE_1', 'on creating files (excluding files in subfolders)') & "|" & __GetLang('IMMEDIATE_MONITOR_MODE_2', 'on creating files (including files in subfolders)')
 	$oCurrent[3] = __GetImmediateMonitorMode(IniRead($oINI, $G_Global_GeneralSection, "ImmediateMonitorMode", "Never"), 1)
 
 	For $A = 1 To $oComboItems[0]
@@ -7902,9 +7934,10 @@ Func _Options($oHandle = -1)
 
 	; Monitoring Settings:
 	$oState = $GUI_DISABLE
-	If GUICtrlRead($oCheckItems[15]) = 1 Or __GetImmediateMonitorMode(GUICtrlRead($oComboItems[3])) <> "Never" Then
+	If GUICtrlRead($oCheckItems[15]) = 1 Then
 		$oState = $GUI_ENABLE
 	EndIf
+	GUICtrlSetState($oComboItems[3], $oState)
 	GUICtrlSetState($oScanTime, $oState)
 	GUICtrlSetState($oScanSize, $oState)
 	GUICtrlSetState($oCheckItems[23], $oState)
@@ -7913,8 +7946,8 @@ Func _Options($oHandle = -1)
 	GUICtrlSetState($oMn_Edit, $oState)
 	GUICtrlSetState($oMn_Remove, $oState)
 	$oState = IniRead($oINI, $G_Global_GeneralSection, "MonitoringTime", "")
-	If $oState = "" And $oState = 0 Then
-		$oState = 30
+	If $oState = "" Then
+		$oState = 0
 	EndIf
 	GUICtrlSetData($oScanTime, $oState)
 	$oState = IniRead($oINI, $G_Global_GeneralSection, "MonitoringSize", "")
@@ -7968,7 +8001,7 @@ Func _Options($oHandle = -1)
 			If GUICtrlGetState($oMn_Remove) = 80 Then
 				GUICtrlSetState($oMn_Remove, 144) ; $GUI_DISABLE + $GUI_SHOW.
 			EndIf
-		ElseIf GUICtrlRead($oCheckItems[15]) = 1 Or __GetImmediateMonitorMode(GUICtrlRead($oComboItems[3])) <> "Never" Then ; Monitoring Enabled.
+		ElseIf GUICtrlRead($oCheckItems[15]) = 1 Then ; Monitoring Enabled.
 			If GUICtrlGetState($oMn_Edit) > 80 Then
 				GUICtrlSetState($oMn_Edit, 80) ; $GUI_ENABLE + $GUI_SHOW.
 			EndIf
@@ -8040,11 +8073,12 @@ Func _Options($oHandle = -1)
 				GUICtrlSetState($oMasterPassword, $oState)
 				GUICtrlSetState($oShowMasterPassword, $oState)
 
-			Case $oCheckItems[15], $oComboItems[3] ; Monitoring Checkbox.
+			Case $oCheckItems[15] ; Monitoring Checkbox.
 				$oState = $GUI_DISABLE
-				If GUICtrlRead($oCheckItems[15]) = 1 Or __GetImmediateMonitorMode(GUICtrlRead($oComboItems[3])) <> "Never" Then
+				If GUICtrlRead($oCheckItems[15]) = 1 Then
 					$oState = $GUI_ENABLE
 				EndIf
+				GUICtrlSetState($oComboItems[3], $oState)
 				GUICtrlSetState($oScanTime, $oState)
 				GUICtrlSetState($oScanSize, $oState)
 				GUICtrlSetState($oCheckItems[23], $oState)
