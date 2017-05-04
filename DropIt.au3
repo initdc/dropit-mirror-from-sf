@@ -7373,8 +7373,6 @@ Func _SetFeaturesWithTimer($mINI)
 					EndIf
 
 					If $Global_MonitoringImmediate = "OnCreateFiles" Then
-						$iId = _RDC_Create($mMonitored[$A][0], False, $FILE_NOTIFY_CHANGE_FILE_NAME)
-					ElseIf $Global_MonitoringImmediate = "OnCreateFilesRecursive" Then
 						$iId = _RDC_Create($mMonitored[$A][0], True, $FILE_NOTIFY_CHANGE_FILE_NAME)
 					EndIf
 					If @error = 0 Then
@@ -7400,11 +7398,10 @@ Func _MonitoringChanges()
 
 		For $j = 1 to $aData[0][0]
 			If $aData[$j][0] = 1 Then ; only force execution on file creation
-				If $sResult = "" Then
-					$sResult = _RDC_GetDirectory($iId) & "\\" & $aData[$i][1]
-				Else
-					$sResult &= "|" & _RDC_GetDirectory($iId) & "\\" & $aData[$i][1]
+				If $sResult <> "" Then
+					$sResult &= "|"
 				EndIf
+				$sResult &= _RDC_GetDirectory($iId) & "\\" & $aData[$i][1]
 			EndIf
 		Next
 	Next
@@ -7453,9 +7450,11 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 						ContinueLoop ; Skip Folder If %UserInput% Value Is Not Defined.
 					EndIf
 				EndIf
-				; TODO handle folder size configuration properly for immediate monitoring
-				If FileExists($mLoadedFolder[1]) = 0 Or DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer Then
-					ContinueLoop ; Skip Folder If Does Not Exist Or Smaller Than Defined Size.
+				If FileExists($mLoadedFolder[1]) = 0 Then
+					ContinueLoop ; Skip Folder If Does Not Exist
+				EndIf
+				If DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer And $Global_MonitoringTimer > 0 Then
+					ContinueLoop ; Skip Folder If Is Smaller Than Defined Size And Timer Is Used.
 				EndIf
 				If $Global_MonitoringTimer > 0 And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
 					;always execute drop event for whole folder with priority over the force execution files
@@ -7854,7 +7853,7 @@ Func _Options($oHandle = -1)
 			__GetLang('DATE_CREATED', 'Date Created') & "|" & __GetLang('DATE_MODIFIED', 'Date Modified') & "|" & __GetLang('DATE_OPENED', 'Date Opened')
 	$oCurrent[2] = __GetOrderMode(IniRead($oINI, $G_Global_GeneralSection, "GroupOrder", "Path"), 1)
 
-	$oGroup[3] = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never') & "|" & __GetLang('IMMEDIATE_MONITOR_MODE_1', 'on creating files (excluding files in subfolders)') & "|" & __GetLang('IMMEDIATE_MONITOR_MODE_2', 'on creating files (including files in subfolders)')
+	$oGroup[3] = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never') & "|" & __GetLang('IMMEDIATE_MONITOR_MODE_1', 'on creating files')
 	$oCurrent[3] = __GetImmediateMonitorMode(IniRead($oINI, $G_Global_GeneralSection, "ImmediateMonitorMode", "Never"), 1)
 
 	For $A = 1 To $oComboItems[0]
@@ -7939,7 +7938,6 @@ Func _Options($oHandle = -1)
 	EndIf
 	GUICtrlSetState($oComboItems[3], $oState)
 	GUICtrlSetState($oScanTime, $oState)
-	GUICtrlSetState($oScanSize, $oState)
 	GUICtrlSetState($oCheckItems[23], $oState)
 	GUICtrlSetState($oListView, $oState)
 	GUICtrlSetState($oMn_Add, $oState)
@@ -7955,6 +7953,11 @@ Func _Options($oHandle = -1)
 		$oState = 0
 	EndIf
 	GUICtrlSetData($oScanSize, $oState)
+	If GUICtrlRead($oScanTime) > 0 Then
+		GUICtrlSetState($oScanSize, $oState)
+	Else
+		GUICtrlSetState($oScanSize, $GUI_DISABLE)
+	EndIf
 
 	; ListView Settings:
 	$oListView_Handle = GUICtrlGetHandle($oListView)
@@ -8009,8 +8012,17 @@ Func _Options($oHandle = -1)
 				GUICtrlSetState($oMn_Remove, 80) ; $GUI_ENABLE + $GUI_SHOW.
 			EndIf
 		EndIf
+		$oState = $GUI_DISABLE
+		If GUICtrlRead($oCheckItems[15]) = 1 And GUICtrlRead($oScanTime) > 0 Then
+			$oState = $GUI_ENABLE
+		EndIf
+		If BitAND(GUICtrlGetState($oScanSize), $oState) <> $oState Then
+			GUICtrlSetState($oScanSize, $oState)
+		EndIf
+
 
 		$oMsg = GUIGetMsg()
+
 		Switch $oMsg
 			Case $GUI_EVENT_CLOSE, $oCancel
 				SetError(1, 0, 0)
@@ -8080,7 +8092,11 @@ Func _Options($oHandle = -1)
 				EndIf
 				GUICtrlSetState($oComboItems[3], $oState)
 				GUICtrlSetState($oScanTime, $oState)
-				GUICtrlSetState($oScanSize, $oState)
+				If GUICtrlRead($oScanTime) > 0 Then
+					GUICtrlSetState($oScanSize, $oState)
+				Else
+					GUICtrlSetState($oScanSize, $GUI_DISABLE)
+				EndIf
 				GUICtrlSetState($oCheckItems[23], $oState)
 				GUICtrlSetState($oListView, $oState)
 				GUICtrlSetState($oMn_Add, $oState)
@@ -8150,8 +8166,8 @@ Func _Options($oHandle = -1)
 					$oLogWrite = 1 ; Needed To Write "Log Enabled" After Log Activation.
 				EndIf
 
-				If _GUICtrlListView_GetItemCount($oListView_Handle) = 0 Then
-					GUICtrlSetState($oCheckItems[15], $GUI_UNCHECKED) ; Disable Monitoring If ListView Is Empty.
+				If _GUICtrlListView_GetItemCount($oListView_Handle) = 0 Or (GUICtrlRead($oScanTime) = 0 And GUICtrlRead($oComboItems[3]) = __GetImmediateMonitorMode("Never")) Then
+					GUICtrlSetState($oCheckItems[15], $GUI_UNCHECKED) ; Disable Monitoring If ListView Is Empty Or Immediate Monitoring And Scan Time Are Disabled.
 				EndIf
 
 				For $A = 1 To $oINI_TrueOrFalse_Array[0]
