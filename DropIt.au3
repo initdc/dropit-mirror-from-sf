@@ -2720,11 +2720,18 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	_GUICtrlListView_SetColumnWidth($mListAssoc, 0, 90)
 	_GUICtrlListView_SetColumnWidth($mListAssoc, 1, 90)
 	$Global_ListViewMultiActionLeft = $mListAssoc
-	; TODO: use icons for the following buttons
-	$mButtonMoveUp = GUICtrlCreateButton("^", 272 - 12, 12 + 28 + 130 - 20 - 7 - 20 - 14, 24, 20)
-	$mButtonAdd = GUICtrlCreateButton(">", 272 - 12, 12 + 28 + 130 - 20 - 7, 24, 20)
-	$mButtonRemove = GUICtrlCreateButton("<", 272 - 12, 12 + 28 + 130 + 7, 24, 20)
-	$mButtonMoveDown = GUICtrlCreateButton("v", 272 - 12, 12 + 28 + 130 + 7 + 20 + 14, 24, 20)
+	$mButtonMoveUp = GUICtrlCreateButton("^", 272 - 12, 12 + 28 + 130 - 20 - 7 - 20 - 14, 24, 20, $BS_ICON)
+	GUICtrlSetTip($mButtonMoveUp, __GetLang('OPTIONS_BUTTON_6', 'Up'))
+	GUICtrlSetImage($mButtonMoveUp, @ScriptFullPath, -12, 0)
+	$mButtonAdd = GUICtrlCreateButton(">", 272 - 12, 12 + 28 + 130 - 20 - 7, 24, 20, $BS_ICON)
+	GUICtrlSetTip($mButtonAdd, __GetLang('OPTIONS_BUTTON_4', 'Add'))
+	GUICtrlSetImage($mButtonAdd, @ScriptFullPath, -10, 0)
+	$mButtonRemove = GUICtrlCreateButton("<", 272 - 12, 12 + 28 + 130 + 7, 24, 20, $BS_ICON)
+	GUICtrlSetTip($mButtonRemove, __GetLang('OPTIONS_BUTTON_3', 'Remove'))
+	GUICtrlSetImage($mButtonRemove, @ScriptFullPath, -11, 0)
+	$mButtonMoveDown = GUICtrlCreateButton("v", 272 - 12, 12 + 28 + 130 + 7 + 20 + 14, 24, 20, $BS_ICON)
+	GUICtrlSetTip($mButtonMoveDown, __GetLang('OPTIONS_BUTTON_7', 'Down'))
+	GUICtrlSetImage($mButtonMoveDown, @ScriptFullPath, -13, 0)
 	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_1', 'Selected actions') & ":", 299, 12 + 4, 310, 20)
 	$mListSelected = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('FROM_PREVIOUS', 'From Previous'), 299, 12 + 28, 310, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS))
 	_GUICtrlListView_SetExtendedListViewStyle($mListSelected, BitOr($LVS_EX_FULLROWSELECT, $LVS_EX_CHECKBOXES))
@@ -2732,7 +2739,6 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	_GUICtrlListView_SetColumnWidth($mListSelected, 1, 90)
 	_GUICtrlListView_SetColumnWidth($mListSelected, 2, 100)
 	$Global_ListViewMultiActionRight = $mListSelected
-
 
 	; set default settings combo box
 	Switch $mSettings
@@ -2745,7 +2751,7 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 		Case Else ;use StopError by default
 			$sDefaultSetting = __GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)')
 	EndSwitch
-	$mComboProceedNext = GUICtrlCreateCombo(__GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)'), 15, 380 - 50 - 28, 540, 24)
+	$mComboProceedNext = GUICtrlCreateCombo(__GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)'), 15, 380 - 50 - 28, 540, 24, 0x0003)
 	GUICtrlSetData($mComboProceedNext, __GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Stop processing multi action WITHOUT error if association rule does not match (use with care)') & "|" & __GetLang('MANAGE_MULTI_ACTION_OPTION_2', 'Proceed with next association, if the rules of an association do not match'), $sDefaultSetting)
 
  	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 312 - 40 - 90, 380 - 24 - 15, 90, 24)
@@ -2757,6 +2763,7 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	; add available actions to list
 	$aAssociations = __GetAssociations()
 	For $i = 1 to UBound($aAssociations) - 1
+		$iItemIndex = _GUICtrlListView_AddItem($mListAssoc, $aAssociations[$i][0])
 		_GUICtrlListView_AddSubItem($mListAssoc, $iItemIndex, __GetActionString($aAssociations[$i][3]), 1)
 	Next
 
