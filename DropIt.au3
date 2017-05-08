@@ -2720,15 +2720,15 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	_GUICtrlListView_SetColumnWidth($mListAssoc, 0, 90)
 	_GUICtrlListView_SetColumnWidth($mListAssoc, 1, 90)
 	$Global_ListViewMultiActionLeft = $mListAssoc
-	$mButtonMoveUp = GUICtrlCreateButton("^", 272 - 12, 12 + 28 + 130 - 20 - 7 - 20 - 14, 24, 20, $BS_ICON)
-	GUICtrlSetTip($mButtonMoveUp, __GetLang('OPTIONS_BUTTON_6', 'Up'))
-	GUICtrlSetImage($mButtonMoveUp, @ScriptFullPath, -12, 0)
-	$mButtonAdd = GUICtrlCreateButton(">", 272 - 12, 12 + 28 + 130 - 20 - 7, 24, 20, $BS_ICON)
+	$mButtonAdd = GUICtrlCreateButton(">", 272 - 12, 12 + 28 + 130 - 20 - 7 - 20 - 14, 24, 20, $BS_ICON)
 	GUICtrlSetTip($mButtonAdd, __GetLang('OPTIONS_BUTTON_4', 'Add'))
 	GUICtrlSetImage($mButtonAdd, @ScriptFullPath, -10, 0)
-	$mButtonRemove = GUICtrlCreateButton("<", 272 - 12, 12 + 28 + 130 + 7, 24, 20, $BS_ICON)
+	$mButtonRemove = GUICtrlCreateButton("<", 272 - 12, 12 + 28 + 130 - 20 - 7, 24, 20, $BS_ICON)
 	GUICtrlSetTip($mButtonRemove, __GetLang('OPTIONS_BUTTON_3', 'Remove'))
 	GUICtrlSetImage($mButtonRemove, @ScriptFullPath, -11, 0)
+	$mButtonMoveUp = GUICtrlCreateButton("^", 272 - 12, 12 + 28 + 130 + 7, 24, 20, $BS_ICON)
+	GUICtrlSetTip($mButtonMoveUp, __GetLang('OPTIONS_BUTTON_6', 'Up'))
+	GUICtrlSetImage($mButtonMoveUp, @ScriptFullPath, -12, 0)
 	$mButtonMoveDown = GUICtrlCreateButton("v", 272 - 12, 12 + 28 + 130 + 7 + 20 + 14, 24, 20, $BS_ICON)
 	GUICtrlSetTip($mButtonMoveDown, __GetLang('OPTIONS_BUTTON_7', 'Down'))
 	GUICtrlSetImage($mButtonMoveDown, @ScriptFullPath, -13, 0)
@@ -2783,7 +2783,22 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	_CheckForceSelectionOfItems($mListSelected)
 
 	While 1
-		_CheckForceSelectionOfItems($mListSelected)
+		Sleep(25)
+		;set button state
+		If _GUICtrlListView_GetSelectedCount($mListAssoc) > 0 Then
+			GUICtrlSetState($mButtonAdd, BitOR($GUI_ENABLE, $GUI_SHOW))
+		Else
+			GUICtrlSetState($mButtonAdd, BitOR($GUI_DISABLE, $GUI_SHOW))
+		EndIf
+		If _GUICtrlListView_GetSelectedCount($mListSelected) > 0 Then
+			GUICtrlSetState($mButtonRemove, BitOR($GUI_ENABLE, $GUI_SHOW))
+			GUICtrlSetState($mButtonMoveUp, BitOR($GUI_ENABLE, $GUI_SHOW))
+			GUICtrlSetState($mButtonMoveDown, BitOR($GUI_ENABLE, $GUI_SHOW))
+		Else
+			GUICtrlSetState($mButtonRemove, BitOR($GUI_DISABLE, $GUI_SHOW))
+			GUICtrlSetState($mButtonMoveUp, BitOR($GUI_DISABLE, $GUI_SHOW))
+			GUICtrlSetState($mButtonMoveDown, BitOR($GUI_DISABLE, $GUI_SHOW))
+		EndIf
 
 		Switch GUIGetMsg()
  			Case $GUI_EVENT_CLOSE, $mCancel
@@ -2793,22 +2808,28 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 				If _GUICtrlListView_GetSelectedCount($mListAssoc) > 0 Then
 					_GUICtrlListView_AddItem($mListSelected, _GUICtrlListView_GetItemText($mListAssoc, _GUICtrlListView_GetSelectionMark($mListAssoc)))
 					_GUICtrlListView_AddSubItem($mListSelected, _GUICtrlListView_GetItemCount($mListSelected) - 1, _GUICtrlListView_GetItemText($mListAssoc, _GUICtrlListView_GetSelectionMark($mListAssoc), 1), 1)
+					_WinAPI_SetFocus($mListSelected)
+					_CheckForceSelectionOfItems($mListSelected)
 				EndIf
 
 			Case $mButtonRemove
 				_GUICtrlListView_DeleteItemsSelected($mListSelected)
+				_WinAPI_SetFocus($mListSelected)
+				_CheckForceSelectionOfItems($mListSelected)
 
 			Case $mButtonMoveUp
 				If _GUICtrlListView_GetSelectedCount($mListSelected) > 0 Then
 					$pos = _GUICtrlListView_GetSelectedIndices($mListSelected, True)[1]
 					If $pos > 0 Then
 						$sItemText = _GUICtrlListView_GetItemText($mListSelected, $pos) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 1) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 2)
-						$bItemChecked = _GUICtrlListView_GetItemSelected($mListSelected, $pos)
+						$bItemChecked = _GUICtrlListView_GetItemChecked($mListSelected, $pos)
 						_GUICtrlListView_DeleteItem($mListSelected, $pos)
 						_GUICtrlListView_InsertItem($mListSelected, StringSplit($sItemText, "|")[1], $pos - 1)
 						_GUICtrlListView_SetItemChecked($mListSelected, $pos - 1, $bItemChecked)
 						_GUICtrlListView_AddSubItem($mListSelected, $pos - 1, StringSplit($sItemText, "|")[2], 1)
 						_GUICtrlListView_SetItemSelected($mListSelected, $pos - 1)
+						_WinAPI_SetFocus($mListSelected)
+						_CheckForceSelectionOfItems($mListSelected)
 					EndIf
 				EndIf
 
@@ -2817,12 +2838,14 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 					$pos = _GUICtrlListView_GetSelectedIndices($mListSelected, True)[1]
 					If $pos < _GUICtrlListView_GetItemCount($mListSelected) - 1 Then
 						$sItemText = _GUICtrlListView_GetItemText($mListSelected, $pos) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 1) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 2)
-						$bItemChecked = _GUICtrlListView_GetItemSelected($mListSelected, $pos)
+						$bItemChecked = _GUICtrlListView_GetItemChecked($mListSelected, $pos)
 						_GUICtrlListView_DeleteItem ($mListSelected, $pos)
 						_GUICtrlListView_InsertItem($mListSelected, StringSplit($sItemText, "|")[1], $pos + 1)
 						_GUICtrlListView_SetItemChecked($mListSelected, $pos + 1, $bItemChecked)
 						_GUICtrlListView_AddSubItem($mListSelected, $pos + 1, StringSplit($sItemText, "|")[2], 1)
 						_GUICtrlListView_SetItemSelected($mListSelected, $pos + 1)
+						_WinAPI_SetFocus($mListSelected)
+						_CheckForceSelectionOfItems($mListSelected)
 					EndIf
 				EndIf
 
@@ -9030,6 +9053,7 @@ Func _WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 					; add item to the right list
 					_GUICtrlListView_AddItem($Global_ListViewMultiActionRight, _GUICtrlListView_GetItemText($Global_ListViewMultiActionLeft, _GUICtrlListView_GetSelectionMark($Global_ListViewMultiActionLeft)))
 					_GUICtrlListView_AddSubItem($Global_ListViewMultiActionRight, _GUICtrlListView_GetItemCount($Global_ListViewMultiActionRight) - 1, _GUICtrlListView_GetItemText($Global_ListViewMultiActionLeft, _GUICtrlListView_GetSelectionMark($Global_ListViewMultiActionLeft), 1), 1)
+					_CheckForceSelectionOfItems($Global_ListViewMultiActionRight)
 			EndSwitch
 
 		Case $Global_ListViewMultiActionRight
@@ -9037,6 +9061,11 @@ Func _WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 				Case $NM_DBLCLK
 					; remove item from the right list
 					_GUICtrlListView_DeleteItemsSelected($Global_ListViewMultiActionRight)
+					_CheckForceSelectionOfItems($Global_ListViewMultiActionRight)
+
+				Case $LVN_ITEMCHANGED
+					;necessary to get checking/unchecking of list items
+					_CheckForceSelectionOfItems($Global_ListViewMultiActionRight)
 			EndSwitch
 
 		Case $nListViewProfiles
