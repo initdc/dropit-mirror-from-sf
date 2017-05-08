@@ -1091,6 +1091,10 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 					$mGalleryTheme = ""
 					$mGallerySettings = ""
 				EndIf
+				If $mCurrentActionString <> "$L" Then
+					$mMultiAction = ""
+					$mMultiActionSettings = ""
+				EndIf
 				__IniWriteEx($mProfile[0], $mInput_NameRead, "", "State=" & $mState & @LF & "Rules=" & $mInput_RulesRead & @LF & "Action=" & $mCurrentActionString & @LF & "Destination=" & $mInput_DestinationRead & _
 						__ComposeLineINI("Filters", $mStringFilters) & _
 						__ComposeLineINI("FavouriteAssociation", $mFavouriteAssociation) & _
