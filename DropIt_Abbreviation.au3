@@ -800,3 +800,135 @@ Func __GetUserInput($sDestination, $sFilePath, $sAction)
 	EndIf
 	Return $sText
 EndFunc   ;==>__GetUserInput
+
+Func __ReadFileContentDate($sFilePath, $iNormalized)
+	#cs
+		Description: Search for a datestring in a file.
+			$iNormalized = 0 (in unchanged date format), $iNormalized = 1 (in normalized date format YYYYMMDD)
+		Returns: Date string to be appended to filename
+	#ce
+
+	Local $mINI, $mDateSettings, $mFormats, $mFormat, $mMonthRegex, $iPosYear, $iPosMonth, $iPosDay, $aDate = 0, $aDateTmp, $iYear, $iMonth, $iDay, $iJulianDate
+	Local $sContent = __ReadFile($sFilePath), $bMatchFound
+
+	$mINI = __IsSettingsFile()
+	$mDateSettings = __IniReadSection($mINI, "FileContentDates")
+
+	$mFormats = StringSplit($mDateSettings[15][1], "|")
+
+	$mMonthRegex = "(?<month>"
+	For $A = 2 To 13
+		$mMonthRegex &= "(?:" & $mDateSettings[$A][1] & ")"
+		If $A < 13 Then $mMonthRegex &= "|"
+	Next
+	$mMonthRegex &= ")"
+
+	For $A = 1 to $mFormats[0]
+		;apply regex for all months and find first appearance
+		$bMatchFound = False
+		$mFormat = $mFormats[$A]
+		$iPosDay = StringInStr($mFormat, "%DAY%")
+		$iPosMonth = StringInStr($mFormat, "%MONTH%")
+		$iPosYear = StringInStr($mFormat, "%YEAR%")
+
+		If $iPosMonth = 0 Or $iPosYear = 0 Then Return ""
+
+		; find out position of day, month and year for backreference
+		If $iPosDay <> 0 Then
+			If $iPosDay < $iPosMonth And $iPosDay < $iPosYear Then
+				$iPosDay = 1
+				If $iPosMonth < $iPosYear Then
+					$iPosMonth = 2
+					$iPosYear = 3
+				Else
+					$iPosMonth = 3
+					$iPosYear = 2
+				EndIf
+			ElseIf $iPosMonth < $iPosDay And $iPosMonth < $iPosYear Then
+				$iPosMonth = 1
+				If $iPosDay < $iPosYear Then
+					$iPosDay = 2
+					$iPosYear = 3
+				Else
+					$iPosDay = 3
+					$iPosYear = 2
+				EndIf
+			ElseIf $iPosYear < $iPosMonth And $iPosYear < $iPosDay Then
+				$iPosYear = 1
+				If $iPosDay < $iPosMonth Then
+					$iPosDay = 2
+					$iPosMonth = 3
+				Else
+					$iPosDay = 3
+					$iPosMonth = 2
+				EndIf
+			EndIf
+		Else
+			If $iPosMonth < $iPosYear Then
+				$iPosMonth = 1
+				$iPosYear = 2
+			Else
+				$iPosMonth = 2
+				$iPosYear = 1
+			EndIf
+		EndIf
+
+		$mFormat = StringReplace($mFormat, "%DAY%", $mDateSettings[1][1])
+		$mFormat = StringReplace($mFormat, "%MONTH%", $mMonthRegex)
+		$mFormat = StringReplace($mFormat, "%YEAR%", $mDateSettings[14][1])
+
+		$aDate = StringRegExp($sContent, $mFormat, $STR_REGEXPARRAYFULLMATCH)
+		If Not @error Then
+			;find out day number
+			If $iPosDay = 0 Then
+				$iDay = 1
+			Else
+				$iDay = Int($aDate[$iPosDay])
+			EndIf
+
+			;find out month number
+			$iMonth = -1
+			For $B = 2 To 13
+				If StringRegExp($aDate[$iPosMonth], $mDateSettings[$B][1]) Then
+					$iMonth = $B - 1
+					ExitLoop
+				EndIf
+			Next
+
+			;find out year number
+			$iYear = Int($aDate[$iPosYear])
+
+			$bMatchFound = True
+			ExitLoop
+		EndIf
+	Next
+
+	If Not $bMatchFound Then Return ""
+
+	If $iNormalized == 0 Then
+		Return $aDate[0]
+
+	Else
+		;Found date with literal month, so convert for further use
+
+		;Convert date to have a common zerobased structure
+		If $iYear < 100 Then
+			; Convert two digit years to four digit years according this logic: https://www.spss-tutorials.com/two-digit-year-in-string-cautionary-note/
+			 If (@YEAR + 30) - (Int(@YEAR / 100) * 100) - $iYear >= 0 Then
+				 $iJulianDate = _DateToDayValue($iYear + (Int(@YEAR / 100) * 100), $iMonth, $iDay)
+			 Else
+				 $iJulianDate = _DateToDayValue($iYear + (Int(@YEAR / 100) * 100) - 100, $iMonth, $iDay)
+			 EndIf
+
+		Else
+		   $iJulianDate = _DateToDayValue($iYear, $iMonth, $iDay)
+		EndIf
+
+		;convert to gregorian calendar
+		_DayValueToDate($iJulianDate, $iYear, $iMonth, $iDay)
+
+		Return $iYear & $iMonth & $iDay
+	EndIf
+
+	Return ""
+EndFunc   ;==>__ReadFileContentDate

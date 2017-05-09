@@ -115,6 +115,11 @@ Func __IsSettingsFile($iINI = -1)
 			"MonitoringSize=0" & @LF & "MonitoringFirstAtStartup=False" & @LF & "MasterPassword=" & @LF & "EndCommandLine=")
 	__IniWriteEx($iINI, "MonitoredFolders", "", "")
 	__IniWriteEx($iINI, "EnvironmentVariables", "", "")
+	__IniWriteEx($iINI, "FileContentDates", "", "Day=(\d{1,2})(?:st|nd|rd|th)?" & @LF & "MonthJan=Jan[[:alpha:]]*|0?1" & @LF & "MonthFeb=Feb[[:alpha:]]*|0?2" & @LF & "MonthMar=Mar[[:alpha:]]*|M..?rz|0?3" & @LF & _
+			"MonthApr=Apr[[:alpha:]]*|0?4" & @LF & "MonthMay=May|Mai|0?5" & @LF & "MonthJun=Jun[[:alpha:]]*|0?6" & @LF & "MonthJul=Jul[[:alpha:]]*|0?7" & @LF & "MonthAug=Aug[[:alpha:]]*|0?8" & @LF & _
+			"MonthSep=Sep[[:alpha:]]*|0?9" & @LF & "MonthOct=O[kc]t[[:alpha:]]*|10" & @LF & "MonthNov=Nov[[:alpha:]]*|11" & @LF & "MonthDec=De[cz][[:alpha:]]*|12" & @LF & "Year=(\d{2}(?:\d{2})?)[^\d]" & @LF & _
+			"DateFormats=%DAY% *\. *%MONTH% *%YEAR%|%MONTH% +%DAY% *, *%YEAR%|%DAY% *\. *%MONTH% *\. *%YEAR%|%DAY% +%MONTH% +%YEAR%")
+			;            3. Oct 11                  Oct 3, 2011               03.10.11                       3 Oct 11
 
 	If FileExists($iINI & ".old") = 0 Then ; Create Profile Examples Only If This Is The First DropIt Run And Not An Update.
 		__CreateProfileExample(1) ; Archiver.
