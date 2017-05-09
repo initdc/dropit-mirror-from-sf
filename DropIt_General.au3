@@ -112,7 +112,7 @@ Func __IsSettingsFile($iINI = -1)
 			"IgnoreNew=False" & @LF & "IgnoreInUse=False" & @LF & "IgnoreAttributes=True" & @LF & "AlertSize=True" & @LF & "AlertDelete=False" & @LF & "AlertFailed=True" & @LF & _
 			"AlertAmbiguity=False" & @LF & "AlertMail=True" & @LF & "FixOpenWithDestination=True" & @LF & "GroupOrder=Path" & @LF & "GraduallyHide=False" & @LF & _
 			"GraduallyHideSpeed=5" & @LF & "GraduallyHideTime=0" & @LF & "GraduallyHideVisPx=8" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & _
-			"MonitoringSize=0" & @LF & "MonitoringFirstAtStartup=False" & @LF & "MasterPassword=" & @LF & "EndCommandLine=")
+			"MonitoringSize=0" & @LF & "MonitoringFirstAtStartup=False" & @LF & "MasterPassword=" & @LF & "EndCommandLine=" & @LF & "ImmediateMonitorMode=Never")
 	__IniWriteEx($iINI, "MonitoredFolders", "", "")
 	__IniWriteEx($iINI, "EnvironmentVariables", "", "")
 

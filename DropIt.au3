@@ -9195,8 +9195,8 @@ Func __Upgrade()
 		Return SetError(1, 0, 0) ; Abort Upgrade If INI Version Is The Same Of Current Software Version.
 	EndIf
 
-	Local $uINI_Array[60][2] = [ _
-			[59, 2], _
+	Local $uINI_Array[61][2] = [ _
+			[60, 2], _
 			["Profile", 1], _
 			["Language", 1], _
 			["PosX", 1], _
@@ -9255,7 +9255,8 @@ Func __Upgrade()
 			["MonitoringSize", 1], _
 			["MonitoringFirstAtStartup", 1], _ ; INI Setting Only (Not In Options).
 			["MasterPassword", 1], _
-			["EndCommandLine", 1]] ; INI Setting Only (Not In Options).
+			["EndCommandLine", 1], _ ; INI Setting Only (Not In Options).
+			["ImmediateMonitorMode", 1]]
 
 	Local $uINIRead
 	FileMove($uINI, $uINI & ".old", 1) ; Rename The Old INI.
