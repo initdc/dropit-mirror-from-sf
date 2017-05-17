@@ -650,10 +650,14 @@ Func __SetPositionResult($sMainArray, $sFrom, $sTo, $sListView, $sElementsGUI, $
 				EndIf
 				__Log_Write($sText, $sMainArray[$A][0])
 			EndIf
-			If $sMainArray[$A][4] <> -8 Then ; If Not Previously Virtually Processed.
+			If $sMainArray[$A][4] <> -8 And $sElementsGUI <> -1 Then ; If Not Previously Virtually Processed.
 				__SetProgressResult($sElementsGUI, $sMainArray[$A][1], $sMainArray[0][0], $A)
 			EndIf
-			_GUICtrlListView_AddSubItem($sListView, $A - 1, $sDestination, 2)
+			If $sAction = "$L" Then
+				_GUICtrlListView_AddSubItem($sListView, $A - 1, __GetLang('MANAGE_MULTI_ACTION_DETAILS', 'Further information for this action can be found by using "Show details" context menu.'), 2)
+			Else
+				_GUICtrlListView_AddSubItem($sListView, $A - 1, $sDestination, 2)
+			EndIf
 			_GUICtrlListView_AddSubItem($sListView, $A - 1, $sText, 3)
 			_GUICtrlListView_EnsureVisible($sListView, $A)
 		EndIf

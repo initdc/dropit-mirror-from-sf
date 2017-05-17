@@ -140,7 +140,7 @@ Global $Global_ContextMenu[14][2] = [[13, 2]], $Global_TrayMenu[13][2] = [[12, 2
 Global $Global_ListViewIndex = -1, $Global_ListViewFolders, $Global_ListViewProfiles, $Global_ListViewRules, $Global_ListViewProcess ; ListView Variables.
 Global $Global_ListViewProfiles_Enter, $Global_ListViewProfiles_New, $Global_ListViewProfiles_Delete, $Global_ListViewProfiles_Duplicate ; ListView Variables.
 Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Export, $Global_ListViewProfiles_ImportAll, $Global_ListViewProfiles_ExportAll ; ListView Variables.
-Global $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New ; ListView Variables.
+Global $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New, $Global_ListViewProcess_ShowDetails ; ListView Variables.
 Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1, $Global_ListViewProcess_Open, $Global_ListViewProcess_Info, $Global_ListViewProcess_Skip ; ListView Variables.
 Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
 Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
@@ -2708,6 +2708,15 @@ Func _CheckForceSelectionOfItems(ByRef $mList)
 		Else
 			$bLastItemForcesProcessingOnPreviousSource = False
 		EndIf
+
+;		For these associations, the previous DESTINATION has to be used
+;		Case "$0" ; Move.
+;			$gReturn = __GetLang('ACTION_MOVE', 'Move')
+		If StringInStr("$0", $sCurrentAction) > 0 Then
+			$bLastItemForcesProcessingOnPreviousDestination = True
+		Else
+			$bLastItemForcesProcessingOnPreviousDestination = False
+		EndIf
 	Next
 EndFunc   ;==>_CheckForceSelectionOfItems
 
@@ -2882,6 +2891,37 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 
 	Return 1 ; ByRef: $mSelectedAssociations, $mSettings.
 EndFunc   ;==>_Manage_MultiAction
+
+Func _Manage_MultiActionResults($sMainArray, $mHandle = -1)
+	Local $mGUI, $sListView, $sListView_Handle
+
+	$mGUI = GUICreate(__GetLang('ENV_VAR_TAB_18', 'Show details'), 500, 280, -1, -1, $WS_SIZEBOX, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
+
+	$sListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination') & "|" & __GetLang('STATUS', 'Status'), 0, 0, 500, 280, BitOR($LVS_NOSORTHEADER, $LVS_REPORT))
+	$sListView_Handle = GUICtrlGetHandle($sListView)
+	GUICtrlSetResizing($sListView, $GUI_DOCKBORDERS)
+	_GUICtrlListView_SetExtendedListViewStyle($sListView_Handle, BitOR($LVS_EX_FULLROWSELECT, $LVS_EX_GRIDLINES, $LVS_EX_INFOTIP))
+
+	_Position_Populate($sListView, $sMainArray)
+
+	GUISetState(@SW_SHOW)
+
+	;show results in list view
+	For $A = 1 To $sMainArray[0][0]
+		__SetPositionResult($sMainArray, $A, $A, $sListView, -1, $sMainArray[$A][4])
+	Next
+
+	While 1
+		Switch GUIGetMsg()
+			Case $GUI_EVENT_CLOSE
+				ExitLoop
+		EndSwitch
+	WEnd
+
+	GUIDelete($mGUI)
+
+	Return 1
+EndFunc   ;==>_Manage_MultiActionResults
 
 Func _Manage_OpenWith(ByRef $mSettings, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mStringSplit, $mCheckbox_Wait, $mWait, $mCheckbox_Remove, $mRemove
@@ -4819,6 +4859,7 @@ Func _DropStop($dAborted = 0)
 	$Global_ListViewProcess_Open = 0
 	$Global_ListViewProcess_Info = 0
 	$Global_ListViewProcess_Skip = 0
+	$Global_ListViewProcess_ShowDetails = 0
 	$Global_Wheel = 0
 	$Global_Clipboard = ""
 	If $dAborted Then
@@ -5323,7 +5364,7 @@ EndFunc   ;==>_Position_MainArray
 Func _Position_MainArrayAdd($pMainArray, $pFilePath, $pElementsGUI)
 	Local $pSize
 
-	$pMainArray[0][0] += 1 ; [0][0] Counter, [0][1] Full Size, [0][2] Main Dirs Array, [$A][0] File Path, [$A][1] File Size, [$A][2] Action, [$A][3] Destination, [$A][4] Result.
+	$pMainArray[0][0] += 1 ; [0][0] Counter, [0][1] Full Size, [0][2] Main Dirs Array, [$A][0] File Path, [$A][1] File Size, [$A][2] Action, [$A][3] Destination, [$A][4] Result, [$A][5] Sort Parameter, [$A][6] File Content Matches For Backreferences.
 	If UBound($pMainArray) <= $pMainArray[0][0] Then
 		ReDim $pMainArray[UBound($pMainArray) * 2][7]
 	EndIf
@@ -5434,7 +5475,7 @@ Func _Position_Populate($pListView, $pMainArray)
 	Return $pMainArray
 EndFunc   ;==>_Position_Populate
 
-Func _Position_Process($pMainArray, $pProfile, $pElementsGUI)
+Func _Position_Process(ByRef $pMainArray, $pProfile, $pElementsGUI)
 	Local $pFailed, $pFrom, $pTo, $pStringSplit, $pCounter, $pCurrentGroup, $pPreviousGroup = ""
 
 	If _Copy_OpenDll(@ScriptDir & '\Lib\copy\Copy.dll') = 0 Then
@@ -5509,7 +5550,7 @@ Func _Position_Process($pMainArray, $pProfile, $pElementsGUI)
 	Return $pFailed
 EndFunc   ;==>_Position_Process
 
-Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
+Func _Position_ProcessGroup(ByRef $pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI, $pSkipPositionResult = False)
 	Local $pFailed, $pResult
 
 	Switch $pMainArray[$pFrom][2]
@@ -5590,7 +5631,9 @@ Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
 				Else ; OK.
 					$pResult = 0
 				EndIf
-				__SetPositionResult($pMainArray, $A, $A, $Global_ListViewProcess, $pElementsGUI, $pResult)
+				If Not $pSkipPositionResult Then
+					__SetPositionResult($pMainArray, $A, $A, $Global_ListViewProcess, $pElementsGUI, $pResult)
+				EndIf
 			Next
 			Return $pFailed
 
@@ -5609,7 +5652,9 @@ Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
 	Else ; OK.
 		$pResult = 0
 	EndIf
-	__SetPositionResult($pMainArray, $pFrom, $pTo, $Global_ListViewProcess, $pElementsGUI, $pResult)
+	If Not $pSkipPositionResult Then
+		__SetPositionResult($pMainArray, $pFrom, $pTo, $Global_ListViewProcess, $pElementsGUI, $pResult)
+	EndIf
 	Return $pFailed
 EndFunc   ;==>_Position_ProcessGroup
 
@@ -5744,7 +5789,7 @@ Func _Sorting_EventButtons()
 EndFunc   ;==>_Sorting_EventButtons
 
 Func _Sorting_Pause($sMainArray, $sMode = 0)
-	Local $sIndices_Selected, $sStatus, $sOpenDummy = -1, $sInfoDummy = -1, $sSkipDummy = -1
+	Local $sIndices_Selected, $sStatus, $sOpenDummy = -1, $sInfoDummy = -1, $sSkipDummy = -1, $sShowDetailsDummy = -1
 
 	$G_Global_PauseSorting = 2 ; To Define That The Process Is In This Function.
 	GUICtrlSetState($Global_PauseButton, $GUI_ENABLE)
@@ -5757,6 +5802,7 @@ Func _Sorting_Pause($sMainArray, $sMode = 0)
 		$sOpenDummy = $Global_ListViewProcess_Open
 		$sInfoDummy = $Global_ListViewProcess_Info
 		$sSkipDummy = $Global_ListViewProcess_Skip
+		$sShowDetailsDummy = $Global_ListViewProcess_ShowDetails
 	Else
 		GUIRegisterMsg($WM_NOTIFY, "")
 	EndIf
@@ -5807,13 +5853,21 @@ Func _Sorting_Pause($sMainArray, $sMode = 0)
 					EndIf
 					_GUICtrlListView_AddSubItem($Global_ListViewProcess, $sIndices_Selected[$A], $sStatus, 3)
 				Next
+			Case $sShowDetailsDummy
+				$sIndices_Selected = _GUICtrlListView_GetSelectedIndices($Global_ListViewProcess, True)
+				For $A = 1 To $sIndices_Selected[0]
+					If IsArray($sMainArray[$sIndices_Selected[$A] + 1][3]) Then
+						; show destination array in a nice list form
+						_Manage_MultiActionResults($sMainArray[$sIndices_Selected[$A] + 1][3], $Global_GUI_1)
+					EndIf
+				Next
 		EndSwitch
 	WEnd
 	__ExpandEventMode(1) ; Enable Event Buttons.
 EndFunc   ;==>_Sorting_Pause
 
 Func _Sorting_Pause_ContextMenu($sListView, $sIndex, $sSubItem)
-	Local Enum $sItem1 = 1000, $sItem2, $sItem3
+	Local Enum $sItem1 = 1000, $sItem2, $sItem3, $sItem4
 
 	If IsHWnd($sListView) = 0 Then
 		$sListView = GUICtrlGetHandle($sListView)
@@ -5826,11 +5880,12 @@ Func _Sorting_Pause_ContextMenu($sListView, $sIndex, $sSubItem)
 		__SetItemImage("OPEN", $sIndex, $sContextMenu, 2, 1)
 		$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('ENV_VAR_TAB_3', 'Info'), $sItem2)
 		__SetItemImage("INFO", $sIndex, $sContextMenu, 2, 1)
+		$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('ENV_VAR_TAB_18', 'Show details'), $sItem3)
 		If $sStatus == "" Then
-			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('DUPLICATE_MODE_6', 'Skip'), $sItem3)
+			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('DUPLICATE_MODE_6', 'Skip'), $sItem4)
 			__SetItemImage("SKIP", $sIndex, $sContextMenu, 2, 1)
 		ElseIf $sStatus == __GetLang('DUPLICATE_MODE_6', 'Skip') Then
-			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('OPTIONS_BUTTON_2', 'Restore'), $sItem3)
+			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('OPTIONS_BUTTON_2', 'Restore'), $sItem4)
 			__SetItemImage("NEW", $sIndex, $sContextMenu, 2, 1)
 		EndIf
 	EndIf
@@ -5841,6 +5896,8 @@ Func _Sorting_Pause_ContextMenu($sListView, $sIndex, $sSubItem)
 		Case $sItem2
 			GUICtrlSendToDummy($Global_ListViewProcess_Info)
 		Case $sItem3
+			GUICtrlSendToDummy($Global_ListViewProcess_ShowDetails)
+		Case $sItem4
 			GUICtrlSendToDummy($Global_ListViewProcess_Skip)
 	EndSwitch
 	_GUICtrlMenu_DestroyMenu($sContextMenu)
@@ -5950,6 +6007,7 @@ Func _Sorting_CreateGUI($sProfile, $sMonitored)
 	$Global_ListViewProcess_Open = GUICtrlCreateDummy()
 	$Global_ListViewProcess_Info = GUICtrlCreateDummy()
 	$Global_ListViewProcess_Skip = GUICtrlCreateDummy()
+	$Global_ListViewProcess_ShowDetails = GUICtrlCreateDummy()
 	$Global_ResizeMinWidth = 420 ; Set Default Min Width.
 	$Global_ResizeMaxWidth = @DesktopWidth ; Set Default Max Width.
 	$Global_ResizeMinHeight = 186 ; Set Default Min Height.
@@ -6911,17 +6969,23 @@ Func _Sorting_OpenFile($sMainArray, $sIndex, $sElementsGUI)
 EndFunc   ;==>_Sorting_OpenFile
 
 Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
-	Local $aAssociationNames, $i, $j, $aAssociations, $aTmp, $sSplitString, $sSettings = "StopError", $bUsePreviousDestinationAsNextSource
+	Local $aAssociationNames, $i, $j, $aAssociations, $sPos = 0, $aTmp, $aSubMainArray[2][7], $sSplitString, $sSettings = "StopError", $bUsePreviousDestinationAsNextSource
 
 	$sSplitString = StringSplit($sMainArray[$sIndex][3], "|")
-
 	$sSettings = $sSplitString[2]
+
+	For $A = 0 To 6
+		$aSubMainArray[0][$A] = $sMainArray[0][$A]
+		$aSubMainArray[1][$A] = $sMainArray[$sIndex][$A]
+	Next
+	$aSubMainArray[0][0] = 1
 
 	;Find corresponding associations
 	$aAssociations = __GetAssociations($sProfile)
-
 	$aAssociationNames = StringSplit($sSplitString[1], ";")
 	For $i = 1 to UBound($aAssociationNames) - 2 Step 2
+		$sPos += 1
+
 		$aTmp = $aAssociations
 		For $j = UBound($aTmp) - 1 to 1 Step -1
 			If $aTmp[$j][0] = $aAssociationNames[$i] Then
@@ -6939,49 +7003,58 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 		Else
 			$bUsePreviousDestinationAsNextSource = False
 		EndIf
-		$sMainArray = _Position_Checking($sMainArray, $sIndex, $aTmp, $sProfile)
-		$sMainArray[$sIndex][3] = _Destination_Fix($sMainArray[$sIndex][0], $sMainArray[$sIndex][3], $sMainArray[$sIndex][2], $sMainArray[$sIndex][6], $sMainArray[0][2], $sProfile)
 
-		If $sMainArray[$sIndex][4] < 0 Then
+		$aSubMainArray = _Position_Checking($aSubMainArray, $sPos, $aTmp, $sProfile)
+		$aSubMainArray[$sPos][3] = _Destination_Fix($aSubMainArray[$sPos][0], $aSubMainArray[$sPos][3], $aSubMainArray[$sPos][2], $aSubMainArray[$sPos][6], $aSubMainArray[0][2], $sProfile)
+
+		If $aSubMainArray[$sPos][4] < 0 Then
 			; respect options (StopError, StopOk, ProceedNext)
 			If $sSettings = "StopError" Then
-				$sMainArray[$sIndex][3] = __GetLang('POSITIONPROCESS_MULTI_FAILED_1', 'The rules of an association of the multi action did not match the current input file') & ": Step #" & $i & ", '" & $aAssociationNames[$i] & "' -> '" & $sMainArray[$sIndex][0] & "'"
+				$sMainArray[$sIndex][3] = $aSubMainArray
 				Return SetError(2, 0, $sMainArray) ; Failed.
 
 			ElseIf $sSettings = "StopOk" Then
+				$sMainArray[$sIndex][3] = $aSubMainArray
 				Return $sMainArray ; OK.
 
 			ElseIf $sSettings = "ProceedNext" Then
 				ContinueLoop
 
 			Else ; use StopError by default
-				$sMainArray[$sIndex][3] = __GetLang('POSITIONPROCESS_MULTI_FAILED_1', 'The rules of an association of the multi action did not match the current input file') & ": Step #" & $i & ", '" & $aAssociationNames[$i] & "' -> '" & $sMainArray[$sIndex][0] & "'"
+				$sMainArray[$sIndex][3] = $aSubMainArray
 				Return SetError(2, 0, $sMainArray) ; Failed.
 
 			EndIf
 		EndIf
 
-		If _Position_ProcessGroup($sMainArray, $sIndex, $sIndex, $sProfile, $sElementsGUI) = 0 Then
+		; Do not call __SetPositionResult during processing multi action
+		If _Position_ProcessGroup($aSubMainArray, $sPos, $sPos, $sProfile, $sElementsGUI, True) = 0 Then
 			If $i < UBound($aAssociationNames) - 1 Then
-				; modify the main array for the individual actions and call the related functionalities
-				; Main Array structure:
-				; Original file name | File Size | Action | Destination file name | Status (0 = OK) | ??? original file name ??? | ??? file content stuff ???
+				ReDim $aSubMainArray[$sPos + 2][7]
+				$aSubMainArray[0][0] += 1
 
 				; copy destination name as source name for the next association to work on, if the user wants it
 				If $bUsePreviousDestinationAsNextSource Then
-					$sMainArray[$sIndex][0] = StringRegExpReplace($sMainArray[$sIndex][3], "([^|]*)|.*", "\1")
+					If StringInStr($aSubMainArray[$sPos][3], "|") > 0 Then
+						$aSubMainArray[$sPos + 1][0] = StringRegExpReplace($aSubMainArray[$sPos][3], "([^|]*)|.*", "\1")
+					Else
+						$aSubMainArray[$sPos + 1][0] = $aSubMainArray[$sPos][3]
+					EndIf
+				Else
+					$aSubMainArray[$sPos + 1][0] = $aSubMainArray[$sPos][0]
 				EndIf
 			EndIf
 		Else
-			$sMainArray[$sIndex][3] = __GetLang('POSITIONPROCESS_MULTI_FAILED_2', 'An association failed during execution for the current input file') & ": Step #" & $i & ", '" & $aAssociationNames[$i] & "' -> '" & $sMainArray[$sIndex][0] & "'"
+			$sMainArray[$sIndex][3] = $aSubMainArray
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
 		If @error Then
-			$sMainArray[$sIndex][3] = __GetLang('POSITIONPROCESS_MULTI_FAILED_2', 'An association failed during execution for the current input file') & ": Step #" & $i & ", '" & $aAssociationNames[$i] & "' -> '" & $sMainArray[$sIndex][0] & "'"
+			$sMainArray[$sIndex][3] = $aSubMainArray
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
 	Next
 
+	$sMainArray[$sIndex][3] = $aSubMainArray
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_MultiAction
 
