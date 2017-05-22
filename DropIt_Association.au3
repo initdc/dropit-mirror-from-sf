@@ -511,8 +511,7 @@ Func __GetAssociationKey($gParameter = -1, $gType = 0)
 		Return $gNumberFields
 	EndIf
 	Local $gFields[$gNumberFields] = ["Name", "State", "Rules", "Action", "Destination", "Filters", "List Properties", "HTML Theme", "Site Settings", "Crypt Settings", "Gallery Properties", _
-			"Gallery Theme", "Gallery Settings", "Compress Settings", "Extract Settings", "Open With Settings", "List Settings", "Favourite Association", "Use RegEx", "Split Settings", "Join Settings", _
-			"Multi Action Settings"]
+			"Gallery Theme", "Gallery Settings", "Compress Settings", "Extract Settings", "Open With Settings", "List Settings", "Favourite Association", "Use RegEx", "Split Settings", "Join Settings"]
 	For $A = 0 To $gNumberFields
 		If $gType = 0 Then
 			$gFields[$A] = StringStripWS($gFields[$A], 8)
@@ -556,7 +555,6 @@ Func __GetAssociations($gProfile = -1)
 		[A][18] - Consider As Regular Expressions [False]
 		[A][19] - Split Settings [10MB]
 		[A][20] - Join Settings [False]
-		[A][21] - Multi Action Settings [True]
 	#ce
 	$gProfile = __IsProfile($gProfile, 0) ; Get Array Of Selected Profile.
 

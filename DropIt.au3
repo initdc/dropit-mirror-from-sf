@@ -329,7 +329,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Local $mLabel_Destination, $mInput_Destination, $mInput_DestinationRead, $mButton_Destination, $mCombo_Delete, $mRename, $mInput_Rename, $mClipboard, $mInput_Clipboard
 	Local $mSite, $mInput_Site, $mButton_Site, $mSiteSettings, $mList, $mInput_List, $mButton_List, $mListName, $mListProperties, $mHTMLTheme, $mListSettings, $mInput_Current
 	Local $mCrypt, $mInput_Crypt, $mButton_Crypt, $mCryptSettings, $mButton_Change, $mFileProperties, $mButton_Mail, $mMailSettings, $mStringSplit, $mNoOthers, $mCheck_Favourite
-	Local $mCompress, $mInput_Compress, $mButton_Compress, $mCompressSettings, $mCompressFormat, $mCompressFormatBis, $mButton_MultiAction, $mMultiAction, $mMultiActionSettings
+	Local $mCompress, $mInput_Compress, $mButton_Compress, $mCompressSettings, $mCompressFormat, $mCompressFormatBis, $mButton_MultiAction, $mMultiAction
 	Local $mExtract, $mInput_Extract, $mButton_Extract, $mExtractSettings, $mJoin, $mInput_Join, $mButton_Join, $mJoinSettings, $iActionTypeChangedForMultiAction, $mAssociations
 	Local $mOpenWith, $mInput_OpenWith, $mButton_OpenWith, $mOpenWithSettings, $mSplit, $mInput_Split, $mButton_Split, $mSplitSettings = "10;MB;False"
 	Local $mInput_Ignore, $mGallery, $mInput_Gallery, $mButton_Gallery, $mGalleryProperties, $mGalleryTheme, $mGallerySettings = "2;1;", $i
@@ -486,7 +486,6 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 		$mSite = "/"
 	EndIf
 	If $mInitialAction == __GetLang('ACTION_MULTI', 'Multi Action') Then
-		$mMultiActionSettings = __GetAssociationField($mProfile[0], $mAssociationName, "MultiActionSettings")
 		$mMultiAction = $mDestination
 		$mDestination = "-"
 	Else
@@ -789,9 +788,6 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			If $mMultiAction = "" Then
 				$mMultiAction = "-"
 			EndIf
-			If $mMultiActionSettings = "" Then
-				$mMultiActionSettings = "-"
-			EndIf
 			$mCurrentAction = GUICtrlRead($mCombo_Action)
 			Switch $mCurrentAction
 				Case __GetLang('ACTION_DELETE', 'Delete')
@@ -799,9 +795,6 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 				Case __GetLang('ACTION_IGNORE', 'Ignore')
 					GUICtrlSetState($mInput_Ignore, $GUI_SHOW)
 				Case __GetLang('ACTION_MULTI', 'Multi Action')
-					If $mMultiActionSettings = "-" Then
-						$mMultiActionSettings = ""
-					EndIf
 					If $mMultiAction = "-" Then
 						$mMultiAction = ""
 					EndIf
@@ -931,14 +924,14 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 
 		; Enable/Disable Save Button:
 		$mTempString = GUICtrlRead($mInput_Destination) & GUICtrlRead($mInput_Rename) & GUICtrlRead($mInput_Compress) & GUICtrlRead($mInput_Extract) & GUICtrlRead($mInput_Split) & GUICtrlRead($mInput_Join) & GUICtrlRead($mInput_OpenWith) & GUICtrlRead($mInput_Crypt) & GUICtrlRead($mInput_Gallery) & GUICtrlRead($mInput_List)
-		If GUICtrlRead($mInput_Name) <> "" And GUICtrlRead($mInput_Rules) <> "" And $mFileProperties <> "" And $mMultiAction <> "" And $mMultiActionSettings <> "" And $mCryptSettings <> "" And $mMailSettings <> "" And __StringIsValid($mTempString, '|') And Not StringIsSpace(GUICtrlRead($mInput_Rules)) Then
+		If GUICtrlRead($mInput_Name) <> "" And GUICtrlRead($mInput_Rules) <> "" And $mFileProperties <> "" And $mMultiAction <> "" And $mCryptSettings <> "" And $mMailSettings <> "" And __StringIsValid($mTempString, '|') And Not StringIsSpace(GUICtrlRead($mInput_Rules)) Then
 			If GUICtrlGetState($mSave) > 80 Then
 				GUICtrlSetState($mSave, 576) ; $GUI_ENABLE + $GUI_DEFBUTTON.
 			EndIf
 			If GUICtrlGetState($mCancel) = 512 Then
 				GUICtrlSetState($mCancel, 80) ; $GUI_ENABLE + $GUI_SHOW.
 			EndIf
-		ElseIf GUICtrlRead($mInput_Name) = "" Or GUICtrlRead($mInput_Rules) = "" Or $mFileProperties = "" Or $mMultiAction = "" Or $mMultiActionSettings = "" Or $mCryptSettings = "" Or $mMailSettings = "" Or __StringIsValid($mTempString, '|') = 0 Or StringIsSpace(GUICtrlRead($mInput_Rules)) Then
+		ElseIf GUICtrlRead($mInput_Name) = "" Or GUICtrlRead($mInput_Rules) = "" Or $mFileProperties = "" Or $mMultiAction = "" Or $mCryptSettings = "" Or $mMailSettings = "" Or __StringIsValid($mTempString, '|') = 0 Or StringIsSpace(GUICtrlRead($mInput_Rules)) Then
 			If GUICtrlGetState($mSave) = 80 Then
 				GUICtrlSetState($mSave, 144) ; $GUI_DISABLE + $GUI_SHOW.
 			EndIf
@@ -1093,7 +1086,6 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 				EndIf
 				If $mCurrentActionString <> "$L" Then
 					$mMultiAction = ""
-					$mMultiActionSettings = ""
 				EndIf
 				__IniWriteEx($mProfile[0], $mInput_NameRead, "", "State=" & $mState & @LF & "Rules=" & $mInput_RulesRead & @LF & "Action=" & $mCurrentActionString & @LF & "Destination=" & $mInput_DestinationRead & _
 						__ComposeLineINI("Filters", $mStringFilters) & _
@@ -1111,8 +1103,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 						__ComposeLineINI("SiteSettings", $mSiteSettings) & _
 						__ComposeLineINI("CryptSettings", $mCryptSettings) & _
 						__ComposeLineINI("SplitSettings", $mSplitSettings) & _
-						__ComposeLineINI("JoinSettings", $mJoinSettings) & _
-						__ComposeLineINI("MultiActionSettings", $mMultiActionSettings))
+						__ComposeLineINI("JoinSettings", $mJoinSettings))
 				__Log_Write($mLogAssociation, $mInput_NameRead)
 				$mChanged = 1
 				ExitLoop
@@ -1176,7 +1167,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 				_Manage_Site($mSiteSettings, $mGUI) ; ByRef: $mSiteSettings.
 
 			Case $mButton_MultiAction
-				_Manage_MultiAction($mMultiAction, $mMultiActionSettings, $mGUI) ; ByRef: $mMultiAction.
+				_Manage_MultiAction($mMultiAction, $mGUI) ; ByRef: $mMultiAction.
 
 			Case $mButton_Change
 				_Manage_Properties($mFileProperties, $mGUI) ; ByRef: $mFileProperties.
@@ -2720,9 +2711,9 @@ Func _CheckForceSelectionOfItems(ByRef $mList)
 	Next
 EndFunc   ;==>_CheckForceSelectionOfItems
 
-Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandle = -1)
+Func _Manage_MultiAction(ByRef $mSelectedAssociations, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mListAssoc, $mListSelected, $mButtonAdd, $mButtonRemove, $aAssociations, $i, $aSelectedAssoc[0], $aSelected[0], $pos, $sItemText, $iItemIndex
-	Local $mButtonMoveUp, $mButtonMoveDown, $mComboProceedNext, $bItemChecked, $sDefaultSetting
+	Local $mButtonMoveUp, $mButtonMoveDown, $bItemChecked, $sDefaultSetting
 
 	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 624, 380, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
@@ -2753,20 +2744,6 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 	_GUICtrlListView_SetColumnWidth($mListSelected, 2, 100)
 	$Global_ListViewMultiActionRight = $mListSelected
 
-	; set default settings combo box
-	Switch $mSettings
-		Case "StopError"
-			$sDefaultSetting = __GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)')
-		Case "StopOk"
-			$sDefaultSetting = __GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Stop processing multi action WITHOUT error if association rule does not match (use with care)')
-		Case "ProceedNext"
-			$sDefaultSetting = __GetLang('MANAGE_MULTI_ACTION_OPTION_2', 'Proceed with next association, if the rules of an association do not match')
-		Case Else ;use StopError by default
-			$sDefaultSetting = __GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)')
-	EndSwitch
-	$mComboProceedNext = GUICtrlCreateCombo(__GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)'), 15, 380 - 50 - 28, 540, 24, 0x0003)
-	GUICtrlSetData($mComboProceedNext, __GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Stop processing multi action WITHOUT error if association rule does not match (use with care)') & "|" & __GetLang('MANAGE_MULTI_ACTION_OPTION_2', 'Proceed with next association, if the rules of an association do not match'), $sDefaultSetting)
-
  	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 312 - 40 - 90, 380 - 24 - 15, 90, 24)
  	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 312 + 40, 380 - 24 - 15, 90, 24)
  	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
@@ -2787,7 +2764,7 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 		If $pos > -1 Then
 			$iItemIndex = _GUICtrlListView_AddItem($mListSelected, $aAssociations[$pos][0])
 			_GUICtrlListView_AddSubItem($mListSelected, _GUICtrlListView_GetItemCount($mListSelected) - 1, __GetActionString($aAssociations[$pos][3]), 1)
-			If $aSelected[$i + 1] = "True" Then
+			If $aSelected[$i + 1] = "OnSource" Then
 				_GUICtrlListView_SetItemChecked($mListSelected, $iItemIndex)
 				_GUICtrlListView_SetItemText($mListSelected, $iItemIndex, __GetLang("SOURCE", "Source"), 2)
 			EndIf
@@ -2867,21 +2844,13 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 
 				For $i = 0 to _GUICtrlListView_GetItemCount($mListSelected) - 1
 					_ArrayAdd($aSelectedAssoc, _GUICtrlListView_GetItemText($mListSelected, $i))
-					_ArrayAdd($aSelectedAssoc, _GUICtrlListView_GetItemChecked($mListSelected, $i))
+					If _GUICtrlListView_GetItemChecked($mListSelected, $i) Then
+						_ArrayAdd($aSelectedAssoc, "OnSource")
+					Else
+						_ArrayAdd($aSelectedAssoc, "OnDest")
+					EndIf
 				Next
 				$mSelectedAssociations = _ArrayToString($aSelectedAssoc, ";")
-
-				Switch GUICtrlRead($mComboProceedNext)
-					Case __GetLang('MANAGE_MULTI_ACTION_OPTION_0', 'Stop processing multi action WITH error if association rule does not match (default)')
-						$mSettings = "StopError"
-
-					Case __GetLang('MANAGE_MULTI_ACTION_OPTION_1', 'Stop processing multi action WITHOUT error if association rule does not match (use with care)')
-						$mSettings = "StopOk"
-
-					Case __GetLang('MANAGE_MULTI_ACTION_OPTION_2', 'Proceed with next association, if the rules of an association do not match')
-						$mSettings = "ProceedNext"
-
-				EndSwitch
 
 				ExitLoop
 		EndSwitch
@@ -2889,25 +2858,31 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, ByRef $mSettings, $mHandl
 
 	GUIDelete($mGUI)
 
-	Return 1 ; ByRef: $mSelectedAssociations, $mSettings.
+	Return 1 ; ByRef: $mSelectedAssociations
 EndFunc   ;==>_Manage_MultiAction
 
 Func _Manage_MultiActionResults($sMainArray, $mHandle = -1)
 	Local $mGUI, $sListView, $sListView_Handle
 
-	$mGUI = GUICreate(__GetLang('ENV_VAR_TAB_18', 'Show details'), 500, 280, -1, -1, $WS_SIZEBOX, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
+	$mGUI = GUICreate(__GetLang('ENV_VAR_TAB_18', 'Show details'), 800, 380, -1, -1, $WS_SIZEBOX, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
-	$sListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination') & "|" & __GetLang('STATUS', 'Status'), 0, 0, 500, 280, BitOR($LVS_NOSORTHEADER, $LVS_REPORT))
+	$sListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination') & "|" & __GetLang('STATUS', 'Status'), 0, 0, 800, 380, BitOR($LVS_NOSORTHEADER, $LVS_REPORT))
 	$sListView_Handle = GUICtrlGetHandle($sListView)
 	GUICtrlSetResizing($sListView, $GUI_DOCKBORDERS)
 	_GUICtrlListView_SetExtendedListViewStyle($sListView_Handle, BitOR($LVS_EX_FULLROWSELECT, $LVS_EX_GRIDLINES, $LVS_EX_INFOTIP))
+	Local $sColumnSize = __GetCurrentSize("ColumnProcess", "140;80;180;70") ; Column Widths.
+	For $A = 1 To $sColumnSize[0]
+		_GUICtrlListView_SetColumnWidth($sListView_Handle, $A - 1, $sColumnSize[$A])
+	Next
 
-	_Position_Populate($sListView, $sMainArray)
+	_Position_Populate($sListView, $sMainArray, True)
 
 	GUISetState(@SW_SHOW)
 
 	;show results in list view
+	_ArrayDisplay($sMainArray)
 	For $A = 1 To $sMainArray[0][0]
+		;TODO do not use SetPositionResult as this also writes to the log file
 		__SetPositionResult($sMainArray, $A, $A, $sListView, -1, $sMainArray[$A][4])
 	Next
 
@@ -5068,7 +5043,7 @@ Func _Matches_Select($mMatches, $mFilePath)
 EndFunc   ;==>_Matches_Select
 
 Func _Position_Checking($pMainArray, $pIndex, $pAssociations, $pProfileName)
-	Local $pMatch, $pCheck, $pAssociation, $pAssociationSplit, $pStringSplit, $pString, $pNoOthers, $pSomeFavourites, $pNumberMatchFields = 18, $aMatches
+	Local $pMatch, $pCheck, $pAssociation, $pAssociationSplit, $pStringSplit, $pString, $pNoOthers, $pSomeFavourites, $pNumberMatchFields = 17, $aMatches
 	Local $pFilePath = $pMainArray[$pIndex][0], $pMatches[1][$pNumberMatchFields + 1] = [[0, $pNumberMatchFields]]
 	$pNoOthers = 0 ; For Special Associations That Match All Files That Have Not Other Matches.
 
@@ -5179,7 +5154,6 @@ Func _Position_Checking($pMainArray, $pIndex, $pAssociations, $pProfileName)
 				$pMatches[$pMatches[0][0]][15] = $pAssociations[$A][17] ; Favourite Association.
 				$pMatches[$pMatches[0][0]][16] = $pAssociations[$A][19] ; Split Settings.
 				$pMatches[$pMatches[0][0]][17] = $pAssociations[$A][20] ; Join Settings.
-				$pMatches[$pMatches[0][0]][18] = $pAssociations[$A][21] ; Multi Action Settings.
 				If $pNoOthers < 0 Then
 					$pNoOthers = $pMatches[0][0] ; It Saves The Index Of The First "No Others" Association In $pMatches Array (More "No Others" Are Ignored).
 				ElseIf $pMatches[$pMatches[0][0]][15] == "True" Then
@@ -5264,8 +5238,6 @@ Func _Position_Checking($pMainArray, $pIndex, $pAssociations, $pProfileName)
 					$pMatches[$pMatch][3] &= "|" & $pMatches[$pMatch][16]
 				Case "$J" ; Join Action.
 					$pMatches[$pMatch][3] &= "|" & $pMatches[$pMatch][17]
-				Case "$L" ; Multi Action.
-					$pMatches[$pMatch][3] &= "|" & $pMatches[$pMatch][18]
 			EndSwitch
 			$pMainArray[$pIndex][3] = $pMatches[$pMatch][3] ; Destination And Parameters.
 			$pMainArray[$pIndex][4] = 0 ; OK.
@@ -5451,12 +5423,16 @@ Func _Position_Load($pMainArray, $pProfile, $pElementsGUI)
 	Return $pMainArray
 EndFunc   ;==>_Position_Load
 
-Func _Position_Populate($pListView, $pMainArray)
+Func _Position_Populate($pListView, $pMainArray, $bSourceFileAsFullFileName = False)
 	Local $pName, $pAction, $pDestination
 
 	_GUICtrlListView_BeginUpdate($pListView)
 	For $A = 1 To $pMainArray[0][0]
-		$pName = __GetFileName($pMainArray[$A][0])
+		If $bSourceFileAsFullFileName Then
+			$pName = $pMainArray[$A][0]
+		Else
+			$pName = __GetFileName($pMainArray[$A][0])
+		EndIf
 		$pAction = "-" ; Because The Item Is Skipped If The User Does Not Define An Association With _Manage_Edit_GUI().
 		$pDestination = "-"
 		If $pMainArray[$A][2] <> "" Then
@@ -5617,7 +5593,10 @@ Func _Position_ProcessGroup(ByRef $pMainArray, $pFrom, $pTo, $pProfile, $pElemen
 					Case "$L" ; Multi Action.
 						$pMainArray = _Sorting_MultiAction($pMainArray, $A, $pElementsGUI, $pProfile)
 
-					Case Else ; Move Or Copy Action.
+					Case "$2" ; Ignore Action.
+						SetError(1, 0, 0)
+
+					Case "$0", "$1" ; Move Or Copy Action.
 						$pMainArray = _Sorting_CopyFile($pMainArray, $A, $pElementsGUI, $pProfile)
 
 				EndSwitch
@@ -5880,6 +5859,7 @@ Func _Sorting_Pause_ContextMenu($sListView, $sIndex, $sSubItem)
 		__SetItemImage("OPEN", $sIndex, $sContextMenu, 2, 1)
 		$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('ENV_VAR_TAB_3', 'Info'), $sItem2)
 		__SetItemImage("INFO", $sIndex, $sContextMenu, 2, 1)
+		;TODO show "Show details" context menu only if underlying item is a multi action
 		$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('ENV_VAR_TAB_18', 'Show details'), $sItem3)
 		If $sStatus == "" Then
 			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('DUPLICATE_MODE_6', 'Skip'), $sItem4)
@@ -6969,10 +6949,7 @@ Func _Sorting_OpenFile($sMainArray, $sIndex, $sElementsGUI)
 EndFunc   ;==>_Sorting_OpenFile
 
 Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
-	Local $aAssociationNames, $i, $j, $aAssociations, $sPos = 0, $aTmp, $aSubMainArray[2][7], $sSplitString, $sSettings = "StopError", $bUsePreviousDestinationAsNextSource
-
-	$sSplitString = StringSplit($sMainArray[$sIndex][3], "|")
-	$sSettings = $sSplitString[2]
+	Local $aAssociationNames, $i, $j, $aAssociations, $sPos = 0, $aTmp, $aSubMainArray[2][7], $bUsePreviousDestinationAsNextSource
 
 	For $A = 0 To 6
 		$aSubMainArray[0][$A] = $sMainArray[0][$A]
@@ -6982,12 +6959,13 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 
 	;Find corresponding associations
 	$aAssociations = __GetAssociations($sProfile)
-	$aAssociationNames = StringSplit($sSplitString[1], ";")
-	For $i = 1 to UBound($aAssociationNames) - 2 Step 2
+	$aAssociationNames = StringSplit($sMainArray[$sIndex][3], ";")
+
+	For $i = 1 to $aAssociationNames[0] - 1 Step 2
 		$sPos += 1
 
 		$aTmp = $aAssociations
-		For $j = UBound($aTmp) - 1 to 1 Step -1
+		For $j = $aTmp[0][0] to 1 Step -1
 			If $aTmp[$j][0] = $aAssociationNames[$i] Then
 				; enable association, so that it is definitely applied
 				$aTmp[$j][1] = $G_Global_StateEnabled
@@ -6996,47 +6974,43 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 				_ArrayDelete($aTmp, $j)
 			EndIf
 		Next
-
 		$aTmp[0][0] = 1
-		If $aAssociationNames[$i + 1] = "True" Then
-			$bUsePreviousDestinationAsNextSource = True
-		Else
+
+		If $aAssociationNames[$i + 1] = "OnSource" Then
 			$bUsePreviousDestinationAsNextSource = False
+		Else
+			$bUsePreviousDestinationAsNextSource = True
 		EndIf
 
 		$aSubMainArray = _Position_Checking($aSubMainArray, $sPos, $aTmp, $sProfile)
 		$aSubMainArray[$sPos][3] = _Destination_Fix($aSubMainArray[$sPos][0], $aSubMainArray[$sPos][3], $aSubMainArray[$sPos][2], $aSubMainArray[$sPos][6], $aSubMainArray[0][2], $sProfile)
 
-		If $aSubMainArray[$sPos][4] < 0 Then
-			; respect options (StopError, StopOk, ProceedNext)
-			If $sSettings = "StopError" Then
-				$sMainArray[$sIndex][3] = $aSubMainArray
-				Return SetError(2, 0, $sMainArray) ; Failed.
-
-			ElseIf $sSettings = "StopOk" Then
-				$sMainArray[$sIndex][3] = $aSubMainArray
-				Return $sMainArray ; OK.
-
-			ElseIf $sSettings = "ProceedNext" Then
-				ContinueLoop
-
-			Else ; use StopError by default
-				$sMainArray[$sIndex][3] = $aSubMainArray
-				Return SetError(2, 0, $sMainArray) ; Failed.
-
-			EndIf
+		If $aSubMainArray[$sPos][4] = -1 Then
+			; the item shall be ignored, so stop further execution of actions for it here
+			ExitLoop
 		EndIf
 
+		If $aSubMainArray[$sPos][4] < 0 And Not $aTmp[1][3] = "$2" Then
+			$sMainArray[$sIndex][3] = $aSubMainArray
+			Return SetError(2, 0, $sMainArray) ; Failed.
+		EndIf
+
+		;TODO Some actions (e.g. Rename) set the result to -9, so that they are not overwritten. This leads to the fact that the multi action does not show the result.
+		;TODO Do not allow the single actions to write to the SetPositionResult, as they write directly to the main list. This may lead to several problems
+		;TODO why is renaming not resolving %COUNTER%
+		;TODO improve details window messages
+
+		; if current action was ignore, but did not match the current input file, so proceed with next action without throwing an error
 		; Do not call __SetPositionResult during processing multi action
-		If _Position_ProcessGroup($aSubMainArray, $sPos, $sPos, $sProfile, $sElementsGUI, True) = 0 Then
-			If $i < UBound($aAssociationNames) - 1 Then
+		If _Position_ProcessGroup($aSubMainArray, $sPos, $sPos, $sProfile, $sElementsGUI, True) = 0 Or $aTmp[1][3] = "$2"  Then
+			If $i < $aAssociationNames[0] - 1 Then
 				ReDim $aSubMainArray[$sPos + 2][7]
 				$aSubMainArray[0][0] += 1
 
 				; copy destination name as source name for the next association to work on, if the user wants it
 				If $bUsePreviousDestinationAsNextSource Then
 					If StringInStr($aSubMainArray[$sPos][3], "|") > 0 Then
-						$aSubMainArray[$sPos + 1][0] = StringRegExpReplace($aSubMainArray[$sPos][3], "([^|]*)|.*", "\1")
+						$aSubMainArray[$sPos + 1][0] = StringRegExpReplace($aSubMainArray[$sPos][3], "([^\|]*)\|.*", "\1")
 					Else
 						$aSubMainArray[$sPos + 1][0] = $aSubMainArray[$sPos][3]
 					EndIf
@@ -7048,7 +7022,7 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 			$sMainArray[$sIndex][3] = $aSubMainArray
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
-		If @error Then
+		If @error And Not $aTmp[1][3] = "$2" Then
 			$sMainArray[$sIndex][3] = $aSubMainArray
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
