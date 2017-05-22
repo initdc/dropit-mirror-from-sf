@@ -2880,10 +2880,8 @@ Func _Manage_MultiActionResults($sMainArray, $mHandle = -1)
 	GUISetState(@SW_SHOW)
 
 	;show results in list view
-	_ArrayDisplay($sMainArray)
 	For $A = 1 To $sMainArray[0][0]
-		;TODO do not use SetPositionResult as this also writes to the log file
-		__SetPositionResult($sMainArray, $A, $A, $sListView, -1, $sMainArray[$A][4])
+		__SetPositionResult($sMainArray, $A, $A, $sListView, -1, $sMainArray[$A][4], False)
 	Next
 
 	While 1
@@ -5336,7 +5334,7 @@ EndFunc   ;==>_Position_MainArray
 Func _Position_MainArrayAdd($pMainArray, $pFilePath, $pElementsGUI)
 	Local $pSize
 
-	$pMainArray[0][0] += 1 ; [0][0] Counter, [0][1] Full Size, [0][2] Main Dirs Array, [$A][0] File Path, [$A][1] File Size, [$A][2] Action, [$A][3] Destination, [$A][4] Result, [$A][5] Sort Parameter, [$A][6] File Content Matches For Backreferences.
+	$pMainArray[0][0] += 1 ; [0][0] Counter, [0][1] Full Size, [0][2] Main Dirs Array, [$A][0] File Path, [$A][1] File Size, [$A][2] Action (<=-9 means do not overwrite), [$A][3] Destination, [$A][4] Result, [$A][5] Sort Parameter, [$A][6] File Content Matches For Backreferences.
 	If UBound($pMainArray) <= $pMainArray[0][0] Then
 		ReDim $pMainArray[UBound($pMainArray) * 2][7]
 	EndIf
@@ -5481,7 +5479,7 @@ Func _Position_Process(ByRef $pMainArray, $pProfile, $pElementsGUI)
 					$pMainArray[$A][3] = "-"
 				EndIf
 				__SetPositionResult($pMainArray, $A, $A, $Global_ListViewProcess, $pElementsGUI, -1)
-				$pMainArray[$A][4] = -9 ; To Do Not Process It Again In Group.
+				$pMainArray[$A][4] = -9 - 1 ; To Do Not Process It Again In Group.
 				ContinueLoop
 			EndIf
 			$pCurrentGroup = $pMainArray[$A][2] & $pMainArray[$A][3] ; Unique String For Group = Action + Destination.
@@ -5493,7 +5491,7 @@ Func _Position_Process(ByRef $pMainArray, $pProfile, $pElementsGUI)
 		If $pPreviousGroup <> $pCurrentGroup Then
 			$pTo = $A - 1 ; Last Item Of The Group.
 			If $pPreviousGroup <> "" Then ; Process Previous Group If Not Empty.
-				If _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI) = 1 Then ; 0 = OK, 1 = Failed.
+				If _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $Global_ListViewProcess, $pProfile, $pElementsGUI) = 1 Then ; 0 = OK, 1 = Failed.
 					$pFailed = 1 ; At Least One Item Failed.
 				EndIf
 				If @error Then
@@ -5526,78 +5524,78 @@ Func _Position_Process(ByRef $pMainArray, $pProfile, $pElementsGUI)
 	Return $pFailed
 EndFunc   ;==>_Position_Process
 
-Func _Position_ProcessGroup(ByRef $pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI, $pSkipPositionResult = False)
+Func _Position_ProcessGroup(ByRef $pMainArray, $pFrom, $pTo, $pListViewProcess, $pProfile, $pElementsGUI)
 	Local $pFailed, $pResult
 
 	Switch $pMainArray[$pFrom][2]
 		Case "$3" ; Compress Action.
-			$pMainArray = _Sorting_CompressFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_CompressFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$7" ; Rename Action.
-			$pMainArray = _Sorting_RenameFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_RenameFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$8" ; Create List Action.
-			$pMainArray = _Sorting_ListFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_ListFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$9" ; Create Playlist Action.
-			$pMainArray = _Sorting_PlaylistFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_PlaylistFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$C" ; Upload Action.
-			$pMainArray = _Sorting_UploadFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_UploadFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$E" ; Send by Mail Action.
-			$pMainArray = _Sorting_MailFile($pMainArray, $pFrom, $pTo, $pElementsGUI)
+			$pMainArray = _Sorting_MailFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI)
 
 		Case "$H" ; Create Gallery Action.
-			$pMainArray = _Sorting_GalleryFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_GalleryFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$J" ; Join Action.
-			$pMainArray = _Sorting_JoinFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_JoinFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case Else ; Single Process Actions.
 			For $A = $pFrom To $pTo
-				If $pMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+				If $pMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 					ContinueLoop
 				EndIf
 				Switch $pMainArray[$pFrom][2]
 					Case "$4" ; Extract Action.
-						$pMainArray = _Sorting_ExtractFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_ExtractFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$5" ; Open With Action.
-						$pMainArray = _Sorting_OpenFile($pMainArray, $A, $pElementsGUI)
+						$pMainArray = _Sorting_OpenFile($pMainArray, $A, $pListViewProcess, $pElementsGUI)
 
 					Case "$6" ; Delete Action.
-						$pMainArray = _Sorting_DeleteFile($pMainArray, $A, $pElementsGUI)
+						$pMainArray = _Sorting_DeleteFile($pMainArray, $A, $pListViewProcess, $pElementsGUI)
 
 					Case "$A" ; Create Shortcut Action.
-						$pMainArray = _Sorting_ShortcutFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_ShortcutFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$B" ; Copy To Clipboard Action.
-						$pMainArray = _Sorting_ClipboardFile($pMainArray, $A, $pElementsGUI)
+						$pMainArray = _Sorting_ClipboardFile($pMainArray, $A, $pListViewProcess, $pElementsGUI)
 
 					Case "$D" ; Change Properties Action.
-						$pMainArray = _Sorting_ChangeFile($pMainArray, $A, $pElementsGUI)
+						$pMainArray = _Sorting_ChangeFile($pMainArray, $A, $pListViewProcess, $pElementsGUI)
 
 					Case "$F" ; Encrypt Action.
-						$pMainArray = _Sorting_EncryptFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_EncryptFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$G" ; Decrypt Action.
-						$pMainArray = _Sorting_DecryptFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_DecryptFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$I" ; Split Action.
-						$pMainArray = _Sorting_SplitFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_SplitFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$K" ; Convert Image Action.
-						$pMainArray = _Sorting_ConvertFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_ConvertFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$L" ; Multi Action.
-						$pMainArray = _Sorting_MultiAction($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_MultiAction($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$2" ; Ignore Action.
 						SetError(1, 0, 0)
 
 					Case "$0", "$1" ; Move Or Copy Action.
-						$pMainArray = _Sorting_CopyFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_CopyFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 				EndSwitch
 				If @extended = 1 Then ; Aborted.
@@ -5610,9 +5608,10 @@ Func _Position_ProcessGroup(ByRef $pMainArray, $pFrom, $pTo, $pProfile, $pElemen
 				Else ; OK.
 					$pResult = 0
 				EndIf
-				If Not $pSkipPositionResult Then
-					__SetPositionResult($pMainArray, $A, $A, $Global_ListViewProcess, $pElementsGUI, $pResult)
+				If $pMainArray[$A][4] = "" Then
+					$pMainArray[$A][4] = $pResult
 				EndIf
+				__SetPositionResult($pMainArray, $A, $A, $pListViewProcess, $pElementsGUI, $pResult)
 			Next
 			Return $pFailed
 
@@ -5631,9 +5630,9 @@ Func _Position_ProcessGroup(ByRef $pMainArray, $pFrom, $pTo, $pProfile, $pElemen
 	Else ; OK.
 		$pResult = 0
 	EndIf
-	If Not $pSkipPositionResult Then
-		__SetPositionResult($pMainArray, $pFrom, $pTo, $Global_ListViewProcess, $pElementsGUI, $pResult)
-	EndIf
+	; TODO check if $pMainArray[?][4] is always set, because SetPositionResult uses it
+	; TODO check if groups can still be properly used also with newly introduced multi action
+	__SetPositionResult($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pResult)
 	Return $pFailed
 EndFunc   ;==>_Position_ProcessGroup
 
@@ -6005,7 +6004,7 @@ Func _Sorting_CreateGUI($sProfile, $sMonitored)
 	Return $sElementsGUI
 EndFunc   ;==>_Sorting_CreateGUI
 
-Func _Sorting_ChangeFile($sMainArray, $sIndex, $sElementsGUI)
+Func _Sorting_ChangeFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI)
 	Local $B, $sStringSplit, $sAttributes, $sNewAttribute, $sReadOnly, $sFileTimes[3], $sSource = $sMainArray[$sIndex][0]
 
 	$sAttributes = FileGetAttrib($sSource)
@@ -6075,7 +6074,7 @@ Func _Sorting_ChangeFile($sMainArray, $sIndex, $sElementsGUI)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ChangeFile
 
-Func _Sorting_ClipboardFile($sMainArray, $sIndex, $sElementsGUI)
+Func _Sorting_ClipboardFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI)
 	Local $sClipboardText = $sMainArray[$sIndex][3]
 
 	__SetProgressStatus($sElementsGUI, 1, $sClipboardText) ; Reset Single Progress Bar And Show Second Line.
@@ -6092,7 +6091,7 @@ Func _Sorting_ClipboardFile($sMainArray, $sIndex, $sElementsGUI)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ClipboardFile
 
-Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sError, $sFile, $sString, $sStringSplit, $sStringContent, $sArchiveContent, $sNewPath, $sTempMoved, $sSize, $sDestination = $sMainArray[$sFrom][3]
 	Local $sSourceList = $G_Global_TempDir & "\DropItArchiveList.dat"
 
@@ -6131,7 +6130,7 @@ Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	__SetProgressStatus($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$sNewPath = __RenameToCompress($sMainArray[$A][0], $sStringContent, $sTempMoved) ; ByRef: $sTempMoved = 1 If At Least One File/Folder Is Renamed.
@@ -6166,7 +6165,7 @@ Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	EndIf
 	If $sStringSplit[1] == "True" Then
 		For $A = $sFrom To $sTo
-			If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+			If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 				ContinueLoop
 			EndIf
 			_Sorting_RunDelete($sMainArray[$A][0]) ; Remove Source After Processing It.
@@ -6176,7 +6175,7 @@ Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_CompressFile
 
-Func _Sorting_ConvertFile($sMainArray, $sIndex, $sElementsGUI, $sProfile) ; <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT USED YET
+Func _Sorting_ConvertFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile) ; <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT USED YET
 	Local $sStringSplit, $sSource = $sMainArray[$sIndex][0], $sDestination = $sMainArray[$sIndex][3]
 
 	$sStringSplit = StringSplit($sDestination, "|") ; 1 = Destination Folder, 2 = Remove Source.
@@ -6238,7 +6237,7 @@ Func _Sorting_ConvertFile($sMainArray, $sIndex, $sElementsGUI, $sProfile) ; <<<<
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ConvertFile
 
-Func _Sorting_CopyFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+Func _Sorting_CopyFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sSource = $sMainArray[$sIndex][0], $sAction = $sMainArray[$sIndex][2], $sDestination = $sMainArray[$sIndex][3] & "\" & __GetFileName($sMainArray[$sIndex][0])
 
 	If FileExists($sDestination) Then
@@ -6293,7 +6292,7 @@ Func _Sorting_CopyFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_CopyFile
 
-Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword = "")
+Func _Sorting_DecryptFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile, $sPassword = "")
 	Local $sStringSplit, $sMsgBox, $sIsFolder, $sCryptDestination, $sAlgorithm, $sPassword_Code = $G_Global_PasswordKey
 	Local $sSource = $sMainArray[$sIndex][0], $sDestination = $sMainArray[$sIndex][3]
 
@@ -6310,7 +6309,7 @@ Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 
 	If $sStringSplit[2] == "7ZIP" Then
 			$sMainArray[$sIndex][3] = $sStringSplit[1] & "|" & $sStringSplit[4]
-			Return _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword)
+			Return _Sorting_ExtractFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile, $sPassword)
 	EndIf
 
 	$sDestination = $sStringSplit[1] & "\" & __GetFileName($sSource)
@@ -6354,7 +6353,7 @@ Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 		If $sPassword = -1 Then
 			Return SetError(1, 0, $sMainArray) ; Skipped.
 		EndIf
-		$sMainArray = _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword)
+		$sMainArray = _Sorting_DecryptFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile, $sPassword)
 		Return SetError(@error, 0, $sMainArray)
 	EndIf
 
@@ -6375,7 +6374,7 @@ Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_DecryptFile
 
-Func _Sorting_DeleteFile($sMainArray, $sIndex, $sElementsGUI)
+Func _Sorting_DeleteFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI)
 	Local $sDeleteText, $sSource = $sMainArray[$sIndex][0], $sDeletionMode = $sMainArray[$sIndex][3]
 
 	$sDeleteText = __GetDeleteString($sDeletionMode)
@@ -6396,7 +6395,7 @@ Func _Sorting_DeleteFile($sMainArray, $sIndex, $sElementsGUI)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_DeleteFile
 
-Func _Sorting_EncryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+Func _Sorting_EncryptFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sStringSplit, $sNewDestination, $sIsFolder, $sAlgorithm, $sPassword, $sPassword_Code = $G_Global_PasswordKey
 	Local $sSource = $sMainArray[$sIndex][0], $sDestination = $sMainArray[$sIndex][3]
 
@@ -6412,7 +6411,7 @@ Func _Sorting_EncryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 
 	If $sStringSplit[2] == "7ZIP" Then
 		$sMainArray[$sIndex][3] = $sStringSplit[1] & "|" & $sStringSplit[4] & ";7z;5;LZMA;AES-256;" & $sStringSplit[3]
-		Return _Sorting_CompressFile($sMainArray, $sIndex, $sIndex, $sElementsGUI, $sProfile)
+		Return _Sorting_CompressFile($sMainArray, $sIndex, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	EndIf
 
 	__EnsureDirExists($sDestination)
@@ -6477,7 +6476,7 @@ Func _Sorting_EncryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_EncryptFile
 
-Func _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword = "")
+Func _Sorting_ExtractFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile, $sPassword = "")
 	Local $sProcess, $sMsgBox, $sStringSplit, $sDuplicateMode, $sTempName = $G_Global_TempName
 	Local $sSource = $sMainArray[$sIndex][0], $sSize = $sMainArray[$sIndex][1], $sDestination = $sMainArray[$sIndex][3]
 
@@ -6544,7 +6543,7 @@ Func _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 		If $sPassword = -1 Then
 			Return SetError(1, 0, $sMainArray) ; Skipped.
 		EndIf
-		$sMainArray = _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword)
+		$sMainArray = _Sorting_ExtractFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile, $sPassword)
 		Return SetError(@error, 0, $sMainArray)
 	EndIf
 
@@ -6574,7 +6573,7 @@ Func _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ExtractFile
 
-Func _Sorting_GalleryFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_GalleryFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sStringSplit, $sSkipped, $sDestination, $sSubArray[$sTo - $sFrom + 2]
 	$sSubArray[0] = $sTo - $sFrom + 1
 
@@ -6597,7 +6596,7 @@ Func _Sorting_GalleryFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	__SetProgressStatus($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			$sSkipped += 1
 			$sSubArray[0] -= 1
 			ContinueLoop
@@ -6613,7 +6612,7 @@ Func _Sorting_GalleryFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_GalleryFile
 
-Func _Sorting_JoinFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_JoinFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sStringSplit, $B, $sNumber, $sOpenFile, $sOpenCurrFile, $sCurrPath, $sDestination, $sSubArray[1]
 	Local $sChunkSize, $sRemaining, $sPercent, $sLoadedSize, $sFullSize, $sDone = 0
 
@@ -6748,7 +6747,7 @@ Func _Sorting_JoinFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_JoinFile
 
-Func _Sorting_ListFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_ListFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sStringSplit, $sSkipped, $sDestination, $sSettings, $sSubArray[$sTo - $sFrom + 2]
 	$sSubArray[0] = $sTo - $sFrom + 1
 
@@ -6778,7 +6777,7 @@ Func _Sorting_ListFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	__SetProgressStatus($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			$sSkipped += 1
 			$sSubArray[0] -= 1
 			ContinueLoop
@@ -6809,7 +6808,7 @@ Func _Sorting_ListFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ListFile
 
-Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
+Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI)
 	Local $sFailed, $sStringSplit, $sFilePath, $sFileNames, $sSource, $sError, $sTotalSource, $sTotalSize = 1, $sCurrentSize, $sInternalFrom = $sFrom, $sInternalTo = $sFrom
 	Local $sPassword_Code = $G_Global_PasswordKey, $sDestination = $sMainArray[$sFrom][3]
 
@@ -6829,7 +6828,7 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 	Next
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$sFileNames &= __GetFileName($sMainArray[$A][0])
@@ -6854,7 +6853,7 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 		EndIf
 
 		If $A <= $sTo Then
-			If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+			If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 				ContinueLoop
 			EndIf
 			$sSource = $sMainArray[$A][0]
@@ -6862,8 +6861,8 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 			If _WinAPI_PathIsDirectory($sSource) Then
 				$sFilePath = __CreateTempZIP($sSource) ; Compress Folders To Send Them As Single Archive.
 				If @error Then
-					__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
-					$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+					__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -2)
+					$sMainArray[$A][4] = -9 - 2 ; Force Result To Be Not Overwritten.
 					$sFailed = 1 ; At Least One Item Failed.
 					ContinueLoop
 				EndIf
@@ -6886,15 +6885,15 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 				$sFailed = 1 ; At Least One Item Failed.
 				$sError = -2
 			EndIf
-			__SetPositionResult($sMainArray, $sInternalFrom, $sInternalTo, $Global_ListViewProcess, $sElementsGUI, $sError)
+			__SetPositionResult($sMainArray, $sInternalFrom, $sInternalTo, $sListViewProcess, $sElementsGUI, $sError)
 			For $B = $sInternalFrom To $sInternalTo
 				If $sError = 0 And $sStringSplit[14] == "True" Then
-					If $sMainArray[$B][4] == -9 Then ; Skip Already Processed Item.
+					If $sMainArray[$B][4] <= -9 Then ; Skip Already Processed Item.
 						ContinueLoop
 					EndIf
 					_Sorting_RunDelete($sMainArray[$B][0]) ; Remove Source After Processing It.
 				EndIf
-				$sMainArray[$B][4] = -9 ; Force Result To Be Not Overwritten.
+				$sMainArray[$B][4] = -9 + $sError ; Force Result To Be Not Overwritten.
 			Next
 			$sInternalFrom = $A
 		EndIf
@@ -6913,7 +6912,7 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 	Return $sMainArray
 EndFunc   ;==>_Sorting_MailFile
 
-Func _Sorting_OpenFile($sMainArray, $sIndex, $sElementsGUI)
+Func _Sorting_OpenFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI)
 	Local $sStringSplit, $sSource = $sMainArray[$sIndex][0], $sDestination = $sMainArray[$sIndex][3]
 
 	__SetProgressStatus($sElementsGUI, 1, $sSource) ; Reset Single Progress Bar And Show Second Line.
@@ -6948,7 +6947,7 @@ Func _Sorting_OpenFile($sMainArray, $sIndex, $sElementsGUI)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_OpenFile
 
-Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $aAssociationNames, $i, $j, $aAssociations, $sPos = 0, $aTmp, $aSubMainArray[2][7], $bUsePreviousDestinationAsNextSource
 
 	For $A = 0 To 6
@@ -6995,14 +6994,13 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
 
-		;TODO Some actions (e.g. Rename) set the result to -9, so that they are not overwritten. This leads to the fact that the multi action does not show the result.
-		;TODO Do not allow the single actions to write to the SetPositionResult, as they write directly to the main list. This may lead to several problems
 		;TODO why is renaming not resolving %COUNTER%
 		;TODO improve details window messages
+		;TODO logically do the same here as in the Position_Process function
 
 		; if current action was ignore, but did not match the current input file, so proceed with next action without throwing an error
-		; Do not call __SetPositionResult during processing multi action
-		If _Position_ProcessGroup($aSubMainArray, $sPos, $sPos, $sProfile, $sElementsGUI, True) = 0 Or $aTmp[1][3] = "$2"  Then
+		; process the group, but do not update the list view, as the details will be stored only in the multi action results
+		If _Position_ProcessGroup($aSubMainArray, $sPos, $sPos, -1, $sProfile, $sElementsGUI) = 0 Or $aTmp[1][3] = "$2"  Then
 			If $i < $aAssociationNames[0] - 1 Then
 				ReDim $aSubMainArray[$sPos + 2][7]
 				$aSubMainArray[0][0] += 1
@@ -7032,7 +7030,7 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_MultiAction
 
-Func _Sorting_PlaylistFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_PlaylistFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sSkipped, $sSubArray[$sTo - $sFrom + 2], $sPlaylistFile = $sMainArray[$sFrom][3]
 	$sSubArray[0] = $sTo - $sFrom + 1
 
@@ -7053,7 +7051,7 @@ Func _Sorting_PlaylistFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	__SetProgressStatus($sElementsGUI, 1, $sPlaylistFile) ; Reset Single Progress Bar And Show Second Line.
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			$sSkipped += 1
 			$sSubArray[0] -= 1
 			ContinueLoop
@@ -7079,25 +7077,25 @@ Func _Sorting_PlaylistFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_PlaylistFile
 
-Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sFailed, $sSource, $sDestination, $sTempName = $G_Global_TempName
 
 	For $A = $sFrom To $sTo ; To Be Sure To Do Not Wrongly Overwrite During Process.
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$sSource = $sMainArray[$A][0]
 		__SureMove($sSource, $sSource & $sTempName)
 		If @error Then
-			__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
-			$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+			__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -2)
+			$sMainArray[$A][4] = -9 - 2 ; Force Result To Be Not Overwritten.
 			$sFailed = 1 ; At Least One Item Failed.
 			ContinueLoop
 		EndIf
 	Next
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$sSource = $sMainArray[$A][0]
@@ -7107,8 +7105,8 @@ Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 			__SureMove($sSource & $sTempName, $sSource)
 			$sDestination = __Duplicate_Process($sProfile, $sSource, $sDestination)
 			If @error = 2 Then
-				__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -1)
-				$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+				__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -1)
+				$sMainArray[$A][4] = -9 - 1 ; Force Result To Be Not Overwritten.
 				ContinueLoop ; Skipped.
 			EndIf
 			$sMainArray[$A][3] = $sDestination
@@ -7116,8 +7114,8 @@ Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 				If __Is("IgnoreAttributes") Then
 					FileSetAttrib($sDestination, '-RH') ; Needed To Overwrite Hidden And Read-Only Files/Folders.
 				Else
-					__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
-					$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+					__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -2)
+					$sMainArray[$A][4] = -9 - 2 ; Force Result To Be Not Overwritten.
 					$sFailed = 1 ; At Least One Item Failed.
 					ContinueLoop ; Skipped.
 				EndIf
@@ -7129,13 +7127,13 @@ Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 
 		__SureMove($sSource, $sDestination)
 		If @error Then
-			__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
-			$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+			__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -2)
+			$sMainArray[$A][4] = -9 - 2 ; Force Result To Be Not Overwritten.
 			$sFailed = 1 ; At Least One Item Failed.
 			ContinueLoop
 		EndIf
-		__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, 0)
-		$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+		__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, 0)
+		$sMainArray[$A][4] = -9 - 0 ; Force Result To Be Not Overwritten.
 	Next
 
 	If $sFailed Then
@@ -7144,7 +7142,7 @@ Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray
 EndFunc   ;==>_Sorting_RenameFile
 
-Func _Sorting_ShortcutFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+Func _Sorting_ShortcutFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sSource = $sMainArray[$sIndex][0], $sShortcut = $sMainArray[$sIndex][3]
 
 	If FileExists($sShortcut) Then
@@ -7169,7 +7167,7 @@ Func _Sorting_ShortcutFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ShortcutFile
 
-Func _Sorting_SplitFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+Func _Sorting_SplitFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sStringSplit, $sSettings, $sOpenFile, $sOpenCurrFile, $sCurrPath, $sFileName, $sLast, $sParts, $sChunkSize, $sRemaining, $sPercent, $sRealSize, $sDone = 0
 	Local $sSource = $sMainArray[$sIndex][0], $sFullSize = $sMainArray[$sIndex][1], $sDestination = $sMainArray[$sIndex][3]
 
@@ -7280,13 +7278,13 @@ Func _Sorting_SplitFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 		_Sorting_RunDelete($sMainArray[$sIndex][0]) ; Remove Source After Processing It.
 	EndIf
 
-	__SetPositionResult($sMainArray, $sIndex, $sIndex, $Global_ListViewProcess, $sElementsGUI, 0)
-	$sMainArray[$sIndex][4] = -9 ; Force Result To Be Not Overwritten.
+	__SetPositionResult($sMainArray, $sIndex, $sIndex, $sListViewProcess, $sElementsGUI, 0)
+	$sMainArray[$sIndex][4] = -9 - 0 ; Force Result To Be Not Overwritten.
 	$sMainArray[$sIndex][3] = $sDestination
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_SplitFile
 
-Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sFailed, $sFileName, $sSource, $sSize, $sDate, $sStringSplit, $sDirectory, $sOpen, $sConn, $sListArray
 	Local $sPassiveMode = 0, $sPassword_Code = $G_Global_PasswordKey, $sDestination = $sMainArray[$sFrom][3]
 	;Local $ERR, $MESS ; <<<<< Debug.
@@ -7338,7 +7336,7 @@ Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 			Return SetExtended(1, $sMainArray) ; Aborted.
 		EndIf
 
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$sSource = $sMainArray[$A][0]
@@ -7352,8 +7350,8 @@ Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 				If $sFileName = $sListArray[$B][0] Then
 					$sDestination = __Duplicate_ProcessOnline($sProfile, $sSource, $sStringSplit[1], $sDirectory, $sListArray[$B][3], $sListArray[$B][1], $sListArray, $sStringSplit[5])
 					If @error = 2 Then
-						__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -1)
-						$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+						__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -1)
+						$sMainArray[$A][4] = -9 - 1 ; Force Result To Be Not Overwritten.
 						ContinueLoop 2 ; Skipped.
 					EndIf
 					__SetProgressStatus($sElementsGUI, 1, $sStringSplit[1] & $sDestination) ; Reset Single Progress Bar And Show Second Line.
@@ -7376,13 +7374,13 @@ Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 		If @error Then
 			;_FTP_GetLastResponseInfo($ERR, $MESS) ; <<<<< Debug.
 			;msgbox(0, "test", $ERR & @LF & $MESS) ; <<<<< Debug.
-			__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
-			$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+			__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -2)
+			$sMainArray[$A][4] = -9 - 2 ; Force Result To Be Not Overwritten.
 			$sFailed = 1 ; At Least One Item Failed.
 			ContinueLoop
 		EndIf
-		__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, 0)
-		$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+		__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, 0)
+		$sMainArray[$A][4] = -9 - 0 ; Force Result To Be Not Overwritten.
 
 		$sListArray[0][0] += 1
 		$sListArray[$sListArray[0][0]][0] = __GetFileName($sDestination)

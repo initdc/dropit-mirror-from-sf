@@ -463,7 +463,7 @@ Func __RestoreCompressedItems($sString, $aMainArray, $iFrom, $iTo) ; Used To Res
 	EndIf
 	Local $iCounter
 	For $A = $iFrom To $iTo
-		If $aMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $aMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$iCounter += 1
