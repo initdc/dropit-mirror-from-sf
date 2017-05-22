@@ -2864,6 +2864,7 @@ EndFunc   ;==>_Manage_MultiAction
 Func _Manage_MultiActionResults($sMainArray, $mHandle = -1)
 	Local $mGUI, $sListView, $sListView_Handle
 
+	;TODO improve multi action details window messages
 	$mGUI = GUICreate(__GetLang('ENV_VAR_TAB_18', 'Show details'), 800, 380, -1, -1, $WS_SIZEBOX, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
 	$sListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination') & "|" & __GetLang('STATUS', 'Status'), 0, 0, 800, 380, BitOR($LVS_NOSORTHEADER, $LVS_REPORT))
@@ -5630,8 +5631,12 @@ Func _Position_ProcessGroup(ByRef $pMainArray, $pFrom, $pTo, $pListViewProcess, 
 	Else ; OK.
 		$pResult = 0
 	EndIf
-	; TODO check if $pMainArray[?][4] is always set, because SetPositionResult uses it
-	; TODO check if groups can still be properly used also with newly introduced multi action
+	;always set the result for the $pMainArray as this is necessary for SetPositionResult
+	For $A = $pFrom To $pTo
+		If $pMainArray[$A][4] = "" Then
+			$pMainArray[$A][4] = $pResult
+		EndIf
+	Next
 	__SetPositionResult($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pResult)
 	Return $pFailed
 EndFunc   ;==>_Position_ProcessGroup
@@ -5852,14 +5857,17 @@ Func _Sorting_Pause_ContextMenu($sListView, $sIndex, $sSubItem)
 	EndIf
 
 	Local $sStatus = _GUICtrlListView_GetItemText($sListView, $sIndex, 3)
+	Local $sAction = _GUICtrlListView_GetItemText($sListView, $sIndex, 1)
 	Local $sContextMenu = _GUICtrlMenu_CreatePopup()
 	If $sIndex <> -1 And $sSubItem <> -1 Then
 		$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('OPEN', 'Open'), $sItem1)
 		__SetItemImage("OPEN", $sIndex, $sContextMenu, 2, 1)
 		$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('ENV_VAR_TAB_3', 'Info'), $sItem2)
 		__SetItemImage("INFO", $sIndex, $sContextMenu, 2, 1)
-		;TODO show "Show details" context menu only if underlying item is a multi action
-		$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('ENV_VAR_TAB_18', 'Show details'), $sItem3)
+		;show "Show details" context menu only if underlying item is a multi action and has been executed
+		If $sAction = __GetLang('ACTION_MULTI', 'Multi Action') And $sStatus <> "" Then
+			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('ENV_VAR_TAB_18', 'Show details'), $sItem3)
+		EndIf
 		If $sStatus == "" Then
 			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('DUPLICATE_MODE_6', 'Skip'), $sItem4)
 			__SetItemImage("SKIP", $sIndex, $sContextMenu, 2, 1)
@@ -6994,9 +7002,9 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
 
-		;TODO why is renaming not resolving %COUNTER%
-		;TODO improve details window messages
 		;TODO logically do the same here as in the Position_Process function
+		;TODO how should multi action behave for groups?
+		;TODO how should multi action behave for %Counter%?
 
 		; if current action was ignore, but did not match the current input file, so proceed with next action without throwing an error
 		; process the group, but do not update the list view, as the details will be stored only in the multi action results
