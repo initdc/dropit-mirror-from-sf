@@ -808,26 +808,72 @@ Func __ReadFileContentDate($sFilePath, $iNormalized)
 		Returns: Date string to be appended to filename
 	#ce
 
-	Local $mINI, $mDateSettings, $mFormats, $mFormat, $mMonthRegex, $iPosYear, $iPosMonth, $iPosDay, $aDate = 0, $aDateTmp, $iYear, $iMonth, $iDay, $iJulianDate
+	Local $mINI, $mDateSettings, $mFormats, $mFormat, $mMonthLitRegex = "", $mMonthNumRegex, $mMonthRegex, $iPosYear, $iPosMonth, $iPosDay, $aDate = 0, $aDateTmp, $iYear, $iMonth, $iDay, $iJulianDate
+	Local $mYearShort, $mYearLong, $mYearRegex = "", $mDayRegex
 	Local $sContent = __ReadFile($sFilePath), $bMatchFound, $aMonths = [12, "MonthJan", "MonthFeb", "MonthMar", "MonthApr", "MonthMay", "MonthJun", "MonthJul", "MonthAug", "MonthSep", "MonthOct", "MonthNov", "MonthDec"]
 
 	$mINI = __IsSettingsFile()
 	$mFormats = StringSplit(IniRead($mINI, "FileContentDates", "DateFormats", ""), $STATIC_FILTERS_DIVIDER)
 
-	$mMonthRegex = "(?<month>"
+	$mDayRegex = IniRead($mINI, "FileContentDates", "Day", "%DAY%")
 	For $A = 1 To $aMonths[0]
-		$mMonthRegex &= "(?:" & IniRead($mINI, "FileContentDates", $aMonths[$A], "%" & $aMonths[$A] & "%") & ")"
-		If $A < $aMonths[0] Then $mMonthRegex &= "|"
+		$mMonthLitRegex &= "(?:" & IniRead($mINI, "FileContentDates", $aMonths[$A], "%" & $aMonths[$A] & "%") & ")"
+		If $A < $aMonths[0] Then $mMonthLitRegex &= "|"
 	Next
-	$mMonthRegex &= ")"
+	$mMonthNumRegex = IniRead($mINI, "FileContentDates", "MonthNumeric", "%MonthNumeric%")
+	$mYearShort = IniRead($mINI, "FileContentDates", "YearShort", "%YearShort%")
+	$mYearLong = IniRead($mINI, "FileContentDates", "YearLong", "%YearLong%")
 
 	For $A = 1 to $mFormats[0]
 		;apply regex for all months and find first appearance
 		$bMatchFound = False
 		$mFormat = $mFormats[$A]
+
+		; find and replace DAY variable in date format
 		$iPosDay = StringInStr($mFormat, "%DAY%")
+		$mFormat = StringReplace($mFormat, "%DAY%", $mDayRegex)
+
+		; find and replace MONTH variable in date format
 		$iPosMonth = StringInStr($mFormat, "%MONTH%")
+		If $iPosMonth > 0 Then
+			$mMonthRegex = "(?<month>" & $mMonthLitRegex & "|" & $mMonthNumRegex & ")"
+			$mFormat = StringReplace($mFormat, "%MONTH%", $mMonthRegex)
+		EndIf
+		If $iPosMonth = 0 Then
+			$iPosMonth = StringInStr($mFormat, "%MONTH_LITERAL%")
+			If $iPosMonth > 0 Then
+				$mMonthRegex = "(?<month>" & $mMonthLitRegex & ")"
+				$mFormat = StringReplace($mFormat, "%MONTH_LITERAL%", $mMonthRegex)
+			EndIf
+		EndIf
+		If $iPosMonth = 0 Then
+			$iPosMonth = StringInStr($mFormat, "%MONTH_NUMERIC%")
+			If $iPosMonth > 0 Then
+				$mMonthRegex = "(?<month>" & $mMonthNumRegex & ")"
+				$mFormat = StringReplace($mFormat, "%MONTH_NUMERIC%", $mMonthRegex)
+			EndIf
+		EndIf
+
+		; find and replace YEAR variable in date format
 		$iPosYear = StringInStr($mFormat, "%YEAR%")
+		If $iPosYear > 0 Then
+			$mYearRegex = "(?<year>" & $mYearLong & "|" & $mYearShort & ")"
+			$mFormat = StringReplace($mFormat, "%YEAR%", $mYearRegex)
+		EndIf
+		If $iPosYear = 0 Then
+			$iPosYear = StringInStr($mFormat, "%YEAR_LONG%")
+			If $iPosYear > 0 Then
+				$mYearRegex = "(?<year>" & $mYearLong & ")"
+				$mFormat = StringReplace($mFormat, "%YEAR_LONG%", $mYearRegex)
+			EndIf
+		EndIf
+		If $iPosYear = 0 Then
+			$iPosYear = StringInStr($mFormat, "%YEAR_SHORT%")
+			If $iPosYear > 0 Then
+				$mYearRegex = "(?<year>" & $mYearShort & ")"
+				$mFormat = StringReplace($mFormat, "%YEAR_SHORT%", $mYearRegex)
+			EndIf
+		EndIf
 
 		If $iPosMonth = 0 Or $iPosYear = 0 Then Return ""
 
@@ -871,10 +917,7 @@ Func __ReadFileContentDate($sFilePath, $iNormalized)
 			EndIf
 		EndIf
 
-		$mFormat = StringReplace($mFormat, "%DAY%", IniRead($mINI, "FileContentDates", "Day", "%DAY%"))
-		$mFormat = StringReplace($mFormat, "%MONTH%", $mMonthRegex)
-		$mFormat = StringReplace($mFormat, "%YEAR%", IniRead($mINI, "FileContentDates", "Year", "%YEAR%"))
-
+		; match date to format and extract day, month and year
 		$aDate = StringRegExp($sContent, $mFormat, $STR_REGEXPARRAYFULLMATCH)
 		If Not @error Then
 			;find out day number
@@ -886,12 +929,16 @@ Func __ReadFileContentDate($sFilePath, $iNormalized)
 
 			;find out month number
 			$iMonth = -1
-			For $B = 1 To $aMonths[0]
-				If StringRegExp($aDate[$iPosMonth], "^" & IniRead($mINI, "FileContentDates", $aMonths[$B], "") & "$") Then
-					$iMonth = $B
-					ExitLoop
-				EndIf
-			Next
+			If Number($aDate[$iPosMonth]) > 0 Then
+				$iMonth = Int($aDate[$iPosMonth])
+			Else
+				For $B = 1 To $aMonths[0]
+					If StringRegExp($aDate[$iPosMonth], "^" & IniRead($mINI, "FileContentDates", $aMonths[$B], "") & "$") Then
+						$iMonth = $B
+						ExitLoop
+					EndIf
+				Next
+			EndIf
 
 			;find out year number
 			$iYear = Int($aDate[$iPosYear])

@@ -9234,10 +9234,12 @@ Func __Upgrade()
 
 	__IniReadSection($uINI & ".old", "FileContentDates")
 	If @error Then
-		__IniWriteEx($uINI, "FileContentDates", "", "Day=(\d{1,2})(?:st|nd|rd|th)?" & @LF & "MonthJan=Jan[[:alpha:]]*|0?1" & @LF & "MonthFeb=Feb[[:alpha:]]*|0?2" & @LF & "MonthMar=Mar[[:alpha:]]*|M..?rz|0?3" & @LF & _
-			"MonthApr=Apr[[:alpha:]]*|0?4" & @LF & "MonthMay=May|Mai|0?5" & @LF & "MonthJun=Jun[[:alpha:]]*|0?6" & @LF & "MonthJul=Jul[[:alpha:]]*|0?7" & @LF & "MonthAug=Aug[[:alpha:]]*|0?8" & @LF & _
-			"MonthSep=Sep[[:alpha:]]*|0?9" & @LF & "MonthOct=O[kc]t[[:alpha:]]*|10" & @LF & "MonthNov=Nov[[:alpha:]]*|11" & @LF & "MonthDec=De[cz][[:alpha:]]*|12" & @LF & "Year=(\d{2}(?:\d{2})?)[^\d]" & @LF & _
-			"DateFormats=%DAY% *\. *%MONTH% *%YEAR%|%MONTH% +%DAY% *, *%YEAR%|%DAY% *\. *%MONTH% *\. *%YEAR%|%DAY% +%MONTH% +%YEAR%")
+		__IniWriteEx($uINI, "FileContentDates", "", "Day=(?<!\d)([1-9]|0[1-9]|[1-2][0-9]|3[0-1])(?!\d)(?:st|nd|rd|th)?" & @LF & "MonthNumeric=(?<!\d)[1-9]|0[1-9]|1[0-2](?!\d)" & @LF & "MonthJan=Jan[[:alpha:]]*" & @LF & "MonthFeb=Feb[[:alpha:]]*" & _
+			@LF & "MonthMar=Mar[[:alpha:]]*|M..?rz" & @LF & "MonthApr=Apr[[:alpha:]]*" & @LF & "MonthMay=May|Mai" & @LF & "MonthJun=Jun[[:alpha:]]*" & @LF & "MonthJul=Jul[[:alpha:]]*" & @LF & _
+			"MonthAug=Aug[[:alpha:]]*" & @LF & "MonthSep=Sep[[:alpha:]]*" & @LF & "MonthOct=O[kc]t[[:alpha:]]*" & @LF & "MonthNov=Nov[[:alpha:]]*" & @LF & "MonthDec=De[cz][[:alpha:]]*" & @LF & _
+			"YearShort=(?<!\d)\d{2}(?!\d)" & @LF & "YearLong=(?<!\d)\d{4}(?!\d)" & @LF & _
+			"DateFormats=%DAY% *\. *%MONTH_LITERAL% *%YEAR%|%MONTH_LITERAL% +%DAY% *, *%YEAR%|%DAY% *\. *%MONTH_NUMERIC% *\. *%YEAR%|%DAY% +%MONTH_LITERAL% +%YEAR%|%DAY% *- *%MONTH_NUMERIC% *- *%YEAR_LONG%|%YEAR_LONG% *- *%MONTH_NUMERIC% *- *%DAY%")
+			;            3. Oct 11                          Oct 3, 2011                       03.10.11                               3 Oct 11                       03-10-2011                                2011-10-03
 	Else
 		__IniWriteEx($uINI, "FileContentDates", "", __IniReadSection($uINI & ".old", "FileContentDates"))
 	EndIf
