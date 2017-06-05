@@ -1167,7 +1167,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 				_Manage_Site($mSiteSettings, $mGUI) ; ByRef: $mSiteSettings.
 
 			Case $mButton_MultiAction
-				_Manage_MultiAction($mMultiAction, $mGUI) ; ByRef: $mMultiAction.
+				_Manage_MultiAction($mMultiAction, $mGUI, $mProfile[1]) ; ByRef: $mMultiAction.
 
 			Case $mButton_Change
 				_Manage_Properties($mFileProperties, $mGUI) ; ByRef: $mFileProperties.
@@ -2711,7 +2711,7 @@ Func _CheckForceSelectionOfItems(ByRef $mList)
 	Next
 EndFunc   ;==>_CheckForceSelectionOfItems
 
-Func _Manage_MultiAction(ByRef $mSelectedAssociations, $mHandle = -1)
+Func _Manage_MultiAction(ByRef $mSelectedAssociations, $mHandle = -1, $mProfile = -1)
 	Local $mGUI, $mSave, $mCancel, $mListAssoc, $mListSelected, $mButtonAdd, $mButtonRemove, $aAssociations, $i, $aSelectedAssoc[0], $aSelected[0], $pos, $sItemText, $iItemIndex
 	Local $mButtonMoveUp, $mButtonMoveDown, $bItemChecked, $sDefaultSetting
 
@@ -2751,7 +2751,9 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, $mHandle = -1)
  	GUISetState(@SW_SHOW)
 
 	; add available actions to list
-	$aAssociations = __GetAssociations()
+	; TODO check why the overall result of the multi action is ok, although the last association did not match.
+	; TODO why is second progress bar running to 200%?
+	$aAssociations = __GetAssociations($mProfile)
 	For $i = 1 to UBound($aAssociations) - 1
 		$iItemIndex = _GUICtrlListView_AddItem($mListAssoc, $aAssociations[$i][0])
 		_GUICtrlListView_AddSubItem($mListAssoc, $iItemIndex, __GetActionString($aAssociations[$i][3]), 1)
