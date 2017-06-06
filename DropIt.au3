@@ -3119,11 +3119,12 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["CurrentMonthShort", __GetLang('ENV_VAR_31', 'current month') & ' ["' & __Locale_MonthName(@MON, 1) & '"]'], _
 			["CurrentDayName", __GetLang('ENV_VAR_32', 'current day') & ' ["' & __Locale_DayName(_DateToDayOfWeekISO(@YEAR, @MON, @MDAY), 0) & '"]'], _
 			["CurrentDayShort", __GetLang('ENV_VAR_32', 'current day') & ' ["' & __Locale_DayName(_DateToDayOfWeekISO(@YEAR, @MON, @MDAY), 1) & '"]']]
-	Local $mGroupCreated[16][3] = [ _
-			[15, 0, 0], _
+	Local $mGroupCreated[17][3] = [ _
+			[16, 0, 0], _
 			["DateCreated", __GetLang('ENV_VAR_2', 'date file creation') & ' ["' & @YEAR & "-" & @MON & "-" & @MDAY & '"]'], _
 			["YearCreated", __GetLang('ENV_VAR_36', 'year file creation') & ' ["' & @YEAR & '"]'], _
 			["MonthCreated", __GetLang('ENV_VAR_37', 'month file creation') & ' ["' & @MON & '"]'], _
+			["YearWeekCreated", __GetLang('ENV_VAR_145', 'year and week file creation') & ' ["' & @YEAR & " " & _WeekNumberISO() & '"]'], _
 			["WeekCreated", __GetLang('ENV_VAR_96', 'week file creation') & ' ["' & _WeekNumberISO() & '"]'], _
 			["DayCreated", __GetLang('ENV_VAR_38', 'day file creation') & ' ["' & @MDAY & '"]'], _
 			[""], _ ; Separator.
@@ -3136,11 +3137,12 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["MonthShortCreated", __GetLang('ENV_VAR_37', 'month file creation') & ' ["' & __Locale_MonthName(@MON, 1) & '"]'], _
 			["DayNameCreated", __GetLang('ENV_VAR_38', 'day file creation') & ' ["' & __Locale_DayName(_DateToDayOfWeekISO(@YEAR, @MON, @MDAY), 0) & '"]'], _
 			["DayShortCreated", __GetLang('ENV_VAR_38', 'day file creation') & ' ["' & __Locale_DayName(_DateToDayOfWeekISO(@YEAR, @MON, @MDAY), 1) & '"]']]
-	Local $mGroupModified[16][3] = [ _
-			[15, 0, 0], _
+	Local $mGroupModified[17][3] = [ _
+			[16, 0, 0], _
 			["DateModified", __GetLang('ENV_VAR_3', 'date file modification') & ' ["' & @YEAR & "-" & @MON & "-" & @MDAY & '"]'], _
 			["YearModified", __GetLang('ENV_VAR_43', 'year file modification') & ' ["' & @YEAR & '"]'], _
 			["MonthModified", __GetLang('ENV_VAR_44', 'month file modification') & ' ["' & @MON & '"]'], _
+			["YearWeekModified", __GetLang('ENV_VAR_146', 'year and week file modification') & ' ["' & @YEAR & " " & _WeekNumberISO() & '"]'], _
 			["WeekModified", __GetLang('ENV_VAR_97', 'week file modification') & ' ["' & _WeekNumberISO() & '"]'], _
 			["DayModified", __GetLang('ENV_VAR_45', 'day file modification') & ' ["' & @MDAY & '"]'], _
 			[""], _ ; Separator.
@@ -3153,11 +3155,12 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["MonthShortModified", __GetLang('ENV_VAR_44', 'month file modification') & ' ["' & __Locale_MonthName(@MON, 1) & '"]'], _
 			["DayNameModified", __GetLang('ENV_VAR_45', 'day file modification') & ' ["' & __Locale_DayName(_DateToDayOfWeekISO(@YEAR, @MON, @MDAY), 0) & '"]'], _
 			["DayShortModified", __GetLang('ENV_VAR_45', 'day file modification') & ' ["' & __Locale_DayName(_DateToDayOfWeekISO(@YEAR, @MON, @MDAY), 1) & '"]']]
-	Local $mGroupOpened[16][3] = [ _
-			[15, 0, 0], _
+	Local $mGroupOpened[17][3] = [ _
+			[16, 0, 0], _
 			["DateOpened", __GetLang('ENV_VAR_4', 'date file last access') & ' ["' & @YEAR & "-" & @MON & "-" & @MDAY & '"]'], _
 			["YearOpened", __GetLang('ENV_VAR_50', 'year file last access') & ' ["' & @YEAR & '"]'], _
 			["MonthOpened", __GetLang('ENV_VAR_51', 'month file last access') & ' ["' & @MON & '"]'], _
+			["YearWeekOpened", __GetLang('ENV_VAR_147', 'year and week file last access') & ' ["' & @YEAR & " " & _WeekNumberISO() & '"]'], _
 			["WeekOpened", __GetLang('ENV_VAR_98', 'week file last access') & ' ["' & _WeekNumberISO() & '"]'], _
 			["DayOpened", __GetLang('ENV_VAR_52', 'day file last access') & ' ["' & @MDAY & '"]'], _
 			[""], _ ; Separator.

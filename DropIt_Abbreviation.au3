@@ -252,8 +252,8 @@ EndFunc   ;==>_ContextMenuAbbreviations
 
 Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDirs = 0, $aFileContentMatches = 0)
 	Local $sLoadedProperty
-	Local $aEnvArray[163][3] = [ _
-			[162, 0, 0], _
+	Local $aEnvArray[166][3] = [ _
+			[165, 0, 0], _
 			["FileExt", 0, 1], _
 			["FileName", 0, 2], _
 			["FileNameExt", 0, 3], _
@@ -352,6 +352,7 @@ Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "",
 			["MonthCreated", 2, 1], _
 			["MonthNameCreated", 2, 1], _
 			["MonthShortCreated", 2, 1], _
+			["YearWeekCreated", 2, 1], _
 			["WeekCreated", 2, 1], _
 			["DayCreated", 2, 1], _
 			["DayNameCreated", 2, 1], _
@@ -365,6 +366,7 @@ Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "",
 			["MonthModified", 2, 0], _
 			["MonthNameModified", 2, 0], _
 			["MonthShortModified", 2, 0], _
+			["YearWeekModified", 2, 0], _
 			["WeekModified", 2, 0], _
 			["DayModified", 2, 0], _
 			["DayNameModified", 2, 0], _
@@ -378,6 +380,7 @@ Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "",
 			["MonthOpened", 2, 2], _
 			["MonthNameOpened", 2, 2], _
 			["MonthShortOpened", 2, 2], _
+			["YearWeekOpened", 2, 2], _
 			["WeekOpened", 2, 2], _
 			["DayOpened", 2, 2], _
 			["DayNameOpened", 2, 2], _
@@ -625,6 +628,14 @@ Func __GetFileTime($sFilePath, $sTimeVariable, $iTimeCode)
 		$sReturn = $aTime[0] & "-" & $aTime[1] & "-" & $aTime[2] ; YYYY-MM-DD.
 	ElseIf StringInStr($sTimeVariable, "Time") Then
 		$sReturn = $aTime[3] & "." & $aTime[4] ; HH.MM.
+	ElseIf StringInStr($sTimeVariable, "YearWeek") Then
+		If _WeekNumberISO($aTime[0], $aTime[1], $aTime[2]) > 40 And $aTime[1] = "01" Then
+			$sReturn = (Int($aTime[0]) - 1) & " " & _WeekNumberISO($aTime[0], $aTime[1], $aTime[2]) ; YYYY WK. (previous year)
+		ElseIf _WeekNumberISO($aTime[0], $aTime[1], $aTime[2]) < 10 And $aTime[1] = "12" Then
+			$sReturn = (Int($aTime[0]) + 1) & " " & _WeekNumberISO($aTime[0], $aTime[1], $aTime[2]) ; YYYY WK. (next year)
+		Else
+			$sReturn = $aTime[0] & " " & _WeekNumberISO($aTime[0], $aTime[1], $aTime[2]) ; YYYY WK. (current year)
+		EndIf
 	ElseIf StringInStr($sTimeVariable, "Year") Then
 		$sReturn = $aTime[0] ; YYYY.
 	ElseIf StringInStr($sTimeVariable, "MonthName") Then
