@@ -452,20 +452,24 @@ Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gMode = 0) ; Modifie
 		0 Name, 1 Size, 2 Type, 3 Date Modified, 4 Date Created, 5 Date Opened, 6 Attributes, 7 Status, 8 Owner, 9 Date Taken,
 		10 Dimensions, 11 Camera Model, 12 Authors, 13 Artists, 14 Title, 15 Album, 16 Genre, 17 Year, 18 Track Number,
 		19 Subject, 20 Category, 21 Comments, 22 Copyright, 23 Duration, 24 Bit Rate, 25 Camera Maker, 26 Company, 27 Rating, 28 Product Name,
-		29 Keywords.
+		29 Keywords, 30 Pages.
 		This Numeration Is Automatically Converted For Win2000, WinXP, Win2003, WinVista, Win7, Win8, Win8.1.
 		More Properties And Relative Numeration Are Reported At The AutoIt Webpage.
 	#ce
 	Local $gFileName, $gFileDir, $gObjShell, $gObjFolder, $gObjFile, $gFileProperty, $gFileProperties[2]
 
 	If $gMode = 0 Then
-		Local $gArrayWin2000[30] = [0, 1, 2, 3, 6, 7, 4, 100, 8, 100, 100, 100, 10, 100, 11, 100, 100, 100, 100, 12, 13, 5, 15, 33, 30, 100, 100, 100, 19, 18]
-		Local $gArrayWinXP[30] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 25, 26, 24, 9, 16, 10, 17, 20, 18, 19, 11, 12, 14, 15, 21, 22, 100, 100, 100, 38, 18]
-		Local $gArrayWin7[30] = [0, 1, 2, 3, 4, 5, 6, 7, 10, 12, 31, 30, 20, 13, 21, 14, 16, 15, 26, 22, 23, 24, 25, 27, 28, 32, 33, 19, 270, 18]
+		;                           0  1  2  3  4  5  6    7   8    9   10   11  12   13  14   15   16   17   18  19  20  21  22  23  24   25   26   27   28  29   30
+		Local $gArrayWin2000[31] = [0, 1, 2, 3, 6, 7, 4,  -1,  8,  -1,  -1,  -1, 10,  -1, 11,  -1,  -1,  -1,  -1, 12, 13,  5, 15, 33, 30,  -1,  -1,  -1,  19, 40,  -1]
+		Local $gArrayWinXP[31]   = [0, 1, 2, 3, 4, 5, 6,   7,  8,  25,  26,  24,  9,  16, 10,  17,  20,  18,  19, 11, 12, 14, 15, 21, 22,  -1,  -1,  -1,  38, 40,  -1]
+		Local $gArrayWin7[31]    = [0, 1, 2, 3, 4, 5, 6,   7, 10,  12,  31,  30, 20,  13, 21,  14,  16,  15,  26, 22, 23, 24, 25, 27, 28,  32,  33,  19, 270, 18, 148]
+		Local $gArrayWin10[31]   = [0, 1, 2, 3, 4, 5, 6,   7, 10,  12,  31,  30, 20,  13, 21,  14,  16,  15,  26, 22, 23, 24, 25, 27, 28,  32,  33,  19, 290, 18, 150]
 		If @OSVersion == "WIN_XP" Or @OSVersion == "WIN_XPe" Or @OSVersion == "WIN_2003" Then
 			$gPropertyNumber = $gArrayWinXP[$gPropertyNumber]
 		ElseIf @OSVersion == "WIN_2000" Then
 			$gPropertyNumber = $gArrayWin2000[$gPropertyNumber]
+		ElseIf @OSVersion == "WIN_10" Then
+			$gPropertyNumber = $gArrayWin10[$gPropertyNumber]
 		Else
 			$gPropertyNumber = $gArrayWin7[$gPropertyNumber]
 		EndIf
@@ -484,6 +488,9 @@ Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gMode = 0) ; Modifie
 					$gFileProperties[1] = $gObjFolder.GetDetailsOf($gObjFile, $gPropertyNumber)
 					Return $gFileProperties
 				Else
+					If $gPropertyNumber = -1 Then
+						Return ""
+					EndIf
 					$gFileProperty = $gObjFolder.GetDetailsOf($gObjFile, $gPropertyNumber)
 					Return $gFileProperty
 				EndIf

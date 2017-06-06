@@ -3032,8 +3032,8 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["File", __GetLang('ENV_VAR_7', 'file full path') & ' ["C:\Docs\Text.txt"]'], _ ; Only By Open With.
 			["LinkAbsolute", __GetLang('ENV_VAR_103', 'file absolute link') & ' ["C:\Docs\Text.txt"]'], _
 			["LinkRelative", __GetLang('ENV_VAR_104', 'file relative link') & ' ["..\Text.txt"]']]
-	Local $mGroupInfo[16][3] = [ _
-			[15, 0, 0], _
+	Local $mGroupInfo[17][3] = [ _
+			[16, 0, 0], _
 			["Attributes", __GetLang('ENV_VAR_74', 'file attributes') & ' ["RA"]'], _
 			["Authors", __GetLang('ENV_VAR_8', 'file authors') & ' ["Lupo Team"]'], _
 			["Category", __GetLang('ENV_VAR_84', 'file category') & ' ["Personal"]'], _
@@ -3048,7 +3048,8 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["Owner", __GetLang('ENV_VAR_77', 'file owner') & ' ["Lupo73"]'], _
 			["ProductName", __GetLang('ENV_VAR_130', 'file product name') & ' ["DropIt"]'], _
 			["Rating", __GetLang('ENV_VAR_129', 'file rating') & ' ["4"]'], _
-			["Subject", __GetLang('ENV_VAR_86', 'file subject') & ' ["Examples"]']]
+			["Subject", __GetLang('ENV_VAR_86', 'file subject') & ' ["Examples"]'], _
+			["Pages", __GetLang('ENV_VAR_144', 'number of pages') & ' ["5"]']]
 	Local $mGroupImage[35][3] = [ _
 			[34, 0, 0], _
 			["Dimensions", __GetLang('ENV_VAR_64', 'image dimensions') & ' ["4912 x 3264"]'], _
