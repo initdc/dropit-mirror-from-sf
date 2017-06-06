@@ -75,7 +75,7 @@ EndFunc
 ; Example .......; Yes
 ; ============================================================================================
 Func _StringM_FirstLetterUpAllWord($sSource, $regExpSetInWord = "")
-	Return __StringM_RegExpOnArray($sSource, '\W+|\d+|[a-zA-Z\-_' & $regExpSetInWord & ']+', '(.)(.*)', 'StringUpper("\1")&"\2"')	
+	Return __StringM_RegExpOnArray($sSource, '(*UCP)\W+|\d+|[\p{L}\-_' & $regExpSetInWord & ']+', '(.)(.*)', 'StringUpper("\1")&"\2"')
 EndFunc
 
 ; #FUNCTION# ===============================================================================================
@@ -94,7 +94,7 @@ EndFunc
 ; Example .......; Yes
 ; ============================================================================================
 Func _StringM_LowerAllExceptFirstLetter($sSource, $regExpSetInWord = "")
-	Return __StringM_RegExpOnArray($sSource, '\W+|\d+|[a-zA-Z\-_' & $regExpSetInWord & ']+', '(.)(.*)', '"\1"&StringLower("\2")')
+	Return __StringM_RegExpOnArray($sSource, '(*UCP)\W+|\d+|[\p{L}\-_' & $regExpSetInWord & ']+', '(.)(.*)', '"\1"&StringLower("\2")')
 EndFunc
 
 ; #FUNCTION# ===============================================================================================
@@ -174,13 +174,13 @@ Func _StringM_UpperLowerString($sString, $bSpaceExcluded = True)
 	Local $sResult = ""
 	Local $bSwitch = True
 	Local $aString = StringSplit($sString, "", 2)
-	For $elem In $aString 
+	For $elem In $aString
 		If $bSpaceExcluded And $elem == " " Then
 			$sResult &= $elem
 		Else
-			If $bSwitch Then 
+			If $bSwitch Then
 				$sResult &= StringUpper($elem)
-			Else 
+			Else
 				$sResult &= StringLower($elem)
 			EndIf
 			$bSwitch = Not $bSwitch
