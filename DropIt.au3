@@ -6994,8 +6994,8 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 		$aSubMainArray = _Position_Checking($aSubMainArray, $sPos, $aTmp, $sProfile)
 		$aSubMainArray[$sPos][3] = _Destination_Fix($aSubMainArray[$sPos][0], $aSubMainArray[$sPos][3], $aSubMainArray[$sPos][2], $aSubMainArray[$sPos][6], $aSubMainArray[0][2], $sProfile)
 
-		If $aSubMainArray[$sPos][4] = -1 Then
-			; the item shall be ignored, so stop further execution of actions for it here
+		If $aSubMainArray[$sPos][4] = -1 And $aTmp[1][3] = "$2" Then
+			; the item shall be ignored, so stop further execution of actions for it here (=matching Ignore action)
 			ExitLoop
 		EndIf
 
@@ -7005,8 +7005,8 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 		EndIf
 
 		;TODO logically do the same here as in the Position_Process function
-		;TODO how should multi action behave for groups?
 		;TODO how should multi action behave for %Counter%?
+		; TODO change writing to destination: "copy1;True;copy2;False;comp1;True" we could use something like "copy1 (from source) >> copy2 (from destination) >> comp1 (from source)"
 
 		; if current action was ignore, but did not match the current input file, so proceed with next action without throwing an error
 		; process the group, but do not update the list view, as the details will be stored only in the multi action results
