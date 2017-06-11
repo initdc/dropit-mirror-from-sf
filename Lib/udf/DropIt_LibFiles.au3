@@ -459,17 +459,23 @@ Func __GetFileProperties($gFilePath, $gPropertyNumber = 0, $gMode = 0) ; Modifie
 	Local $gFileName, $gFileDir, $gObjShell, $gObjFolder, $gObjFile, $gFileProperty, $gFileProperties[2]
 
 	If $gMode = 0 Then
-		;                           0  1  2  3  4  5  6    7   8    9   10   11  12   13  14   15   16   17   18  19  20  21  22  23  24   25   26   27   28  29   30
-		Local $gArrayWin2000[31] = [0, 1, 2, 3, 6, 7, 4,  -1,  8,  -1,  -1,  -1, 10,  -1, 11,  -1,  -1,  -1,  -1, 12, 13,  5, 15, 33, 30,  -1,  -1,  -1,  19, 40,  -1]
-		Local $gArrayWinXP[31]   = [0, 1, 2, 3, 4, 5, 6,   7,  8,  25,  26,  24,  9,  16, 10,  17,  20,  18,  19, 11, 12, 14, 15, 21, 22,  -1,  -1,  -1,  38, 40,  -1]
-		Local $gArrayWin7[31]    = [0, 1, 2, 3, 4, 5, 6,   7, 10,  12,  31,  30, 20,  13, 21,  14,  16,  15,  26, 22, 23, 24, 25, 27, 28,  32,  33,  19, 270, 18, 148]
-		Local $gArrayWin10[31]   = [0, 1, 2, 3, 4, 5, 6,   7, 10,  12,  31,  30, 20,  13, 21,  14,  16,  15,  26, 22, 23, 24, 25, 27, 28,  32,  33,  19, 290, 18, 150]
+		;                            0  1  2  3  4  5  6    7   8    9   10   11  12   13  14   15   16   17   18  19  20  21  22  23  24   25   26   27   28  29   30
+		Local $gArrayWin2000[31]  = [0, 1, 2, 3, 6, 7, 4,  -1,  8,  -1,  -1,  -1, 10,  -1, 11,  -1,  -1,  -1,  -1, 12, 13,  5, 15, 33, 30,  -1,  -1,  -1,  19, 40,  -1]
+		Local $gArrayWinXP[31]    = [0, 1, 2, 3, 4, 5, 6,   7,  8,  25,  26,  24,  9,  16, 10,  17,  20,  18,  19, 11, 12, 14, 15, 21, 22,  -1,  -1,  -1,  38, 40,  -1]
+		Local $gArrayWinVista[31] = [0, 1, 2, 3, 4, 5, 6,   7, 10,  12,  31,  30, 20,  13, 21,  14,  16,  15,  26, 22, 23, 24, 25, 27, 28,  32,  33,  19, 263, 18, 148]
+		Local $gArrayWin7[31]     = [0, 1, 2, 3, 4, 5, 6,   7, 10,  12,  31,  30, 20,  13, 21,  14,  16,  15,  26, 22, 23, 24, 25, 27, 28,  32,  33,  19, 270, 18, 148]
+		Local $gArrayWin81[31]    = [0, 1, 2, 3, 4, 5, 6,   7, 10,  12,  31,  30, 20,  13, 21,  14,  16,  15,  26, 22, 23, 24, 25, 27, 28,  32,  33,  19, 284, 18, 149]
+		Local $gArrayWin10[31]    = [0, 1, 2, 3, 4, 5, 6,   7, 10,  12,  31,  30, 20,  13, 21,  14,  16,  15,  26, 22, 23, 24, 25, 27, 28,  32,  33,  19, 290, 18, 150]
 		If @OSVersion == "WIN_XP" Or @OSVersion == "WIN_XPe" Or @OSVersion == "WIN_2003" Then
 			$gPropertyNumber = $gArrayWinXP[$gPropertyNumber]
 		ElseIf @OSVersion == "WIN_2000" Then
 			$gPropertyNumber = $gArrayWin2000[$gPropertyNumber]
 		ElseIf @OSVersion == "WIN_10" Then
 			$gPropertyNumber = $gArrayWin10[$gPropertyNumber]
+		ElseIf @OSVersion == "WIN_81" Then
+			$gPropertyNumber = $gArrayWin81[$gPropertyNumber]
+		ElseIf @OSVersion == "WIN_VISTA" Then
+			$gPropertyNumber = $gArrayWinVista[$gPropertyNumber]
 		Else
 			$gPropertyNumber = $gArrayWin7[$gPropertyNumber]
 		EndIf
