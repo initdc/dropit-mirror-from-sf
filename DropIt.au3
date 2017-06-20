@@ -2679,6 +2679,8 @@ Func _CheckForceSelectionOfItems(ByRef $mList)
 		; force selections for the next items, depending on the current and/or last action in the list
 		$sCurrentAction = __GetActionString(_GUICtrlListView_GetItemText($mList, $i, 1))
 
+		; TODO behave for associations as described in conversation with Lupo
+
 ;		For these associations, the previous SOURCE has to be used
 ;		Case "$2"
 ;			$gReturn = __GetLang('ACTION_IGNORE', 'Ignore')
@@ -5513,8 +5515,10 @@ Func _Position_Process(ByRef $pMainArray, $pProfile, $pElementsGUI)
 		_GUICtrlListView_AddSubItem($Global_ListViewProcess, $A - 1, __GetLang('POSITIONPROCESS_LOG_1', 'Loaded'), 3) ; Set ListView State To "Loaded".
 		__Log_Write(__GetLang('POSITIONPROCESS_LOG_1', 'Loaded'), $pMainArray[$A][0])
 		$pCounter += 1 ; Used For %Counter% Abbreviation.
+		; Add Counter Information To The Sort Criteria For Further Use During Processing The Group
+		$pMainArray[$A][5] &= "|" & $pCounter
 		$pStringSplit = StringSplit($pMainArray[$A][3], "|")
-		If StringInStr($pStringSplit[1], "%") And StringInStr("$C" & "$D" & "$E", $pMainArray[$A][2]) = 0 Then
+		If StringInStr($pStringSplit[1], "%") And StringInStr("$C" & "$D" & "$E" & "$L", $pMainArray[$A][2]) = 0 Then
 			$pStringSplit[1] = StringReplace($pStringSplit[1], "%Counter%", StringFormat("%02d", $pCounter))
 			$pMainArray[$A][3] = _ArrayToString($pStringSplit, "|", 1)
 		EndIf
@@ -6959,7 +6963,7 @@ Func _Sorting_OpenFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI)
 EndFunc   ;==>_Sorting_OpenFile
 
 Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
-	Local $aAssociationNames, $i, $j, $aAssociations, $sPos = 0, $aTmp, $aSubMainArray[2][7], $bUsePreviousDestinationAsNextSource
+	Local $aAssociationNames, $i, $j, $aAssociations, $sPos = 0, $aTmp, $aSubMainArray[2][7], $bUsePreviousDestinationAsNextSource, $pStringSplit, $iCounter = -1
 
 	For $A = 0 To 6
 		$aSubMainArray[0][$A] = $sMainArray[0][$A]
@@ -6968,6 +6972,11 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 		EndIf
 	Next
 	$aSubMainArray[0][0] = 1
+
+	$pStringSplit = StringSplit($aSubMainArray[1][5], "|")
+	If $pStringSplit[0] > 1 Then
+		$iCounter = Int($pStringSplit[$pStringSplit[0]])
+	EndIf
 
 	;Find corresponding associations
 	$aAssociations = __GetAssociations($sProfile)
@@ -6999,6 +7008,15 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 		$aSubMainArray = _Position_Checking($aSubMainArray, $sPos, $aTmp, $sProfile)
 		$aSubMainArray[$sPos][3] = _Destination_Fix($aSubMainArray[$sPos][0], $aSubMainArray[$sPos][3], $aSubMainArray[$sPos][2], $aSubMainArray[$sPos][6], $aSubMainArray[0][2], $sProfile)
 
+		; Replace counter abbreviation
+		If $iCounter >= 0 Then
+			$pStringSplit = StringSplit($aSubMainArray[$sPos][3], "|")
+			If StringInStr($pStringSplit[1], "%") And StringInStr("$C" & "$D" & "$E" & "$L", $aSubMainArray[$sPos][2]) = 0 Then
+				$pStringSplit[1] = StringReplace($pStringSplit[1], "%Counter%", StringFormat("%02d", $iCounter))
+				$aSubMainArray[$sPos][3] = _ArrayToString($pStringSplit, "|", 1)
+			EndIf
+		EndIf
+
 		If $aSubMainArray[$sPos][4] = -1 And $aTmp[1][3] = "$2" Then
 			; the item shall be ignored, so stop further execution of actions for it here (=matching Ignore action)
 			ExitLoop
@@ -7009,8 +7027,6 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 			__SetProgressStatus($sElementsGUI, 2, $aSubMainArray[1][0])
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
-
-		;TODO how should multi action behave for %Counter%?
 
 		; if current action was ignore, but did not match the current input file, so proceed with next action without throwing an error
 		; process the group, but do not update the list view, as the details will be stored only in the multi action results

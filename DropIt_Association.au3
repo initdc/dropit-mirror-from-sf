@@ -324,7 +324,11 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 				If $gDestination <> "" Then
 					$gDestination &= " >> "
 				EndIf
-				$gDestination &= $gStringSplit[$A] & " (" & $gStringSplit[$A + 1] & ")"
+				If $gStringSplit[$A + 1] = "OnSource" Then
+					$gDestination &= $gStringSplit[$A] & " (" & __GetLang('MANAGE_MULTI_ACTION_FROM_SOURCE', 'from source') & ")"
+				ElseIf $gStringSplit[$A + 1] = "OnDest" Then
+					$gDestination &= $gStringSplit[$A] & " (" & __GetLang('MANAGE_MULTI_ACTION_FROM_DESTINATION', 'from destination') & ")"
+				EndIf
 			Next
 	EndSwitch
 
