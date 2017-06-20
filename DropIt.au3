@@ -2751,7 +2751,6 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, $mHandle = -1, $mProfile 
  	GUISetState(@SW_SHOW)
 
 	; add available actions to list
-	; TODO why is second progress bar running to 200%?
 	$aAssociations = __GetAssociations($mProfile)
 	For $i = 1 to UBound($aAssociations) - 1
 		$iItemIndex = _GUICtrlListView_AddItem($mListAssoc, $aAssociations[$i][0])
@@ -6964,7 +6963,9 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 
 	For $A = 0 To 6
 		$aSubMainArray[0][$A] = $sMainArray[0][$A]
-		$aSubMainArray[1][$A] = $sMainArray[$sIndex][$A]
+		If $A <> 1 Then ; Do not use file size, as otherwise progress indication gets wrong during multi action
+			$aSubMainArray[1][$A] = $sMainArray[$sIndex][$A]
+		EndIf
 	Next
 	$aSubMainArray[0][0] = 1
 
@@ -6972,7 +6973,7 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 	$aAssociations = __GetAssociations($sProfile)
 	$aAssociationNames = StringSplit($sMainArray[$sIndex][3], ";")
 
-	__SetProgressStatus($sElementsGUI, 1, "") ; Reset Single Progress Bar And Show Second Line.
+	__SetProgressStatus($sElementsGUI, 1, $aSubMainArray[1][0]) ; Reset Single Progress Bar And Show Second Line.
 
 	For $i = 1 to $aAssociationNames[0] - 1 Step 2
 		$sPos += 1
@@ -7005,11 +7006,11 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 
 		If $aSubMainArray[$sPos][4] < 0 And Not $aTmp[1][3] = "$2" Then
 			$sMainArray[$sIndex][3] = $aSubMainArray
+			__SetProgressStatus($sElementsGUI, 2, $aSubMainArray[1][0])
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
 
 		;TODO how should multi action behave for %Counter%?
-		; TODO change writing to destination: "copy1;True;copy2;False;comp1;True" we could use something like "copy1 (from source) >> copy2 (from destination) >> comp1 (from source)"
 
 		; if current action was ignore, but did not match the current input file, so proceed with next action without throwing an error
 		; process the group, but do not update the list view, as the details will be stored only in the multi action results
@@ -7031,15 +7032,20 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 			EndIf
 		Else
 			$sMainArray[$sIndex][3] = $aSubMainArray
+			__SetProgressStatus($sElementsGUI, 2, $aSubMainArray[1][0])
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
 		If @error And Not $aTmp[1][3] = "$2" Then
 			$sMainArray[$sIndex][3] = $aSubMainArray
+			__SetProgressStatus($sElementsGUI, 2, $aSubMainArray[1][0])
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
+
+		GUICtrlSetData($sElementsGUI[3], $sPos / ($aAssociationNames[0] / 2))
 	Next
 
 	$sMainArray[$sIndex][3] = $aSubMainArray
+	__SetProgressStatus($sElementsGUI, 2, $aSubMainArray[1][0])
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_MultiAction
 

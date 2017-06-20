@@ -294,7 +294,7 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 	Switch $gAction
 		Case "$6"
 			$gDestination = __GetDeleteString($gDestination)
-		Case "$3", "$4", "$5", "$8", "$F", "$G", "$H", "$I", "$J", "$L"
+		Case "$3", "$4", "$5", "$8", "$F", "$G", "$H", "$I", "$J"
 			$gStringSplit = StringSplit($gDestination, "|")
 			$gDestination = $gStringSplit[1]
 		Case "$C"
@@ -316,6 +316,16 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 			Else
 				$gDestination = __GetLang('MAIL_SETTINGS_DEFINED', 'Defined Settings')
 			EndIf
+		Case "$L"
+			; Prettify text of multi action destination
+			$gStringSplit = StringSplit($gDestination, ";")
+			$gDestination = ""
+			For $A = 1 to $gStringSplit[0] - 1 Step 2
+				If $gDestination <> "" Then
+					$gDestination &= " >> "
+				EndIf
+				$gDestination &= $gStringSplit[$A] & " (" & $gStringSplit[$A + 1] & ")"
+			Next
 	EndSwitch
 
 	Return $gDestination
