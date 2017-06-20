@@ -640,7 +640,6 @@ Func __SetPositionResult($sMainArray, $sFrom, $sTo, $sListView, $sElementsGUI, $
 			$sResult = $sMainArray[$A][4] + 9
 		EndIf
 
-		;TODO check if writing this result to the log for every item between from and to is ok
 		If $sResult == 0 Then
 			$sText = __GetLang('OK', 'OK')
 			If $sMainArray[$A][4] > -9 And $sWriteToLog Then
@@ -1069,6 +1068,7 @@ Func __GetPercent($gSize, $gUpdateCurrent = 1)
 	If $G_Global_SortingTotalSize = 0 Then
 		Return 0
 	EndIf
+
 	Return Round($gCurrentSize / $G_Global_SortingTotalSize * 100)
 EndFunc   ;==>__GetPercent
 

@@ -2751,7 +2751,6 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, $mHandle = -1, $mProfile 
  	GUISetState(@SW_SHOW)
 
 	; add available actions to list
-	; TODO check why the overall result of the multi action is ok, although the last association did not match.
 	; TODO why is second progress bar running to 200%?
 	$aAssociations = __GetAssociations($mProfile)
 	For $i = 1 to UBound($aAssociations) - 1
@@ -5600,6 +5599,9 @@ Func _Position_ProcessGroup(ByRef $pMainArray, $pFrom, $pTo, $pListViewProcess, 
 					Case "$0", "$1" ; Move Or Copy Action.
 						$pMainArray = _Sorting_CopyFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
+					Case "" ; No Action Matching, So Stop Current Process Group (Needed For Multi Action).
+						SetError(2, 0, 0)
+
 				EndSwitch
 				If @extended = 1 Then ; Aborted.
 					Return SetError(1, 0, 0)
@@ -6970,6 +6972,8 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 	$aAssociations = __GetAssociations($sProfile)
 	$aAssociationNames = StringSplit($sMainArray[$sIndex][3], ";")
 
+	__SetProgressStatus($sElementsGUI, 1, "") ; Reset Single Progress Bar And Show Second Line.
+
 	For $i = 1 to $aAssociationNames[0] - 1 Step 2
 		$sPos += 1
 
@@ -7004,7 +7008,6 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 			Return SetError(2, 0, $sMainArray) ; Failed.
 		EndIf
 
-		;TODO logically do the same here as in the Position_Process function
 		;TODO how should multi action behave for %Counter%?
 		; TODO change writing to destination: "copy1;True;copy2;False;comp1;True" we could use something like "copy1 (from source) >> copy2 (from destination) >> comp1 (from source)"
 
