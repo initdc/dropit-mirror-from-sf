@@ -2679,7 +2679,8 @@ Func _CheckForceSelectionOfItems(ByRef $mList)
 		; force selections for the next items, depending on the current and/or last action in the list
 		$sCurrentAction = __GetActionString(_GUICtrlListView_GetItemText($mList, $i, 1))
 
-		; TODO behave for associations as described in conversation with Lupo
+		; TODO do not allow further actions after a DELETE action
+		; TODO If "Remove source after processing it" option is enabled, the multi action does have to work always on the previous destination
 
 ;		For these associations, the previous SOURCE has to be used
 ;		Case "$2"
@@ -2692,11 +2693,11 @@ Func _CheckForceSelectionOfItems(ByRef $mList)
 ; 			$gReturn = __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard')
 ; 		Case "$C"
 ; 			$gReturn = __GetLang('ACTION_UPLOAD', 'Upload')
-; 		Case "$D"
-; 			$gReturn = __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties')
 ; 		Case "$E"
 ; 			$gReturn = __GetLang('ACTION_SEND_MAIL', 'Send by Mail')
-		If StringInStr("$2" & "$5" & "$6" & "$B" & "$C" & "$D" & "$E", $sCurrentAction) > 0 Then
+; 		Case "$M"
+; 			$gReturn = __GetLang('ACTION_PRINT', 'Print')
+		If StringInStr("$2" & "$5" & "$6" & "$B" & "$C" & "$E" & "$M", $sCurrentAction) > 0 Then
 			$bLastItemForcesProcessingOnPreviousSource = True
 		Else
 			$bLastItemForcesProcessingOnPreviousSource = False
@@ -2705,7 +2706,9 @@ Func _CheckForceSelectionOfItems(ByRef $mList)
 ;		For these associations, the previous DESTINATION has to be used
 ;		Case "$0" ; Move.
 ;			$gReturn = __GetLang('ACTION_MOVE', 'Move')
-		If StringInStr("$0", $sCurrentAction) > 0 Then
+; 		Case "$D"
+; 			$gReturn = __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties')
+		If StringInStr("$0" & "$D", $sCurrentAction) > 0 Then
 			$bLastItemForcesProcessingOnPreviousDestination = True
 		Else
 			$bLastItemForcesProcessingOnPreviousDestination = False
@@ -6425,7 +6428,7 @@ Func _Sorting_EncryptFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 	$sPassword = __StringEncrypt(0, $sStringSplit[3], $sPassword_Code)
 
 	If $sStringSplit[2] == "7ZIP" Then
-		$sMainArray[$sIndex][3] = $sStringSplit[1] & "|" & $sStringSplit[4] & ";7z;5;LZMA;AES-256;" & $sStringSplit[3]
+		$sMainArray[$sIndex][3] = $sStringSplit[1] & "\" & __GetFileName($sSource) & $STATIC_CRYPT_FOLDER_EXT & "|" & $sStringSplit[4] & ";7z;5;LZMA;AES-256;" & $sStringSplit[3]
 		Return _Sorting_CompressFile($sMainArray, $sIndex, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	EndIf
 
@@ -7002,7 +7005,12 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 		If $aAssociationNames[$i + 1] = "OnSource" Then
 			$bUsePreviousDestinationAsNextSource = False
 		Else
-			$bUsePreviousDestinationAsNextSource = True
+			If $aSubMainArray[$sPos][2] = "$D" Then
+				; work on previous source for CHANGE PROPERTIES action, though only on previous destination is forced in configuration, for usability purposes
+				$bUsePreviousDestinationAsNextSource = False
+			Else
+				$bUsePreviousDestinationAsNextSource = True
+			EndIf
 		EndIf
 
 		$aSubMainArray = _Position_Checking($aSubMainArray, $sPos, $aTmp, $sProfile)
@@ -7041,6 +7049,11 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 						$aSubMainArray[$sPos + 1][0] = StringRegExpReplace($aSubMainArray[$sPos][3], "([^\|]*)\|.*", "\1")
 					Else
 						$aSubMainArray[$sPos + 1][0] = $aSubMainArray[$sPos][3]
+					EndIf
+
+					If $aSubMainArray[$sPos][2] = "$F" Then
+						; work on encrypted file as a result of ENCRYPT action instead of folder
+						$aSubMainArray[$sPos + 1][0] &= "\" & __GetFileName($aSubMainArray[$sPos][0]) & $STATIC_CRYPT_FOLDER_EXT
 					EndIf
 				Else
 					$aSubMainArray[$sPos + 1][0] = $aSubMainArray[$sPos][0]
