@@ -149,7 +149,7 @@ Global $Global_NewDroppedFiles, $Global_DroppedFiles[1], $Global_PriorityActions
 Global $Global_AbortButton, $Global_PauseButton ; Process GUI.
 Global $Global_ResizeMinWidth, $Global_ResizeMinHeight, $Global_ResizeMaxWidth, $Global_ResizeMaxHeight ; Windows Size For Resizing.
 Global $Global_Slider, $Global_SliderLabel ; _Customize_GUI_Edit.
-Global $Global_File_Content[1][2], $Global_ListViewMultiActionLeft, $Global_ListViewMultiActionRight
+Global $Global_File_Content[1][2]
 
 _WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
 __EnvironmentVariables() ; Set The Standard & User Assigned Environment Variables.
@@ -330,7 +330,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Local $mSite, $mInput_Site, $mButton_Site, $mSiteSettings, $mList, $mInput_List, $mButton_List, $mListName, $mListProperties, $mHTMLTheme, $mListSettings, $mInput_Current
 	Local $mCrypt, $mInput_Crypt, $mButton_Crypt, $mCryptSettings, $mButton_Change, $mFileProperties, $mButton_Mail, $mMailSettings, $mStringSplit, $mNoOthers, $mCheck_Favourite
 	Local $mCompress, $mInput_Compress, $mButton_Compress, $mCompressSettings, $mCompressFormat, $mCompressFormatBis, $mButton_MultiAction, $mMultiAction
-	Local $mExtract, $mInput_Extract, $mButton_Extract, $mExtractSettings, $mJoin, $mInput_Join, $mButton_Join, $mJoinSettings, $iActionTypeChangedForMultiAction, $mAssociations
+	Local $mExtract, $mInput_Extract, $mButton_Extract, $mExtractSettings, $mJoin, $mInput_Join, $mButton_Join, $mJoinSettings, $mAssociations
 	Local $mOpenWith, $mInput_OpenWith, $mButton_OpenWith, $mOpenWithSettings, $mSplit, $mInput_Split, $mButton_Split, $mSplitSettings = "10;MB;False"
 	Local $mInput_Ignore, $mGallery, $mInput_Gallery, $mButton_Gallery, $mGalleryProperties, $mGalleryTheme, $mGallerySettings = "2;1;", $i
 
@@ -486,7 +486,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 		$mSite = "/"
 	EndIf
 	If $mInitialAction == __GetLang('ACTION_MULTI', 'Multi Action') Then
-		$mMultiAction = $mDestination
+		$mMultiAction = __GetAssociationField($mProfile[0], $mAssociationName, "Destination")
 		$mDestination = "-"
 	Else
 		$mMultiAction = "-"
@@ -711,7 +711,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 
 	While 1
 		; Enable/Disable Destination Input And Switch Folder/Program Label:
-		If GUICtrlRead($mCombo_Action) <> $mCurrentAction And _GUICtrlComboBox_GetDroppedState($mCombo_Action) = False And $iActionTypeChangedForMultiAction = 0 Then
+		If GUICtrlRead($mCombo_Action) <> $mCurrentAction And _GUICtrlComboBox_GetDroppedState($mCombo_Action) = False Then
 			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_MultiAction, $GUI_HIDE)
@@ -1310,7 +1310,7 @@ Func _Manage_Delete($mProfilePath, $mAssociationName, $mHandle = -1)
 	For $i = 1 to UBound($aAssociations) - 1
 		If $aAssociations[$i][3] = "$L" Then
 			If StringRegExp($aAssociations[$i][4], "(?:^|;)" & $mAssociationName & "(?:;|$)") Then
-				If $mInUse <> "" Then $mInUse = ", " & $mInUse
+				If $mInUse <> "" Then $mInUse &= ", "
 				$mInUse = $mInUse & $aAssociations[$i][0]
 			EndIf
 		EndIf
@@ -2650,37 +2650,102 @@ Func _Manage_Mail(ByRef $mSettings, $mHandle = -1)
 	Return 1 ; ByRef: $mSettings.
 EndFunc   ;==>_Manage_Mail
 
-Func _CheckForceSelectionOfItems(ByRef $mList)
-	Local $i, $bLastItemForcesProcessingOnPreviousSource, $bLastItemForcesProcessingOnPreviousDestination, $sCurrentAction
+Func _Manage_MultiAction_DeleteActionRow(ByRef $mGUI, ByRef $mActionRows, $mPosition)
+	; delete old items
+	For $A = 0 To UBound($mActionRows, 2) - 1
+		GUICtrlDelete($mActionRows[$mPosition][$A])
+	Next
+	_ArrayDelete($mActionRows, $mPosition)
 
-	For $i = 0 To _GUICtrlListView_GetItemCount($mList) - 1
-		If $i = 0 Then
-			;always enable "on previous source" for the first list element
-			_GUICtrlListView_SetItemChecked($mList, $i, True)
-		Else
-			If $bLastItemForcesProcessingOnPreviousSource Then
-				_GUICtrlListView_SetItemChecked($mList, $i, True)
-			ElseIf $bLastItemForcesProcessingOnPreviousDestination Then
-				_GUICtrlListView_SetItemChecked($mList, $i, False)
-			EndIf
-		EndIf
+	; move up all other items
+	For $A = $mPosition To UBound($mActionRows) - 1
+		For $B = 0 To 4
+			GUICtrlSetResizing($mActionRows[$A][$B], 1)
+			ControlMove($mGUI, "", $mActionRows[$A][$B], ControlGetPos($mGUI, "", $mActionRows[$A][$B])[0], ControlGetPos($mGUI, "", $mActionRows[$A][$B])[1] - 30)
+			GUICtrlSetResizing($mActionRows[$A][$B], 802)
+		Next
+	Next
 
-		; Update text in list item based on the selection status, if necessary
-		If _GUICtrlListView_GetItemChecked($mList, $i) Then
-			If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("SOURCE", "Source") Then
-				_GUICtrlListView_SetItemText($mList, $i, __GetLang("SOURCE", "Source"), 2)
-			EndIf
-		Else
-			If _GUICtrlListView_GetItemText($mList, $i, 2) <> __GetLang("DESTINATION", "Destination") Then
-				_GUICtrlListView_SetItemText($mList, $i, __GetLang("DESTINATION", "Destination"), 2)
-			EndIf
-		EndIf
+ 	WinMove($mGUI, "", Default, Default, Default, WinGetPos($mGUI)[3] - 30)
 
-		; force selections for the next items, depending on the current and/or last action in the list
-		$sCurrentAction = __GetActionString(_GUICtrlListView_GetItemText($mList, $i, 1))
+	Return 1
+EndFunc ; ==> _Manage_MultiAction_DeleteActionRow
 
-		; TODO do not allow further actions after a DELETE action
-		; TODO If "Remove source after processing it" option is enabled, the multi action does have to work always on the previous destination
+Func _Manage_MultiAction_AddActionRow(ByRef $mGUI, ByRef $mActionRows, $mAssociations, $mBeforePosition = -1)
+	Local $mTop = 0, $mLabelStart, $mComboAssociation, $mComboOnSrcOrDest, $mButtonAddRow, $mButtonDeleteRow, $mResult[1][6]
+
+	If $mBeforePosition <= 0 Then
+		$mBeforePosition = UBound($mActionRows)
+	EndIf
+
+	$mTop = ($mBeforePosition - 1) * 30 + 15
+
+	If UBound($mActionRows) = 1 Then
+		$mLabelStart = GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_0', 'First apply'), 12, $mTop, 60, 20)
+	Else
+		$mLabelStart = GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_1', 'Then apply'), 12, $mTop, 60, 20)
+	EndIf
+
+	$mComboAssociation = GUICtrlCreateCombo("", 90, $mTop, 250, 20, $CBS_DROPDOWNLIST)
+	If UBound($mAssociations) > 0 Then
+		For $A = 1 to UBound($mAssociations) - 1
+			_GUICtrlComboBox_AddString($mComboAssociation, $mAssociations[$A][0])
+		Next
+	EndIf
+
+	If $mBeforePosition = 1 Then
+		$mComboOnSrcOrDest = GUICtrlCreateCombo(__GetLang("MANAGE_MULTI_ACTION_ON_SOURCE", "on previous source"), 350, $mTop, 180, 20, $CBS_DROPDOWNLIST)
+		GUICtrlSetState($mComboOnSrcOrDest, $GUI_DISABLE)
+	Else
+		$mComboOnSrcOrDest = GUICtrlCreateCombo(__GetLang("MANAGE_MULTI_ACTION_ON_DESTINATION", "on previous destination"), 350, $mTop, 180, 20, $CBS_DROPDOWNLIST)
+		_GUICtrlComboBox_AddString($mComboOnSrcOrDest, __GetLang("MANAGE_MULTI_ACTION_ON_SOURCE", "on previous source"))
+	EndIf
+
+	$mButtonAddRow = GUICtrlCreateButton("+", 540, $mTop, 20, 20)
+	$mButtonDeleteRow = GUICtrlCreateButton("-", 570, $mTop, 20, 20)
+	If UBound($mActionRows) = 1 Then
+		GUICtrlSetState($mButtonDeleteRow, $GUI_HIDE)
+	EndIf
+
+	GUICtrlSetResizing($mComboAssociation, 802)
+	GUICtrlSetResizing($mComboOnSrcOrDest, 802)
+	GUICtrlSetResizing($mButtonAddRow, 802)
+	GUICtrlSetResizing($mButtonDeleteRow, 802)
+	GUICtrlSetResizing($mLabelStart, 802)
+	$mResult[0][0] = $mComboAssociation
+	$mResult[0][1] = $mComboOnSrcOrDest
+	$mResult[0][2] = $mButtonAddRow
+	$mResult[0][3] = $mButtonDeleteRow
+	$mResult[0][4] = $mLabelStart
+	$mResult[0][5] = "" ;used to store association action
+	If $mBeforePosition >= UBound($mActionRows) Then
+		_ArrayAdd($mActionRows, $mResult)
+	Else
+		_ArrayInsert($mActionRows, $mBeforePosition, $mResult)
+
+		; move all other action rows down
+		For $A = $mBeforePosition + 1 To UBound($mActionRows) - 1
+			$mTop += 30
+			For $B = 0 To 4
+				GUICtrlSetResizing($mActionRows[$A][$B], 1)
+				ControlMove($mGUI, "", $mActionRows[$A][$B], ControlGetPos($mGUI, "", $mActionRows[$A][$B])[0], $mTop)
+				GUICtrlSetResizing($mActionRows[$A][$B], 802)
+			Next
+		Next
+	EndIf
+
+	; Resize window
+ 	WinMove($mGUI, "", Default, Default, Default, $mTop + 90)
+	_WinAPI_RedrawWindow($mGUI)
+
+	Return $mBeforePosition
+EndFunc ;==> _Manage_MultiAction_AddActionRow
+
+Func _Manage_MultiAction_SetOnSrcOrDstCombo(ByRef $mActionRows)
+	Local $mCombo, $mPreviousAction = "$2"
+
+	For $A = 1 To UBound($mActionRows) - 1
+		$mCombo = $mActionRows[$A][1]
 
 ;		For these associations, the previous SOURCE has to be used
 ;		Case "$2"
@@ -2697,159 +2762,83 @@ Func _CheckForceSelectionOfItems(ByRef $mList)
 ; 			$gReturn = __GetLang('ACTION_SEND_MAIL', 'Send by Mail')
 ; 		Case "$M"
 ; 			$gReturn = __GetLang('ACTION_PRINT', 'Print')
-		If StringInStr("$2" & "$5" & "$6" & "$B" & "$C" & "$E" & "$M", $sCurrentAction) > 0 Then
-			$bLastItemForcesProcessingOnPreviousSource = True
-		Else
-			$bLastItemForcesProcessingOnPreviousSource = False
-		EndIf
+		If StringInStr("$2" & "$5" & "$6" & "$B" & "$C" & "$E" & "$M", $mPreviousAction) > 0 Then
+			GUICtrlSetData($mCombo, __GetLang("MANAGE_MULTI_ACTION_ON_SOURCE", "on previous source"))
+			GUICtrlSetState($mCombo, $GUI_DISABLE)
 
 ;		For these associations, the previous DESTINATION has to be used
 ;		Case "$0" ; Move.
 ;			$gReturn = __GetLang('ACTION_MOVE', 'Move')
 ; 		Case "$D"
 ; 			$gReturn = __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties')
-		If StringInStr("$0" & "$D", $sCurrentAction) > 0 Then
-			$bLastItemForcesProcessingOnPreviousDestination = True
+		ElseIf StringInStr("$0" & "$D", $mPreviousAction) > 0 Then
+			GUICtrlSetData($mCombo, __GetLang("MANAGE_MULTI_ACTION_ON_DESTINATION", "on previous destination"))
+			GUICtrlSetState($mCombo, $GUI_DISABLE)
+
+;		Else Enable the combo
 		Else
-			$bLastItemForcesProcessingOnPreviousDestination = False
+			GUICtrlSetState($mCombo, $GUI_ENABLE)
 		EndIf
+
+		$mPreviousAction = $mActionRows[$A][5]
 	Next
-EndFunc   ;==>_CheckForceSelectionOfItems
+EndFunc ;==> _Manage_MultiAction_SetOnSrcOrDstCombo
 
 Func _Manage_MultiAction(ByRef $mSelectedAssociations, $mHandle = -1, $mProfile = -1)
-	Local $mGUI, $mSave, $mCancel, $mListAssoc, $mListSelected, $mButtonAdd, $mButtonRemove, $aAssociations, $i, $aSelectedAssoc[0], $aSelected[0], $pos, $sItemText, $iItemIndex
-	Local $mButtonMoveUp, $mButtonMoveDown, $bItemChecked, $sDefaultSetting
+	Local $mGUI, $mSave, $mCancel, $mActionRows[1][6], $mFirstRow[2], $mGuiMsg[0], $mItem
+	Local $aAssociations, $i, $aSelectedAssoc[0], $aSelected[0], $pos
 
-	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 624, 380, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
+	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 600, 42, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
 
-	;TODO add a button for explanation on how to use multi action
-	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_0', 'Available actions') & ":", 15, 12 + 4, 230, 20)
-	$mListAssoc = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action'), 15, 12 + 28, 230, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS, $LVS_SORTASCENDING))
-	_GUICtrlListView_SetExtendedListViewStyle($mListAssoc, $LVS_EX_FULLROWSELECT)
-	_GUICtrlListView_SetColumnWidth($mListAssoc, 0, 90)
-	_GUICtrlListView_SetColumnWidth($mListAssoc, 1, 90)
-	$Global_ListViewMultiActionLeft = $mListAssoc
-	$mButtonAdd = GUICtrlCreateButton(">", 272 - 12, 12 + 28 + 130 - 20 - 7 - 20 - 14, 24, 20, $BS_ICON)
-	GUICtrlSetTip($mButtonAdd, __GetLang('OPTIONS_BUTTON_4', 'Add'))
-	GUICtrlSetImage($mButtonAdd, @ScriptFullPath, -10, 0)
-	$mButtonRemove = GUICtrlCreateButton("<", 272 - 12, 12 + 28 + 130 - 20 - 7, 24, 20, $BS_ICON)
-	GUICtrlSetTip($mButtonRemove, __GetLang('OPTIONS_BUTTON_3', 'Remove'))
-	GUICtrlSetImage($mButtonRemove, @ScriptFullPath, -11, 0)
-	$mButtonMoveUp = GUICtrlCreateButton("^", 272 - 12, 12 + 28 + 130 + 7, 24, 20, $BS_ICON)
-	GUICtrlSetTip($mButtonMoveUp, __GetLang('OPTIONS_BUTTON_6', 'Up'))
-	GUICtrlSetImage($mButtonMoveUp, @ScriptFullPath, -12, 0)
-	$mButtonMoveDown = GUICtrlCreateButton("v", 272 - 12, 12 + 28 + 130 + 7 + 20 + 14, 24, 20, $BS_ICON)
-	GUICtrlSetTip($mButtonMoveDown, __GetLang('OPTIONS_BUTTON_7', 'Down'))
-	GUICtrlSetImage($mButtonMoveDown, @ScriptFullPath, -13, 0)
-	GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_1', 'Selected actions') & ":", 299, 12 + 4, 310, 20)
-	$mListSelected = _GUICtrlListView_Create($mGUI, __GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('FROM_PREVIOUS', 'From Previous'), 299, 12 + 28, 310, 260, BitOR($LVS_REPORT, $LVS_SINGLESEL, $LVS_SHOWSELALWAYS))
-	_GUICtrlListView_SetExtendedListViewStyle($mListSelected, BitOr($LVS_EX_FULLROWSELECT, $LVS_EX_CHECKBOXES))
-	_GUICtrlListView_SetColumnWidth($mListSelected, 0, 90)
-	_GUICtrlListView_SetColumnWidth($mListSelected, 1, 90)
-	_GUICtrlListView_SetColumnWidth($mListSelected, 2, 100)
-	$Global_ListViewMultiActionRight = $mListSelected
-
- 	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 312 - 40 - 90, 380 - 24 - 15, 90, 24)
- 	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 312 + 40, 380 - 24 - 15, 90, 24)
- 	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
-
+ 	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 295 - 95, 12, 90, 24)
+ 	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 295 + 5, 12, 90, 24)
+	GUICtrlSetResizing($mSave, 576)
+	GUICtrlSetResizing($mCancel, 576)
  	GUISetState(@SW_SHOW)
+	$mActionRows[0][0] = $mSave
+	$mActionRows[0][1] = $mCancel
 
-	; add available actions to list
 	$aAssociations = __GetAssociations($mProfile)
-	For $i = 1 to UBound($aAssociations) - 1
-		$iItemIndex = _GUICtrlListView_AddItem($mListAssoc, $aAssociations[$i][0])
-		_GUICtrlListView_AddSubItem($mListAssoc, $iItemIndex, __GetActionString($aAssociations[$i][3]), 1)
-	Next
 
-	; add selected actions to list
+ 	; add selected actions to list
 	$aSelected = StringSplit($mSelectedAssociations, ";")
 	For $i = 1 to UBound($aSelected) - 2 Step 2
+		$mItem = _Manage_MultiAction_AddActionRow($mGUI, $mActionRows, $aAssociations)
 		$pos = _ArraySearch($aAssociations, $aSelected[$i])
 		If $pos > -1 Then
-			$iItemIndex = _GUICtrlListView_AddItem($mListSelected, $aAssociations[$pos][0])
-			_GUICtrlListView_AddSubItem($mListSelected, _GUICtrlListView_GetItemCount($mListSelected) - 1, __GetActionString($aAssociations[$pos][3]), 1)
+			GUICtrlSetData($mActionRows[$mItem][0], $aAssociations[$pos][0])
+			$mActionRows[$mItem][5] = $aAssociations[$pos][3]
 			If $aSelected[$i + 1] = "OnSource" Then
-				_GUICtrlListView_SetItemChecked($mListSelected, $iItemIndex)
-				_GUICtrlListView_SetItemText($mListSelected, $iItemIndex, __GetLang("SOURCE", "Source"), 2)
+				GUICtrlSetData($mActionRows[$mItem][1], __GetLang("MANAGE_MULTI_ACTION_ON_SOURCE", "on previous source"))
+			Else
+				GUICtrlSetData($mActionRows[$mItem][1], __GetLang("MANAGE_MULTI_ACTION_ON_DESTINATION", "on previous destination"))
 			EndIf
 		EndIf
 	Next
-	_CheckForceSelectionOfItems($mListSelected)
+	_Manage_MultiAction_SetOnSrcOrDstCombo($mActionRows)
+
+	If UBound($aSelected) - 2 = 0 Then
+		_Manage_MultiAction_AddActionRow($mGUI, $mActionRows, $aAssociations)
+	EndIf
+
+ 	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
 
 	While 1
-		Sleep(25)
-		;set button state
-		If _GUICtrlListView_GetSelectedCount($mListAssoc) > 0 Then
-			GUICtrlSetState($mButtonAdd, BitOR($GUI_ENABLE, $GUI_SHOW))
-		Else
-			GUICtrlSetState($mButtonAdd, BitOR($GUI_DISABLE, $GUI_SHOW))
-		EndIf
-		If _GUICtrlListView_GetSelectedCount($mListSelected) > 0 Then
-			GUICtrlSetState($mButtonRemove, BitOR($GUI_ENABLE, $GUI_SHOW))
-			GUICtrlSetState($mButtonMoveUp, BitOR($GUI_ENABLE, $GUI_SHOW))
-			GUICtrlSetState($mButtonMoveDown, BitOR($GUI_ENABLE, $GUI_SHOW))
-		Else
-			GUICtrlSetState($mButtonRemove, BitOR($GUI_DISABLE, $GUI_SHOW))
-			GUICtrlSetState($mButtonMoveUp, BitOR($GUI_DISABLE, $GUI_SHOW))
-			GUICtrlSetState($mButtonMoveDown, BitOR($GUI_DISABLE, $GUI_SHOW))
-		EndIf
-
-		Switch GUIGetMsg()
+		$mGuiMsg = GUIGetMsg()
+		Switch $mGuiMsg
  			Case $GUI_EVENT_CLOSE, $mCancel
  				ExitLoop
 
-			Case $mButtonAdd
-				If _GUICtrlListView_GetSelectedCount($mListAssoc) > 0 Then
-					_GUICtrlListView_AddItem($mListSelected, _GUICtrlListView_GetItemText($mListAssoc, _GUICtrlListView_GetSelectionMark($mListAssoc)))
-					_GUICtrlListView_AddSubItem($mListSelected, _GUICtrlListView_GetItemCount($mListSelected) - 1, _GUICtrlListView_GetItemText($mListAssoc, _GUICtrlListView_GetSelectionMark($mListAssoc), 1), 1)
-					_WinAPI_SetFocus($mListSelected)
-					_CheckForceSelectionOfItems($mListSelected)
-				EndIf
-
-			Case $mButtonRemove
-				_GUICtrlListView_DeleteItemsSelected($mListSelected)
-				_WinAPI_SetFocus($mListSelected)
-				_CheckForceSelectionOfItems($mListSelected)
-
-			Case $mButtonMoveUp
-				If _GUICtrlListView_GetSelectedCount($mListSelected) > 0 Then
-					$pos = _GUICtrlListView_GetSelectedIndices($mListSelected, True)[1]
-					If $pos > 0 Then
-						$sItemText = _GUICtrlListView_GetItemText($mListSelected, $pos) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 1) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 2)
-						$bItemChecked = _GUICtrlListView_GetItemChecked($mListSelected, $pos)
-						_GUICtrlListView_DeleteItem($mListSelected, $pos)
-						_GUICtrlListView_InsertItem($mListSelected, StringSplit($sItemText, "|")[1], $pos - 1)
-						_GUICtrlListView_SetItemChecked($mListSelected, $pos - 1, $bItemChecked)
-						_GUICtrlListView_AddSubItem($mListSelected, $pos - 1, StringSplit($sItemText, "|")[2], 1)
-						_GUICtrlListView_SetItemSelected($mListSelected, $pos - 1)
-						_WinAPI_SetFocus($mListSelected)
-						_CheckForceSelectionOfItems($mListSelected)
-					EndIf
-				EndIf
-
-			Case $mButtonMoveDown
-				If _GUICtrlListView_GetSelectedCount($mListSelected) > 0 Then
-					$pos = _GUICtrlListView_GetSelectedIndices($mListSelected, True)[1]
-					If $pos < _GUICtrlListView_GetItemCount($mListSelected) - 1 Then
-						$sItemText = _GUICtrlListView_GetItemText($mListSelected, $pos) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 1) & "|" & _GUICtrlListView_GetItemText($mListSelected, $pos, 2)
-						$bItemChecked = _GUICtrlListView_GetItemChecked($mListSelected, $pos)
-						_GUICtrlListView_DeleteItem ($mListSelected, $pos)
-						_GUICtrlListView_InsertItem($mListSelected, StringSplit($sItemText, "|")[1], $pos + 1)
-						_GUICtrlListView_SetItemChecked($mListSelected, $pos + 1, $bItemChecked)
-						_GUICtrlListView_AddSubItem($mListSelected, $pos + 1, StringSplit($sItemText, "|")[2], 1)
-						_GUICtrlListView_SetItemSelected($mListSelected, $pos + 1)
-						_WinAPI_SetFocus($mListSelected)
-						_CheckForceSelectionOfItems($mListSelected)
-					EndIf
-				EndIf
-
 			Case $mSave
-				_CheckForceSelectionOfItems($mListSelected)
+				ReDim $aSelectedAssoc[0]
+				For $A = 1 to UBound($mActionRows) - 1
+					If GUICtrlRead($mActionRows[$A][0]) = "" Then
+						MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_4', 'Association Error'), __GetLang("MANAGE_EDIT_MSGBOX_44", "There exist rows without a configured association. Please remove these rows before saving."), 0, __OnTop($mGUI))
+						ContinueLoop 2
+					EndIf
 
-				For $i = 0 to _GUICtrlListView_GetItemCount($mListSelected) - 1
-					_ArrayAdd($aSelectedAssoc, _GUICtrlListView_GetItemText($mListSelected, $i))
-					If _GUICtrlListView_GetItemChecked($mListSelected, $i) Then
+					_ArrayAdd($aSelectedAssoc, GUICtrlRead($mActionRows[$A][0]))
+					If GUICtrlRead($mActionRows[$A][1]) = __GetLang("MANAGE_MULTI_ACTION_ON_SOURCE", "on previous source") Then
 						_ArrayAdd($aSelectedAssoc, "OnSource")
 					Else
 						_ArrayAdd($aSelectedAssoc, "OnDest")
@@ -2859,6 +2848,31 @@ Func _Manage_MultiAction(ByRef $mSelectedAssociations, $mHandle = -1, $mProfile 
 
 				ExitLoop
 		EndSwitch
+
+		For $A = 1 To UBound($mActionRows) - 1
+			Switch $mGuiMsg
+				Case $mActionRows[$A][0]
+					; association changed, so update action type
+					$pos = _ArraySearch($aAssociations, GUICtrlRead($mActionRows[$A][0]))
+					$mActionRows[$A][5] = ""
+					If $pos > -1 Then
+						$mActionRows[$A][5] = $aAssociations[$pos][3]
+					EndIf
+					_Manage_MultiAction_SetOnSrcOrDstCombo($mActionRows)
+
+				Case $mActionRows[$A][2]
+					; add button
+					_Manage_MultiAction_AddActionRow($mGUI, $mActionRows, $aAssociations, $A + 1)
+					_Manage_MultiAction_SetOnSrcOrDstCombo($mActionRows)
+
+				Case $mActionRows[$A][3]
+					; delete button
+					_Manage_MultiAction_DeleteActionRow($mGUI, $mActionRows, $A)
+					_Manage_MultiAction_SetOnSrcOrDstCombo($mActionRows)
+					ExitLoop
+
+			EndSwitch
+		Next
 	WEnd
 
 	GUIDelete($mGUI)
@@ -9128,12 +9142,6 @@ Func _WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 	If IsHWnd($nListViewCreateList) = 0 Then
 		$nListViewCreateList = GUICtrlGetHandle($nListViewCreateList)
 	EndIf
-	If IsHWnd($Global_ListViewMultiActionLeft) = 0 Then
-		$Global_ListViewMultiActionLeft = GUICtrlGetHandle($Global_ListViewMultiActionLeft)
-	EndIf
-	If IsHWnd($Global_ListViewMultiActionRight) = 0 Then
-		$Global_ListViewMultiActionRight = GUICtrlGetHandle($Global_ListViewMultiActionRight)
-	EndIf
 
 	Local $tNMHDR = DllStructCreate($tagNMHDR, $ilParam)
 	Local $nWndFrom = HWnd(DllStructGetData($tNMHDR, "hWndFrom"))
@@ -9144,27 +9152,6 @@ Func _WM_NOTIFY($hWnd, $iMsg, $iwParam, $ilParam)
 	Local $nSubItem = DllStructGetData($nInfo, "SubItem") ; The 'Column' Number Selected E.G. Select The 2nd Item Will Return 1
 
 	Switch $nWndFrom
-		Case $Global_ListViewMultiActionLeft
-			Switch $nCode
-				Case $NM_DBLCLK
-					; add item to the right list
-					_GUICtrlListView_AddItem($Global_ListViewMultiActionRight, _GUICtrlListView_GetItemText($Global_ListViewMultiActionLeft, _GUICtrlListView_GetSelectionMark($Global_ListViewMultiActionLeft)))
-					_GUICtrlListView_AddSubItem($Global_ListViewMultiActionRight, _GUICtrlListView_GetItemCount($Global_ListViewMultiActionRight) - 1, _GUICtrlListView_GetItemText($Global_ListViewMultiActionLeft, _GUICtrlListView_GetSelectionMark($Global_ListViewMultiActionLeft), 1), 1)
-					_CheckForceSelectionOfItems($Global_ListViewMultiActionRight)
-			EndSwitch
-
-		Case $Global_ListViewMultiActionRight
-			Switch $nCode
-				Case $NM_DBLCLK
-					; remove item from the right list
-					_GUICtrlListView_DeleteItemsSelected($Global_ListViewMultiActionRight)
-					_CheckForceSelectionOfItems($Global_ListViewMultiActionRight)
-
-				Case $LVN_ITEMCHANGED
-					;necessary to get checking/unchecking of list items
-					_CheckForceSelectionOfItems($Global_ListViewMultiActionRight)
-			EndSwitch
-
 		Case $nListViewProfiles
 			Switch $nCode
 				Case $NM_CLICK

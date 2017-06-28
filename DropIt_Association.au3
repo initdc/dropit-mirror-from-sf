@@ -289,7 +289,7 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 	#cs
 		Description: Get Destination To Show [Defined Settings].
 	#ce
-	Local $gStringSplit
+	Local $gStringSplit, $gTmp
 
 	Switch $gAction
 		Case "$6"
@@ -319,17 +319,18 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 		Case "$L"
 			; Prettify text of multi action destination
 			$gStringSplit = StringSplit($gDestination, ";")
-			$gDestination = ""
+			$gTmp = ""
 			For $A = 1 to $gStringSplit[0] - 1 Step 2
-				If $gDestination <> "" Then
-					$gDestination &= " >> "
+				If $gTmp <> "" Then
+					$gTmp &= " >> "
 				EndIf
 				If $gStringSplit[$A + 1] = "OnSource" Then
-					$gDestination &= $gStringSplit[$A] & " (" & __GetLang('MANAGE_MULTI_ACTION_FROM_SOURCE', 'from source') & ")"
+					$gTmp &= $gStringSplit[$A] & " (" & __GetLang('MANAGE_MULTI_ACTION_ON_SOURCE', 'on previous source') & ")"
 				ElseIf $gStringSplit[$A + 1] = "OnDest" Then
-					$gDestination &= $gStringSplit[$A] & " (" & __GetLang('MANAGE_MULTI_ACTION_FROM_DESTINATION', 'from destination') & ")"
+					$gTmp &= $gStringSplit[$A] & " (" & __GetLang('MANAGE_MULTI_ACTION_ON_DESTINATION', 'on previous destination') & ")"
 				EndIf
 			Next
+			$gDestination = $gTmp
 	EndSwitch
 
 	Return $gDestination
