@@ -6321,6 +6321,8 @@ Func _Sorting_CopyFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $
 		EndIf
 	EndIf
 
+	$sMainArray[$sIndex][3] = $sDestination
+
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_CopyFile
 
@@ -7026,6 +7028,23 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 				$bUsePreviousDestinationAsNextSource = True
 			EndIf
 		EndIf
+		; copy destination name as source name for the next association to work on, if the user wants it
+		If $sPos > 1 Then
+			If $bUsePreviousDestinationAsNextSource Then
+				If StringInStr($aSubMainArray[$sPos - 1][3], "|") > 0 Then
+					$aSubMainArray[$sPos][0] = StringRegExpReplace($aSubMainArray[$sPos - 1][3], "([^\|]*)\|.*", "\1")
+				Else
+					$aSubMainArray[$sPos][0] = $aSubMainArray[$sPos - 1][3]
+				EndIf
+
+				If $aSubMainArray[$sPos - 1][2] = "$F" Then
+					; work on encrypted file as a result of ENCRYPT action instead of folder
+					$aSubMainArray[$sPos][0] &= "\" & __GetFileName($aSubMainArray[$sPos - 1][0]) & $STATIC_CRYPT_FOLDER_EXT
+				EndIf
+			Else
+				$aSubMainArray[$sPos][0] = $aSubMainArray[$sPos - 1][0]
+			EndIf
+		EndIf
 
 		$aSubMainArray = _Position_Checking($aSubMainArray, $sPos, $aTmp, $sProfile)
 		$aSubMainArray[$sPos][3] = _Destination_Fix($aSubMainArray[$sPos][0], $aSubMainArray[$sPos][3], $aSubMainArray[$sPos][2], $aSubMainArray[$sPos][6], $aSubMainArray[0][2], $sProfile)
@@ -7056,22 +7075,6 @@ Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI
 			If $i < $aAssociationNames[0] - 1 Then
 				ReDim $aSubMainArray[$sPos + 2][7]
 				$aSubMainArray[0][0] += 1
-
-				; copy destination name as source name for the next association to work on, if the user wants it
-				If $bUsePreviousDestinationAsNextSource Then
-					If StringInStr($aSubMainArray[$sPos][3], "|") > 0 Then
-						$aSubMainArray[$sPos + 1][0] = StringRegExpReplace($aSubMainArray[$sPos][3], "([^\|]*)\|.*", "\1")
-					Else
-						$aSubMainArray[$sPos + 1][0] = $aSubMainArray[$sPos][3]
-					EndIf
-
-					If $aSubMainArray[$sPos][2] = "$F" Then
-						; work on encrypted file as a result of ENCRYPT action instead of folder
-						$aSubMainArray[$sPos + 1][0] &= "\" & __GetFileName($aSubMainArray[$sPos][0]) & $STATIC_CRYPT_FOLDER_EXT
-					EndIf
-				Else
-					$aSubMainArray[$sPos + 1][0] = $aSubMainArray[$sPos][0]
-				EndIf
 			EndIf
 		Else
 			$sMainArray[$sIndex][3] = $aSubMainArray
