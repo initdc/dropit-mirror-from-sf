@@ -2883,8 +2883,7 @@ EndFunc   ;==>_Manage_MultiAction
 Func _Manage_MultiActionResults($sMainArray, $mHandle = -1)
 	Local $mGUI, $sListView, $sListView_Handle
 
-	;TODO improve multi action details window messages
-	$mGUI = GUICreate(__GetLang('ENV_VAR_TAB_18', 'Show details'), 800, 380, -1, -1, $WS_SIZEBOX, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
+	$mGUI = GUICreate(__GetLang('ENV_VAR_TAB_18', 'Show details'), 800, 380, -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX, $WS_MAXIMIZEBOX), -1, __OnTop($mHandle))
 
 	$sListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination') & "|" & __GetLang('STATUS', 'Status'), 0, 0, 800, 380, BitOR($LVS_NOSORTHEADER, $LVS_REPORT))
 	$sListView_Handle = GUICtrlGetHandle($sListView)
