@@ -252,8 +252,8 @@ EndFunc   ;==>_ContextMenuAbbreviations
 
 Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "", $sProfile = "", $sAction = "", $sMainDirs = 0, $aFileContentMatches = 0)
 	Local $sLoadedProperty
-	Local $aEnvArray[166][3] = [ _
-			[165, 0, 0], _
+	Local $aEnvArray[167][3] = [ _
+			[166, 0, 0], _
 			["FileExt", 0, 1], _
 			["FileName", 0, 2], _
 			["FileNameExt", 0, 3], _
@@ -394,6 +394,7 @@ Func _ReplaceAbbreviation($sDestination, $sFixInvalidChars = 0, $sFilePath = "",
 			["MonthTaken", 2, 3], _
 			["MonthNameTaken", 2, 3], _
 			["MonthShortTaken", 2, 3], _
+			["YearWeekTaken", 2, 3], _
 			["WeekTaken", 2, 3], _
 			["DayTaken", 2, 3], _
 			["DayNameTaken", 2, 3], _

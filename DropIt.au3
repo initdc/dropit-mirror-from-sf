@@ -3173,11 +3173,12 @@ Func _Manage_ContextMenu_Abbreviations($mButton_Abbreviations, $mProfile, $mCurr
 			["MonthShortOpened", __GetLang('ENV_VAR_51', 'month file last access') & ' ["' & __Locale_MonthName(@MON, 1) & '"]'], _
 			["DayNameOpened", __GetLang('ENV_VAR_52', 'day file last access') & ' ["' & __Locale_DayName(_DateToDayOfWeekISO(@YEAR, @MON, @MDAY), 0) & '"]'], _
 			["DayShortOpened", __GetLang('ENV_VAR_52', 'day file last access') & ' ["' & __Locale_DayName(_DateToDayOfWeekISO(@YEAR, @MON, @MDAY), 1) & '"]']]
-	Local $mGroupTaken[16][3] = [ _
-			[15, 0, 0], _
+	Local $mGroupTaken[17][3] = [ _
+			[16, 0, 0], _
 			["DateTaken", __GetLang('ENV_VAR_5', 'date picture taken') & ' ["' & @YEAR & "-" & @MON & "-" & @MDAY & '"]'], _
 			["YearTaken", __GetLang('ENV_VAR_57', 'year picture taken') & ' ["' & @YEAR & '"]'], _
 			["MonthTaken", __GetLang('ENV_VAR_58', 'month picture taken') & ' ["' & @MON & '"]'], _
+			["YearWeekTaken", __GetLang('ENV_VAR_145', 'year and week picture taken') & ' ["' & @YEAR & " " & _WeekNumberISO() & '"]'], _
 			["WeekTaken", __GetLang('ENV_VAR_99', 'week picture taken') & ' ["' & _WeekNumberISO() & '"]'], _
 			["DayTaken", __GetLang('ENV_VAR_59', 'day picture taken') & ' ["' & @MDAY & '"]'], _
 			[""], _ ; Separator.
