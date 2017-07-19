@@ -63,7 +63,7 @@ Func __7ZipRun($rSourceFilePath, $rDestinationFilePath, $rType = 0, $rDuplicateM
 			$rCommand = '"' & $7Zip & '" x ' & __ExtractDuplicateMode($rDuplicateMode) & ' "-p' & $rPassword & '" -o"' & $rDestinationFilePath & '" -- "' & $rSourceFilePath & '"'
 
 		Case 2 ; Check/List Mode.
-			$rCommand = '"' & $7Zip & '" l "-p' & $rPassword & '" -slt -- "' & $rSourceFilePath & '"'
+			$rCommand = '"' & $7Zip & '" l "-p' & $rPassword & '" -bse1 -slt -- "' & $rSourceFilePath & '"'
 			$rNotWait = 1 ; Force To Not Wait.
 
 		Case Else
