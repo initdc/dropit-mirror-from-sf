@@ -587,7 +587,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	$mButton_Change = GUICtrlCreateButton(__GetLang('MANAGE_EDIT_CONFIGURE', 'Configure this action'), 10, 65 * 3 + 30, 440, 25)
 	$mButton_Mail = GUICtrlCreateButton(__GetLang('MANAGE_EDIT_CONFIGURE', 'Configure this action'), 10, 65 * 3 + 30, 440, 25)
 	$mInput_Ignore = GUICtrlCreateInput(__GetLang('MANAGE_EDIT_MSGBOX_15', 'Skip them during process'), 10, 65 * 3 + 32, 440, 22)
-	$mInput_Print = GUICtrlCreateInput(__GetLang('MANAGE_EDIT_MSGBOX_55', 'This action does not prove a destination.'), 10, 65 * 3 + 32, 440, 22)
+	$mInput_Print = GUICtrlCreateInput(__GetLang('MANAGE_EDIT_MSGBOX_55', 'This action does not provide a destination.'), 10, 65 * 3 + 32, 440, 22)
 
 	GUICtrlSetState($mInput_Print, $GUI_DISABLE + $GUI_HIDE) ; Always Disabled In The Code.
 	GUICtrlSetState($mInput_Ignore, $GUI_DISABLE + $GUI_HIDE) ; Always Disabled In The Code.
