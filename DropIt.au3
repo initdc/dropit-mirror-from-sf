@@ -140,7 +140,7 @@ Global $Global_ContextMenu[14][2] = [[13, 2]], $Global_TrayMenu[13][2] = [[12, 2
 Global $Global_ListViewIndex = -1, $Global_ListViewFolders, $Global_ListViewProfiles, $Global_ListViewRules, $Global_ListViewProcess ; ListView Variables.
 Global $Global_ListViewProfiles_Enter, $Global_ListViewProfiles_New, $Global_ListViewProfiles_Delete, $Global_ListViewProfiles_Duplicate ; ListView Variables.
 Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Export, $Global_ListViewProfiles_ImportAll, $Global_ListViewProfiles_ExportAll ; ListView Variables.
-Global $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New ; ListView Variables.
+Global $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New, $Global_ListViewProcess_ShowDetails ; ListView Variables.
 Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1, $Global_ListViewProcess_Open, $Global_ListViewProcess_Info, $Global_ListViewProcess_Skip ; ListView Variables.
 Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
 Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
@@ -329,10 +329,10 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Local $mLabel_Destination, $mInput_Destination, $mInput_DestinationRead, $mButton_Destination, $mCombo_Delete, $mRename, $mInput_Rename, $mClipboard, $mInput_Clipboard
 	Local $mSite, $mInput_Site, $mButton_Site, $mSiteSettings, $mList, $mInput_List, $mButton_List, $mListName, $mListProperties, $mHTMLTheme, $mListSettings, $mInput_Current
 	Local $mCrypt, $mInput_Crypt, $mButton_Crypt, $mCryptSettings, $mButton_Change, $mFileProperties, $mButton_Mail, $mMailSettings, $mStringSplit, $mNoOthers, $mCheck_Favourite
-	Local $mCompress, $mInput_Compress, $mButton_Compress, $mCompressSettings, $mCompressFormat, $mCompressFormatBis
-	Local $mExtract, $mInput_Extract, $mButton_Extract, $mExtractSettings, $mJoin, $mInput_Join, $mButton_Join, $mJoinSettings
+	Local $mCompress, $mInput_Compress, $mButton_Compress, $mCompressSettings, $mCompressFormat, $mCompressFormatBis, $mButton_MultiAction, $mMultiAction
+	Local $mExtract, $mInput_Extract, $mButton_Extract, $mExtractSettings, $mJoin, $mInput_Join, $mButton_Join, $mJoinSettings, $mAssociations
 	Local $mOpenWith, $mInput_OpenWith, $mButton_OpenWith, $mOpenWithSettings, $mSplit, $mInput_Split, $mButton_Split, $mSplitSettings = "10;MB;False"
-	Local $mInput_Ignore, $mGallery, $mInput_Gallery, $mButton_Gallery, $mGalleryProperties, $mGalleryTheme, $mGallerySettings = "2;1;", $mInput_Print
+	Local $mInput_Ignore, $mGallery, $mInput_Gallery, $mButton_Gallery, $mGalleryProperties, $mGalleryTheme, $mGallerySettings = "2;1;", $mInput_Print, $i
 
 	Local $mAssociationType = __GetLang('MANAGE_ASSOCIATION_NEW', 'New Association')
 	Local $mLogAssociation = __GetLang('MANAGE_LOG_0', 'Association Created')
@@ -365,9 +365,9 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			__GetLang('ACTION_OPEN_WITH', 'Open With') & '|' & __GetLang('ACTION_PRINT', 'Print') & "|" & __GetLang('ACTION_UPLOAD', 'Upload') & '|' & __GetLang('ACTION_SEND_MAIL', 'Send by Mail') & '|' & _
 			__GetLang('ACTION_GALLERY', 'Create Gallery') & '|' & __GetLang('ACTION_LIST', 'Create List') & '|' & __GetLang('ACTION_PLAYLIST', 'Create Playlist') & '|' & _
 			__GetLang('ACTION_SHORTCUT', 'Create Shortcut') & '|' & __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard') & '|' & _
-			__GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties') & '|' & __GetLang('ACTION_IGNORE', 'Ignore')
+			__GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties') & '|' & __GetLang('ACTION_MULTI', 'Multi Action') & '|' & __GetLang('ACTION_IGNORE', 'Ignore')
 	Local $mCombo_DeleteData = __GetLang('DELETE_MODE_1', 'Directly Remove') & '|' & __GetLang('DELETE_MODE_2', 'Safely Erase') & '|' & __GetLang('DELETE_MODE_3', 'Send to Recycle Bin')
-	Local $mDestination_Label[11] = [ _
+	Local $mDestination_Label[12] = [ _
 			__GetLang('MANAGE_DESTINATION_FOLDER', 'Destination Folder'), _
 			__GetLang('MANAGE_DESTINATION_PROGRAM', 'Destination Program'), _
 			__GetLang('MANAGE_DESTINATION_FILE', 'Destination File'), _
@@ -378,8 +378,9 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			__GetLang('MANAGE_REMOTE_DESTINATION', 'Remote Destination'), _
 			__GetLang('MANAGE_NEW_PROPERTIES', 'New Properties'), _
 			__GetLang('MANAGE_MAIL_SETTINGS', 'Mail Settings'), _
-			__GetLang('DESTINATION', 'Destination')]
-	For $A = 0 To 10
+			__GetLang('DESTINATION', 'Destination'), _
+			__GetLang('ASSOCIATIONS', 'Associations')]
+ 	For $A = 0 To UBound($mDestination_Label) - 1
 		$mDestination_Label[$A] = "4. " & $mDestination_Label[$A] & ":"
 	Next
 
@@ -484,6 +485,12 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	Else
 		$mSite = "/"
 	EndIf
+	If $mInitialAction == __GetLang('ACTION_MULTI', 'Multi Action') Then
+		$mMultiAction = __GetAssociationField($mProfile[0], $mAssociationName, "Destination")
+		$mDestination = "-"
+	Else
+		$mMultiAction = "-"
+	EndIf
 
 	Select
 		Case $mNewAssociation = 0 And $mDroppedEvent = 0
@@ -585,6 +592,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	GUICtrlSetTip($mButton_Abbreviations, __GetLang('MANAGE_EDIT_MSGBOX_8', 'Abbreviations'))
 	GUICtrlSetImage($mButton_Abbreviations, @ScriptFullPath, -8, 0)
 	$mButton_Change = GUICtrlCreateButton(__GetLang('MANAGE_EDIT_CONFIGURE', 'Configure this action'), 10, 65 * 3 + 30, 440, 25)
+	$mButton_MultiAction = GUICtrlCreateButton(__GetLang('MANAGE_EDIT_CONFIGURE', 'Configure this action'), 10, 65 * 3 + 30, 440, 25)
 	$mButton_Mail = GUICtrlCreateButton(__GetLang('MANAGE_EDIT_CONFIGURE', 'Configure this action'), 10, 65 * 3 + 30, 440, 25)
 	$mInput_Ignore = GUICtrlCreateInput(__GetLang('MANAGE_EDIT_MSGBOX_15', 'Skip them during process'), 10, 65 * 3 + 32, 440, 22)
 	$mInput_Print = GUICtrlCreateInput(__GetLang('MANAGE_EDIT_MSGBOX_55', 'This action does not provide a destination.'), 10, 65 * 3 + 32, 440, 22)
@@ -603,6 +611,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 	GUICtrlSetState($mInput_OpenWith, $GUI_HIDE)
 	GUICtrlSetState($mButton_OpenWith, $GUI_HIDE)
 	GUICtrlSetState($mButton_Change, $GUI_HIDE)
+	GUICtrlSetState($mButton_MultiAction, $GUI_HIDE)
 	GUICtrlSetState($mButton_Mail, $GUI_HIDE)
 	GUICtrlSetState($mInput_Rename, $GUI_HIDE)
 	GUICtrlSetState($mInput_Clipboard, $GUI_HIDE)
@@ -622,6 +631,11 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
 			GUICtrlSetData($mInput_Destination, "-")
 			GUICtrlSetData($mLabel_Destination, $mDestination_Label[10])
+		Case __GetLang('ACTION_MULTI', 'Multi Action')
+			GUICtrlSetState($mButton_MultiAction, $GUI_SHOW)
+			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
+			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
+			GUICtrlSetData($mLabel_Destination, $mDestination_Label[11])
 		Case __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties')
 			GUICtrlSetState($mButton_Change, $GUI_SHOW)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
@@ -707,6 +721,7 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 		If GUICtrlRead($mCombo_Action) <> $mCurrentAction And _GUICtrlComboBox_GetDroppedState($mCombo_Action) = False Then
 			GUICtrlSetState($mInput_Destination, $GUI_HIDE)
 			GUICtrlSetState($mButton_Destination, $GUI_HIDE)
+			GUICtrlSetState($mButton_MultiAction, $GUI_HIDE)
 			GUICtrlSetState($mButton_Abbreviations, $GUI_HIDE)
 			GUICtrlSetState($mInput_Compress, $GUI_HIDE)
 			GUICtrlSetState($mButton_Compress, $GUI_HIDE)
@@ -778,12 +793,20 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			If $mMailSettings = "" Then
 				$mMailSettings = "-"
 			EndIf
+			If $mMultiAction = "" Then
+				$mMultiAction = "-"
+			EndIf
 			$mCurrentAction = GUICtrlRead($mCombo_Action)
 			Switch $mCurrentAction
 				Case __GetLang('ACTION_DELETE', 'Delete')
 					GUICtrlSetState($mCombo_Delete, $GUI_SHOW)
 				Case __GetLang('ACTION_IGNORE', 'Ignore')
 					GUICtrlSetState($mInput_Ignore, $GUI_SHOW)
+				Case __GetLang('ACTION_MULTI', 'Multi Action')
+					If $mMultiAction = "-" Then
+						$mMultiAction = ""
+					EndIf
+					GUICtrlSetState($mButton_MultiAction, $GUI_SHOW)
 				Case __GetLang('ACTION_RENAME', 'Rename')
 					GUICtrlSetState($mInput_Rename, $GUI_SHOW)
 					GUICtrlSetState($mButton_Abbreviations, $GUI_SHOW)
@@ -884,6 +907,8 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 			Switch $mCurrentAction
 				Case __GetLang('ACTION_IGNORE', 'Ignore')
 					GUICtrlSetData($mLabel_Destination, $mDestination_Label[10])
+				Case __GetLang('ACTION_MULTI', 'Multi Action')
+					GUICtrlSetData($mLabel_Destination, $mDestination_Label[11])
 				Case __GetLang('ACTION_OPEN_WITH', 'Open With')
 					GUICtrlSetData($mLabel_Destination, $mDestination_Label[1])
 				Case __GetLang('ACTION_LIST', 'Create List'), __GetLang('ACTION_PLAYLIST', 'Create Playlist')
@@ -909,14 +934,14 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 
 		; Enable/Disable Save Button:
 		$mTempString = GUICtrlRead($mInput_Destination) & GUICtrlRead($mInput_Rename) & GUICtrlRead($mInput_Compress) & GUICtrlRead($mInput_Extract) & GUICtrlRead($mInput_Split) & GUICtrlRead($mInput_Join) & GUICtrlRead($mInput_OpenWith) & GUICtrlRead($mInput_Crypt) & GUICtrlRead($mInput_Gallery) & GUICtrlRead($mInput_List)
-		If (GUICtrlRead($mInput_Name) <> "" And GUICtrlRead($mInput_Rules) <> "" And $mFileProperties <> "" And $mCryptSettings <> "" And $mMailSettings <> "" And __StringIsValid($mTempString, '|') And Not StringIsSpace(GUICtrlRead($mInput_Rules))) Or $mCurrentAction = __GetLang('ACTION_PRINT', 'Print') Then
+		If (GUICtrlRead($mInput_Name) <> "" And GUICtrlRead($mInput_Rules) <> "" And $mFileProperties <> "" And $mMultiAction <> "" And $mCryptSettings <> "" And $mMailSettings <> "" And __StringIsValid($mTempString, '|') And Not StringIsSpace(GUICtrlRead($mInput_Rules))) Or $mCurrentAction = __GetLang('ACTION_PRINT', 'Print') Then
 			If GUICtrlGetState($mSave) > 80 Then
 				GUICtrlSetState($mSave, 576) ; $GUI_ENABLE + $GUI_DEFBUTTON.
 			EndIf
 			If GUICtrlGetState($mCancel) = 512 Then
 				GUICtrlSetState($mCancel, 80) ; $GUI_ENABLE + $GUI_SHOW.
 			EndIf
-		ElseIf GUICtrlRead($mInput_Name) = "" Or GUICtrlRead($mInput_Rules) = "" Or $mFileProperties = "" Or $mCryptSettings = "" Or $mMailSettings = "" Or __StringIsValid($mTempString, '|') = 0 Or StringIsSpace(GUICtrlRead($mInput_Rules)) Then
+		ElseIf GUICtrlRead($mInput_Name) = "" Or GUICtrlRead($mInput_Rules) = "" Or $mFileProperties = "" Or $mMultiAction = "" Or $mCryptSettings = "" Or $mMailSettings = "" Or __StringIsValid($mTempString, '|') = 0 Or StringIsSpace(GUICtrlRead($mInput_Rules)) Then
 			If GUICtrlGetState($mSave) = 80 Then
 				GUICtrlSetState($mSave, 144) ; $GUI_DISABLE + $GUI_SHOW.
 			EndIf
@@ -1014,6 +1039,8 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 						$mInput_DestinationRead = $mMailSettings
 					Case "$2" ; Ignore.
 						$mInput_DestinationRead = "-"
+					Case "$L" ; Multi Action.
+						$mInput_DestinationRead = $mMultiAction
 				EndSwitch
 
 				$mInput_NameRead = __SetAssociationName(GUICtrlRead($mInput_Name), $mAssociationName, $mProfile[0], $mNewAssociation, $mGUI)
@@ -1072,6 +1099,9 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 					$mGalleryProperties = ""
 					$mGalleryTheme = ""
 					$mGallerySettings = ""
+				EndIf
+				If $mCurrentActionString <> "$L" Then
+					$mMultiAction = ""
 				EndIf
 				__IniWriteEx($mProfile[0], $mInput_NameRead, "", "State=" & $mState & @LF & "Rules=" & $mInput_RulesRead & @LF & "Action=" & $mCurrentActionString & @LF & "Destination=" & $mInput_DestinationRead & _
 						__ComposeLineINI("Filters", $mStringFilters) & _
@@ -1151,6 +1181,9 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 
 			Case $mButton_Site
 				_Manage_Site($mSiteSettings, $mGUI) ; ByRef: $mSiteSettings.
+
+			Case $mButton_MultiAction
+				_Manage_MultiAction($mMultiAction, $mGUI, $mProfile[1]) ; ByRef: $mMultiAction.
 
 			Case $mButton_Change
 				_Manage_Properties($mFileProperties, $mGUI) ; ByRef: $mFileProperties.
@@ -1286,7 +1319,25 @@ Func _Manage_Edit_GUI($mProfileName = -1, $mAssociationName = -1, $mFileExtensio
 EndFunc   ;==>_Manage_Edit_GUI
 
 Func _Manage_Delete($mProfilePath, $mAssociationName, $mHandle = -1)
-	Local $mMsgBox = MsgBox(0x4, __GetLang('MANAGE_DELETE_MSGBOX_0', 'Delete association'), __GetLang('MANAGE_DELETE_MSGBOX_1', 'Selected association:') & "  " & $mAssociationName & @LF & __GetLang('MANAGE_DELETE_MSGBOX_2', 'Are you sure to delete this association?'), 0, __OnTop($mHandle))
+	Local $mMsgBox, $aAssociations, $i, $mInUse = ""
+
+	; Deny delete if used in multi associations
+	$aAssociations = __GetAssociations()
+	For $i = 1 to UBound($aAssociations) - 1
+		If $aAssociations[$i][3] = "$L" Then
+			If StringRegExp($aAssociations[$i][4], "(?:^|;)" & $mAssociationName & "(?:;|$)") Then
+				If $mInUse <> "" Then $mInUse &= ", "
+				$mInUse = $mInUse & $aAssociations[$i][0]
+			EndIf
+		EndIf
+	Next
+
+	If $mInUse <> "" Then
+		MsgBox(0x10, __GetLang('MANAGE_DELETE_MSGBOX_0', 'Delete association'), __GetLang('MANAGE_DELETE_MSGBOX_1', 'Selected association:') & "  " & $mAssociationName & @LF & __GetLang('MANAGE_DELETE_MSGBOX_3', 'Cannot be deleted, as it is used in the following associations') & ": " & $mInUse, 0, __OnTop($mHandle))
+		Return SetError(1, 0, 0)
+	EndIf
+
+	$mMsgBox = MsgBox(BitOR(0x4, 0x20), __GetLang('MANAGE_DELETE_MSGBOX_0', 'Delete association'), __GetLang('MANAGE_DELETE_MSGBOX_1', 'Selected association:') & "  " & $mAssociationName & @LF & __GetLang('MANAGE_DELETE_MSGBOX_2', 'Are you sure to delete this association?'), 0, __OnTop($mHandle))
 
 	If $mMsgBox <> 6 Then
 		Return SetError(1, 0, 0)
@@ -2624,6 +2675,271 @@ Func _Manage_Mail(ByRef $mSettings, $mHandle = -1)
 
 	Return 1 ; ByRef: $mSettings.
 EndFunc   ;==>_Manage_Mail
+
+Func _Manage_MultiAction_DeleteActionRow(ByRef $mGUI, ByRef $mActionRows, $mPosition)
+	; delete old items
+	For $A = 0 To UBound($mActionRows, 2) - 1
+		GUICtrlDelete($mActionRows[$mPosition][$A])
+	Next
+	_ArrayDelete($mActionRows, $mPosition)
+
+	; move up all other items
+	For $A = $mPosition To UBound($mActionRows) - 1
+		For $B = 0 To 4
+			GUICtrlSetResizing($mActionRows[$A][$B], 1)
+			ControlMove($mGUI, "", $mActionRows[$A][$B], ControlGetPos($mGUI, "", $mActionRows[$A][$B])[0], ControlGetPos($mGUI, "", $mActionRows[$A][$B])[1] - 30)
+			GUICtrlSetResizing($mActionRows[$A][$B], 802)
+		Next
+	Next
+
+ 	WinMove($mGUI, "", Default, Default, Default, WinGetPos($mGUI)[3] - 30)
+
+	Return 1
+EndFunc ; ==> _Manage_MultiAction_DeleteActionRow
+
+Func _Manage_MultiAction_AddActionRow(ByRef $mGUI, ByRef $mActionRows, $mAssociations, $mBeforePosition = -1)
+	Local $mTop = 0, $mLabelStart, $mComboAssociation, $mComboOnSrcOrDest, $mButtonAddRow, $mButtonDeleteRow, $mResult[1][6]
+
+	If $mBeforePosition <= 0 Then
+		$mBeforePosition = UBound($mActionRows)
+	EndIf
+
+	$mTop = ($mBeforePosition - 1) * 30 + 15
+
+	If UBound($mActionRows) = 1 Then
+		$mLabelStart = GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_0', 'First apply'), 12, $mTop, 60, 20)
+	Else
+		$mLabelStart = GUICtrlCreateLabel(__GetLang('MANAGE_MULTI_ACTION_LABEL_1', 'Then apply'), 12, $mTop, 60, 20)
+	EndIf
+
+	$mComboAssociation = GUICtrlCreateCombo("", 90, $mTop, 250, 20, $CBS_DROPDOWNLIST)
+	If UBound($mAssociations) > 0 Then
+		For $A = 1 to UBound($mAssociations) - 1
+			_GUICtrlComboBox_AddString($mComboAssociation, $mAssociations[$A][0])
+		Next
+	EndIf
+
+	If $mBeforePosition = 1 Then
+		$mComboOnSrcOrDest = GUICtrlCreateCombo(__GetLang("MANAGE_MULTI_ACTION_ON_SOURCE", "on previous source"), 350, $mTop, 180, 20, $CBS_DROPDOWNLIST)
+		GUICtrlSetState($mComboOnSrcOrDest, $GUI_DISABLE)
+	Else
+		$mComboOnSrcOrDest = GUICtrlCreateCombo(__GetLang("MANAGE_MULTI_ACTION_ON_DESTINATION", "on previous destination"), 350, $mTop, 180, 20, $CBS_DROPDOWNLIST)
+		_GUICtrlComboBox_AddString($mComboOnSrcOrDest, __GetLang("MANAGE_MULTI_ACTION_ON_SOURCE", "on previous source"))
+	EndIf
+
+	$mButtonAddRow = GUICtrlCreateButton("+", 540, $mTop, 20, 20)
+	$mButtonDeleteRow = GUICtrlCreateButton("-", 570, $mTop, 20, 20)
+	If UBound($mActionRows) = 1 Then
+		GUICtrlSetState($mButtonDeleteRow, $GUI_HIDE)
+	EndIf
+
+	GUICtrlSetResizing($mComboAssociation, 802)
+	GUICtrlSetResizing($mComboOnSrcOrDest, 802)
+	GUICtrlSetResizing($mButtonAddRow, 802)
+	GUICtrlSetResizing($mButtonDeleteRow, 802)
+	GUICtrlSetResizing($mLabelStart, 802)
+	$mResult[0][0] = $mComboAssociation
+	$mResult[0][1] = $mComboOnSrcOrDest
+	$mResult[0][2] = $mButtonAddRow
+	$mResult[0][3] = $mButtonDeleteRow
+	$mResult[0][4] = $mLabelStart
+	$mResult[0][5] = "" ;used to store association action
+	If $mBeforePosition >= UBound($mActionRows) Then
+		_ArrayAdd($mActionRows, $mResult)
+	Else
+		_ArrayInsert($mActionRows, $mBeforePosition, $mResult)
+
+		; move all other action rows down
+		For $A = $mBeforePosition + 1 To UBound($mActionRows) - 1
+			$mTop += 30
+			For $B = 0 To 4
+				GUICtrlSetResizing($mActionRows[$A][$B], 1)
+				ControlMove($mGUI, "", $mActionRows[$A][$B], ControlGetPos($mGUI, "", $mActionRows[$A][$B])[0], $mTop)
+				GUICtrlSetResizing($mActionRows[$A][$B], 802)
+			Next
+		Next
+	EndIf
+
+	; Resize window
+ 	WinMove($mGUI, "", Default, Default, Default, $mTop + 90)
+	_WinAPI_RedrawWindow($mGUI)
+
+	Return $mBeforePosition
+EndFunc ;==> _Manage_MultiAction_AddActionRow
+
+Func _Manage_MultiAction_SetOnSrcOrDstCombo(ByRef $mActionRows)
+	Local $mCombo, $mPreviousAction = "$2"
+
+	For $A = 1 To UBound($mActionRows) - 1
+		$mCombo = $mActionRows[$A][1]
+
+;		For these associations, the previous SOURCE has to be used
+;		Case "$2"
+;			$gReturn = __GetLang('ACTION_IGNORE', 'Ignore')
+;		Case "$5"
+;			$gReturn = __GetLang('ACTION_OPEN_WITH', 'Open With')
+;		Case "$6"
+;			$gReturn = __GetLang('ACTION_DELETE', 'Delete')
+; 		Case "$B"
+; 			$gReturn = __GetLang('ACTION_CLIPBOARD', 'Copy to Clipboard')
+; 		Case "$C"
+; 			$gReturn = __GetLang('ACTION_UPLOAD', 'Upload')
+; 		Case "$E"
+; 			$gReturn = __GetLang('ACTION_SEND_MAIL', 'Send by Mail')
+; 		Case "$M"
+; 			$gReturn = __GetLang('ACTION_PRINT', 'Print')
+		If StringInStr("$2" & "$5" & "$6" & "$B" & "$C" & "$E" & "$M", $mPreviousAction) > 0 Then
+			GUICtrlSetData($mCombo, __GetLang("MANAGE_MULTI_ACTION_ON_SOURCE", "on previous source"))
+			GUICtrlSetState($mCombo, $GUI_DISABLE)
+
+;		For these associations, the previous DESTINATION has to be used
+;		Case "$0" ; Move.
+;			$gReturn = __GetLang('ACTION_MOVE', 'Move')
+; 		Case "$D"
+; 			$gReturn = __GetLang('ACTION_CHANGE_PROPERTIES', 'Change Properties')
+		ElseIf StringInStr("$0" & "$D", $mPreviousAction) > 0 Then
+			GUICtrlSetData($mCombo, __GetLang("MANAGE_MULTI_ACTION_ON_DESTINATION", "on previous destination"))
+			GUICtrlSetState($mCombo, $GUI_DISABLE)
+
+;		Else Enable the combo
+		Else
+			GUICtrlSetState($mCombo, $GUI_ENABLE)
+		EndIf
+
+		$mPreviousAction = $mActionRows[$A][5]
+	Next
+EndFunc ;==> _Manage_MultiAction_SetOnSrcOrDstCombo
+
+Func _Manage_MultiAction(ByRef $mSelectedAssociations, $mHandle = -1, $mProfile = -1)
+	Local $mGUI, $mSave, $mCancel, $mActionRows[1][6], $mFirstRow[2], $mGuiMsg[0], $mItem
+	Local $aAssociations, $i, $aSelectedAssoc[0], $aSelected[0], $pos
+
+	$mGUI = GUICreate(__GetLang('MANAGE_EDIT_MSGBOX_12', 'Configure'), 600, 42, -1, -1, -1, $WS_EX_TOOLWINDOW, __OnTop($mHandle))
+
+ 	$mSave = GUICtrlCreateButton(__GetLang('OK', 'OK'), 295 - 95, 12, 90, 24)
+ 	$mCancel = GUICtrlCreateButton(__GetLang('CANCEL', 'Cancel'), 295 + 5, 12, 90, 24)
+	GUICtrlSetResizing($mSave, 576)
+	GUICtrlSetResizing($mCancel, 576)
+ 	GUISetState(@SW_SHOW)
+	$mActionRows[0][0] = $mSave
+	$mActionRows[0][1] = $mCancel
+
+	$aAssociations = __GetAssociations($mProfile)
+
+ 	; add selected actions to list
+	$aSelected = StringSplit($mSelectedAssociations, ";")
+	For $i = 1 to UBound($aSelected) - 2 Step 2
+		$mItem = _Manage_MultiAction_AddActionRow($mGUI, $mActionRows, $aAssociations)
+		$pos = _ArraySearch($aAssociations, $aSelected[$i])
+		If $pos > -1 Then
+			GUICtrlSetData($mActionRows[$mItem][0], $aAssociations[$pos][0])
+			$mActionRows[$mItem][5] = $aAssociations[$pos][3]
+			If $aSelected[$i + 1] = "OnSource" Then
+				GUICtrlSetData($mActionRows[$mItem][1], __GetLang("MANAGE_MULTI_ACTION_ON_SOURCE", "on previous source"))
+			Else
+				GUICtrlSetData($mActionRows[$mItem][1], __GetLang("MANAGE_MULTI_ACTION_ON_DESTINATION", "on previous destination"))
+			EndIf
+		EndIf
+	Next
+	_Manage_MultiAction_SetOnSrcOrDstCombo($mActionRows)
+
+	If UBound($aSelected) - 2 = 0 Then
+		_Manage_MultiAction_AddActionRow($mGUI, $mActionRows, $aAssociations)
+	EndIf
+
+ 	GUICtrlSetState($mSave, $GUI_DEFBUTTON)
+
+	While 1
+		$mGuiMsg = GUIGetMsg()
+		Switch $mGuiMsg
+ 			Case $GUI_EVENT_CLOSE, $mCancel
+ 				ExitLoop
+
+			Case $mSave
+				ReDim $aSelectedAssoc[0]
+				For $A = 1 to UBound($mActionRows) - 1
+					If GUICtrlRead($mActionRows[$A][0]) = "" Then
+						MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_4', 'Association Error'), __GetLang("MANAGE_EDIT_MSGBOX_45", "There exist rows without a configured association. Please remove these rows before saving."), 0, __OnTop($mGUI))
+						ContinueLoop 2
+					EndIf
+
+					_ArrayAdd($aSelectedAssoc, GUICtrlRead($mActionRows[$A][0]))
+					If GUICtrlRead($mActionRows[$A][1]) = __GetLang("MANAGE_MULTI_ACTION_ON_SOURCE", "on previous source") Then
+						_ArrayAdd($aSelectedAssoc, "OnSource")
+					Else
+						_ArrayAdd($aSelectedAssoc, "OnDest")
+					EndIf
+				Next
+				$mSelectedAssociations = _ArrayToString($aSelectedAssoc, ";")
+
+				ExitLoop
+		EndSwitch
+
+		For $A = 1 To UBound($mActionRows) - 1
+			Switch $mGuiMsg
+				Case $mActionRows[$A][0]
+					; association changed, so update action type
+					$pos = _ArraySearch($aAssociations, GUICtrlRead($mActionRows[$A][0]))
+					$mActionRows[$A][5] = ""
+					If $pos > -1 Then
+						$mActionRows[$A][5] = $aAssociations[$pos][3]
+					EndIf
+					_Manage_MultiAction_SetOnSrcOrDstCombo($mActionRows)
+
+				Case $mActionRows[$A][2]
+					; add button
+					_Manage_MultiAction_AddActionRow($mGUI, $mActionRows, $aAssociations, $A + 1)
+					_Manage_MultiAction_SetOnSrcOrDstCombo($mActionRows)
+
+				Case $mActionRows[$A][3]
+					; delete button
+					_Manage_MultiAction_DeleteActionRow($mGUI, $mActionRows, $A)
+					_Manage_MultiAction_SetOnSrcOrDstCombo($mActionRows)
+					ExitLoop
+
+			EndSwitch
+		Next
+	WEnd
+
+	GUIDelete($mGUI)
+
+	Return 1 ; ByRef: $mSelectedAssociations
+EndFunc   ;==>_Manage_MultiAction
+
+Func _Manage_MultiActionResults($sMainArray, $mHandle = -1)
+	Local $mGUI, $sListView, $sListView_Handle
+
+	$mGUI = GUICreate(__GetLang('ENV_VAR_TAB_18', 'Show details'), 800, 380, -1, -1, BitOR($GUI_SS_DEFAULT_GUI, $WS_SIZEBOX, $WS_MAXIMIZEBOX), -1, __OnTop($mHandle))
+
+	$sListView = GUICtrlCreateListView(__GetLang('NAME', 'Name') & "|" & __GetLang('ACTION', 'Action') & "|" & __GetLang('DESTINATION', 'Destination') & "|" & __GetLang('STATUS', 'Status'), 0, 0, 800, 380, BitOR($LVS_NOSORTHEADER, $LVS_REPORT))
+	$sListView_Handle = GUICtrlGetHandle($sListView)
+	GUICtrlSetResizing($sListView, $GUI_DOCKBORDERS)
+	_GUICtrlListView_SetExtendedListViewStyle($sListView_Handle, BitOR($LVS_EX_FULLROWSELECT, $LVS_EX_GRIDLINES, $LVS_EX_INFOTIP))
+	Local $sColumnSize = __GetCurrentSize("ColumnProcess", "140;80;180;70") ; Column Widths.
+	For $A = 1 To $sColumnSize[0]
+		_GUICtrlListView_SetColumnWidth($sListView_Handle, $A - 1, $sColumnSize[$A])
+	Next
+
+	_Position_Populate($sListView, $sMainArray, True)
+
+	GUISetState(@SW_SHOW)
+
+	;show results in list view
+	For $A = 1 To $sMainArray[0][0]
+		__SetPositionResult($sMainArray, $A, $A, $sListView, -1, $sMainArray[$A][4], False)
+	Next
+
+	While 1
+		Switch GUIGetMsg()
+			Case $GUI_EVENT_CLOSE
+				ExitLoop
+		EndSwitch
+	WEnd
+
+	GUIDelete($mGUI)
+
+	Return 1
+EndFunc   ;==>_Manage_MultiActionResults
 
 Func _Manage_OpenWith(ByRef $mSettings, $mHandle = -1)
 	Local $mGUI, $mSave, $mCancel, $mStringSplit, $mCheckbox_Wait, $mWait, $mCheckbox_Remove, $mRemove
@@ -4566,6 +4882,7 @@ Func _DropStop($dAborted = 0)
 	$Global_ListViewProcess_Open = 0
 	$Global_ListViewProcess_Info = 0
 	$Global_ListViewProcess_Skip = 0
+	$Global_ListViewProcess_ShowDetails = 0
 	$Global_Wheel = 0
 	$Global_Clipboard = ""
 	If $dAborted Then
@@ -5076,7 +5393,7 @@ EndFunc   ;==>_Position_MainArray
 Func _Position_MainArrayAdd($pMainArray, $pFilePath, $pElementsGUI)
 	Local $pSize
 
-	$pMainArray[0][0] += 1 ; [0][0] Counter, [0][1] Full Size, [0][2] Main Dirs Array, [$A][0] File Path, [$A][1] File Size, [$A][2] Action, [$A][3] Destination, [$A][4] Result.
+	$pMainArray[0][0] += 1 ; [0][0] Counter, [0][1] Full Size, [0][2] Main Dirs Array, [$A][0] File Path, [$A][1] File Size, [$A][2] Action (<=-9 means do not overwrite), [$A][3] Destination, [$A][4] Result, [$A][5] Sort Parameter, [$A][6] File Content Matches For Backreferences.
 	If UBound($pMainArray) <= $pMainArray[0][0] Then
 		ReDim $pMainArray[UBound($pMainArray) * 2][7]
 	EndIf
@@ -5163,12 +5480,16 @@ Func _Position_Load($pMainArray, $pProfile, $pElementsGUI)
 	Return $pMainArray
 EndFunc   ;==>_Position_Load
 
-Func _Position_Populate($pListView, $pMainArray)
+Func _Position_Populate($pListView, $pMainArray, $bSourceFileAsFullFileName = False)
 	Local $pName, $pAction, $pDestination
 
 	_GUICtrlListView_BeginUpdate($pListView)
 	For $A = 1 To $pMainArray[0][0]
-		$pName = __GetFileName($pMainArray[$A][0])
+		If $bSourceFileAsFullFileName Then
+			$pName = $pMainArray[$A][0]
+		Else
+			$pName = __GetFileName($pMainArray[$A][0])
+		EndIf
 		$pAction = "-" ; Because The Item Is Skipped If The User Does Not Define An Association With _Manage_Edit_GUI().
 		$pDestination = "-"
 		If $pMainArray[$A][2] <> "" Then
@@ -5187,7 +5508,7 @@ Func _Position_Populate($pListView, $pMainArray)
 	Return $pMainArray
 EndFunc   ;==>_Position_Populate
 
-Func _Position_Process($pMainArray, $pProfile, $pElementsGUI)
+Func _Position_Process(ByRef $pMainArray, $pProfile, $pElementsGUI)
 	Local $pFailed, $pFrom, $pTo, $pStringSplit, $pCounter, $pCurrentGroup, $pPreviousGroup = ""
 
 	If _Copy_OpenDll(@ScriptDir & '\Lib\copy\Copy.dll') = 0 Then
@@ -5217,7 +5538,7 @@ Func _Position_Process($pMainArray, $pProfile, $pElementsGUI)
 					$pMainArray[$A][3] = "-"
 				EndIf
 				__SetPositionResult($pMainArray, $A, $A, $Global_ListViewProcess, $pElementsGUI, -1)
-				$pMainArray[$A][4] = -9 ; To Do Not Process It Again In Group.
+				$pMainArray[$A][4] = -9 - 1 ; To Do Not Process It Again In Group.
 				ContinueLoop
 			EndIf
 			$pCurrentGroup = $pMainArray[$A][2] & $pMainArray[$A][3] ; Unique String For Group = Action + Destination.
@@ -5229,7 +5550,7 @@ Func _Position_Process($pMainArray, $pProfile, $pElementsGUI)
 		If $pPreviousGroup <> $pCurrentGroup Then
 			$pTo = $A - 1 ; Last Item Of The Group.
 			If $pPreviousGroup <> "" Then ; Process Previous Group If Not Empty.
-				If _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI) = 1 Then ; 0 = OK, 1 = Failed.
+				If _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $Global_ListViewProcess, $pProfile, $pElementsGUI) = 1 Then ; 0 = OK, 1 = Failed.
 					$pFailed = 1 ; At Least One Item Failed.
 				EndIf
 				If @error Then
@@ -5250,8 +5571,10 @@ Func _Position_Process($pMainArray, $pProfile, $pElementsGUI)
 		_GUICtrlListView_AddSubItem($Global_ListViewProcess, $A - 1, __GetLang('POSITIONPROCESS_LOG_1', 'Loaded'), 3) ; Set ListView State To "Loaded".
 		__Log_Write(__GetLang('POSITIONPROCESS_LOG_1', 'Loaded'), $pMainArray[$A][0])
 		$pCounter += 1 ; Used For %Counter% Abbreviation.
+		; Add Counter Information To The Sort Criteria For Further Use During Processing The Group
+		$pMainArray[$A][5] &= "|" & $pCounter
 		$pStringSplit = StringSplit($pMainArray[$A][3], "|")
-		If StringInStr($pStringSplit[1], "%") And StringInStr("$C" & "$D" & "$E", $pMainArray[$A][2]) = 0 Then
+		If StringInStr($pStringSplit[1], "%") And StringInStr("$C" & "$D" & "$E" & "$L", $pMainArray[$A][2]) = 0 Then
 			$pStringSplit[1] = StringReplace($pStringSplit[1], "%Counter%", StringFormat("%02d", $pCounter))
 			$pMainArray[$A][3] = _ArrayToString($pStringSplit, "|", 1)
 		EndIf
@@ -5262,75 +5585,84 @@ Func _Position_Process($pMainArray, $pProfile, $pElementsGUI)
 	Return $pFailed
 EndFunc   ;==>_Position_Process
 
-Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
+Func _Position_ProcessGroup(ByRef $pMainArray, $pFrom, $pTo, $pListViewProcess, $pProfile, $pElementsGUI)
 	Local $pFailed, $pResult
 
 	Switch $pMainArray[$pFrom][2]
 		Case "$3" ; Compress Action.
-			$pMainArray = _Sorting_CompressFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_CompressFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$7" ; Rename Action.
-			$pMainArray = _Sorting_RenameFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_RenameFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$8" ; Create List Action.
-			$pMainArray = _Sorting_ListFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_ListFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$9" ; Create Playlist Action.
-			$pMainArray = _Sorting_PlaylistFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_PlaylistFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$C" ; Upload Action.
-			$pMainArray = _Sorting_UploadFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_UploadFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$E" ; Send by Mail Action.
-			$pMainArray = _Sorting_MailFile($pMainArray, $pFrom, $pTo, $pElementsGUI)
+			$pMainArray = _Sorting_MailFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI)
 
 		Case "$H" ; Create Gallery Action.
-			$pMainArray = _Sorting_GalleryFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_GalleryFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case "$J" ; Join Action.
-			$pMainArray = _Sorting_JoinFile($pMainArray, $pFrom, $pTo, $pElementsGUI, $pProfile)
+			$pMainArray = _Sorting_JoinFile($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pProfile)
 
 		Case Else ; Single Process Actions.
 			For $A = $pFrom To $pTo
-				If $pMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+				If $pMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 					ContinueLoop
 				EndIf
 				Switch $pMainArray[$pFrom][2]
 					Case "$4" ; Extract Action.
-						$pMainArray = _Sorting_ExtractFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_ExtractFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$5" ; Open With Action.
-						$pMainArray = _Sorting_OpenFile($pMainArray, $A, $pElementsGUI)
+						$pMainArray = _Sorting_OpenFile($pMainArray, $A, $pListViewProcess, $pElementsGUI)
 
 					Case "$6" ; Delete Action.
-						$pMainArray = _Sorting_DeleteFile($pMainArray, $A, $pElementsGUI)
+						$pMainArray = _Sorting_DeleteFile($pMainArray, $A, $pListViewProcess, $pElementsGUI)
 
 					Case "$A" ; Create Shortcut Action.
-						$pMainArray = _Sorting_ShortcutFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_ShortcutFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$B" ; Copy To Clipboard Action.
-						$pMainArray = _Sorting_ClipboardFile($pMainArray, $A, $pElementsGUI)
+						$pMainArray = _Sorting_ClipboardFile($pMainArray, $A, $pListViewProcess, $pElementsGUI)
 
 					Case "$D" ; Change Properties Action.
-						$pMainArray = _Sorting_ChangeFile($pMainArray, $A, $pElementsGUI)
+						$pMainArray = _Sorting_ChangeFile($pMainArray, $A, $pListViewProcess, $pElementsGUI)
 
 					Case "$F" ; Encrypt Action.
-						$pMainArray = _Sorting_EncryptFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_EncryptFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$G" ; Decrypt Action.
-						$pMainArray = _Sorting_DecryptFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_DecryptFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$I" ; Split Action.
-						$pMainArray = _Sorting_SplitFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_SplitFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
 
 					Case "$K" ; Convert Image Action.
-						$pMainArray = _Sorting_ConvertFile($pMainArray, $A, $pElementsGUI, $pProfile)
+						$pMainArray = _Sorting_ConvertFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
+
+					Case "$L" ; Multi Action.
+						$pMainArray = _Sorting_MultiAction($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
+
+					Case "$2" ; Ignore Action.
+						SetError(1, 0, 0)
 
 					Case "$M" ; Print Action.
 						$pMainArray = _Sorting_PrintFile($pMainArray, $A, $pElementsGUI)
 
-					Case Else ; Move Or Copy Action.
-						$pMainArray = _Sorting_CopyFile($pMainArray, $A, $pElementsGUI, $pProfile)
+					Case "$0", "$1" ; Move Or Copy Action.
+						$pMainArray = _Sorting_CopyFile($pMainArray, $A, $pListViewProcess, $pElementsGUI, $pProfile)
+
+					Case "" ; No Action Matching, So Stop Current Process Group (Needed For Multi Action).
+						SetError(2, 0, 0)
 
 				EndSwitch
 				If @extended = 1 Then ; Aborted.
@@ -5343,7 +5675,10 @@ Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
 				Else ; OK.
 					$pResult = 0
 				EndIf
-				__SetPositionResult($pMainArray, $A, $A, $Global_ListViewProcess, $pElementsGUI, $pResult)
+				If $pMainArray[$A][4] = "" Then
+					$pMainArray[$A][4] = $pResult
+				EndIf
+				__SetPositionResult($pMainArray, $A, $A, $pListViewProcess, $pElementsGUI, $pResult)
 			Next
 			Return $pFailed
 
@@ -5362,7 +5697,13 @@ Func _Position_ProcessGroup($pMainArray, $pFrom, $pTo, $pProfile, $pElementsGUI)
 	Else ; OK.
 		$pResult = 0
 	EndIf
-	__SetPositionResult($pMainArray, $pFrom, $pTo, $Global_ListViewProcess, $pElementsGUI, $pResult)
+	;always set the result for the $pMainArray as this is necessary for SetPositionResult
+	For $A = $pFrom To $pTo
+		If $pMainArray[$A][4] = "" Then
+			$pMainArray[$A][4] = $pResult
+		EndIf
+	Next
+	__SetPositionResult($pMainArray, $pFrom, $pTo, $pListViewProcess, $pElementsGUI, $pResult)
 	Return $pFailed
 EndFunc   ;==>_Position_ProcessGroup
 
@@ -5395,7 +5736,7 @@ Func _Destination_Fix($dFilePath, $dDestination, $dAction, $aFileContentMatches,
 	EndIf
 
 	; Fix Relative Destination If Needed:
-	If StringInStr("$5" & "$6" & "$B" & "$C" & "$D" & "$E" & "$M", $dAction) = 0 And StringInStr(StringLeft($dStringSplit[1], 2), "\\") = 0 And StringInStr(StringLeft($dStringSplit[1], 2), ":") = 0 Then
+	If StringInStr("$5" & "$6" & "$B" & "$C" & "$D" & "$E" & "$L" & "$M", $dAction) = 0 And StringInStr(StringLeft($dStringSplit[1], 2), "\\") = 0 And StringInStr(StringLeft($dStringSplit[1], 2), ":") = 0 Then
 		$dStringSplit[1] = _WinAPI_GetFullPathName(__GetParentFolder($dFilePath) & "\" & $dStringSplit[1])
 	EndIf
 
@@ -5497,7 +5838,7 @@ Func _Sorting_EventButtons()
 EndFunc   ;==>_Sorting_EventButtons
 
 Func _Sorting_Pause($sMainArray, $sMode = 0)
-	Local $sIndices_Selected, $sStatus, $sOpenDummy = -1, $sInfoDummy = -1, $sSkipDummy = -1
+	Local $sIndices_Selected, $sStatus, $sOpenDummy = -1, $sInfoDummy = -1, $sSkipDummy = -1, $sShowDetailsDummy = -1
 
 	$G_Global_PauseSorting = 2 ; To Define That The Process Is In This Function.
 	GUICtrlSetState($Global_PauseButton, $GUI_ENABLE)
@@ -5510,6 +5851,7 @@ Func _Sorting_Pause($sMainArray, $sMode = 0)
 		$sOpenDummy = $Global_ListViewProcess_Open
 		$sInfoDummy = $Global_ListViewProcess_Info
 		$sSkipDummy = $Global_ListViewProcess_Skip
+		$sShowDetailsDummy = $Global_ListViewProcess_ShowDetails
 	Else
 		GUIRegisterMsg($WM_NOTIFY, "")
 	EndIf
@@ -5560,30 +5902,43 @@ Func _Sorting_Pause($sMainArray, $sMode = 0)
 					EndIf
 					_GUICtrlListView_AddSubItem($Global_ListViewProcess, $sIndices_Selected[$A], $sStatus, 3)
 				Next
+			Case $sShowDetailsDummy
+				$sIndices_Selected = _GUICtrlListView_GetSelectedIndices($Global_ListViewProcess, True)
+				For $A = 1 To $sIndices_Selected[0]
+					If IsArray($sMainArray[$sIndices_Selected[$A] + 1][3]) Then
+						; show destination array in a nice list form
+						_Manage_MultiActionResults($sMainArray[$sIndices_Selected[$A] + 1][3], $Global_GUI_1)
+					EndIf
+				Next
 		EndSwitch
 	WEnd
 	__ExpandEventMode(1) ; Enable Event Buttons.
 EndFunc   ;==>_Sorting_Pause
 
 Func _Sorting_Pause_ContextMenu($sListView, $sIndex, $sSubItem)
-	Local Enum $sItem1 = 1000, $sItem2, $sItem3
+	Local Enum $sItem1 = 1000, $sItem2, $sItem3, $sItem4
 
 	If IsHWnd($sListView) = 0 Then
 		$sListView = GUICtrlGetHandle($sListView)
 	EndIf
 
 	Local $sStatus = _GUICtrlListView_GetItemText($sListView, $sIndex, 3)
+	Local $sAction = _GUICtrlListView_GetItemText($sListView, $sIndex, 1)
 	Local $sContextMenu = _GUICtrlMenu_CreatePopup()
 	If $sIndex <> -1 And $sSubItem <> -1 Then
 		$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('OPEN', 'Open'), $sItem1)
 		__SetItemImage("OPEN", $sIndex, $sContextMenu, 2, 1)
 		$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('ENV_VAR_TAB_3', 'Info'), $sItem2)
 		__SetItemImage("INFO", $sIndex, $sContextMenu, 2, 1)
+		;show "Show details" context menu only if underlying item is a multi action and has been executed
+		If $sAction = __GetLang('ACTION_MULTI', 'Multi Action') And $sStatus <> "" Then
+			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('ENV_VAR_TAB_18', 'Show details'), $sItem3)
+		EndIf
 		If $sStatus == "" Then
-			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('DUPLICATE_MODE_6', 'Skip'), $sItem3)
+			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('DUPLICATE_MODE_6', 'Skip'), $sItem4)
 			__SetItemImage("SKIP", $sIndex, $sContextMenu, 2, 1)
 		ElseIf $sStatus == __GetLang('DUPLICATE_MODE_6', 'Skip') Then
-			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('OPTIONS_BUTTON_2', 'Restore'), $sItem3)
+			$sIndex = _GUICtrlMenu_AddMenuItem($sContextMenu, __GetLang('OPTIONS_BUTTON_2', 'Restore'), $sItem4)
 			__SetItemImage("NEW", $sIndex, $sContextMenu, 2, 1)
 		EndIf
 	EndIf
@@ -5594,6 +5949,8 @@ Func _Sorting_Pause_ContextMenu($sListView, $sIndex, $sSubItem)
 		Case $sItem2
 			GUICtrlSendToDummy($Global_ListViewProcess_Info)
 		Case $sItem3
+			GUICtrlSendToDummy($Global_ListViewProcess_ShowDetails)
+		Case $sItem4
 			GUICtrlSendToDummy($Global_ListViewProcess_Skip)
 	EndSwitch
 	_GUICtrlMenu_DestroyMenu($sContextMenu)
@@ -5703,6 +6060,7 @@ Func _Sorting_CreateGUI($sProfile, $sMonitored)
 	$Global_ListViewProcess_Open = GUICtrlCreateDummy()
 	$Global_ListViewProcess_Info = GUICtrlCreateDummy()
 	$Global_ListViewProcess_Skip = GUICtrlCreateDummy()
+	$Global_ListViewProcess_ShowDetails = GUICtrlCreateDummy()
 	$Global_ResizeMinWidth = 420 ; Set Default Min Width.
 	$Global_ResizeMaxWidth = @DesktopWidth ; Set Default Max Width.
 	$Global_ResizeMinHeight = 186 ; Set Default Min Height.
@@ -5720,7 +6078,7 @@ Func _Sorting_CreateGUI($sProfile, $sMonitored)
 	Return $sElementsGUI
 EndFunc   ;==>_Sorting_CreateGUI
 
-Func _Sorting_ChangeFile($sMainArray, $sIndex, $sElementsGUI)
+Func _Sorting_ChangeFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI)
 	Local $B, $sStringSplit, $sAttributes, $sNewAttribute, $sReadOnly, $sFileTimes[3], $sSource = $sMainArray[$sIndex][0]
 
 	$sAttributes = FileGetAttrib($sSource)
@@ -5790,7 +6148,7 @@ Func _Sorting_ChangeFile($sMainArray, $sIndex, $sElementsGUI)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ChangeFile
 
-Func _Sorting_ClipboardFile($sMainArray, $sIndex, $sElementsGUI)
+Func _Sorting_ClipboardFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI)
 	Local $sClipboardText = $sMainArray[$sIndex][3]
 
 	__SetProgressStatus($sElementsGUI, 1, $sClipboardText) ; Reset Single Progress Bar And Show Second Line.
@@ -5807,7 +6165,7 @@ Func _Sorting_ClipboardFile($sMainArray, $sIndex, $sElementsGUI)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ClipboardFile
 
-Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sError, $sFile, $sString, $sStringSplit, $sStringContent, $sArchiveContent, $sNewPath, $sTempMoved, $sSize, $sDestination = $sMainArray[$sFrom][3]
 	Local $sSourceList = $G_Global_TempDir & "\DropItArchiveList.dat"
 
@@ -5846,7 +6204,7 @@ Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	__SetProgressStatus($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$sNewPath = __RenameToCompress($sMainArray[$A][0], $sStringContent, $sTempMoved) ; ByRef: $sTempMoved = 1 If At Least One File/Folder Is Renamed.
@@ -5881,7 +6239,7 @@ Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	EndIf
 	If $sStringSplit[1] == "True" Then
 		For $A = $sFrom To $sTo
-			If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+			If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 				ContinueLoop
 			EndIf
 			_Sorting_RunDelete($sMainArray[$A][0]) ; Remove Source After Processing It.
@@ -5891,7 +6249,7 @@ Func _Sorting_CompressFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_CompressFile
 
-Func _Sorting_ConvertFile($sMainArray, $sIndex, $sElementsGUI, $sProfile) ; <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT USED YET
+Func _Sorting_ConvertFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile) ; <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< NOT USED YET
 	Local $sStringSplit, $sSource = $sMainArray[$sIndex][0], $sDestination = $sMainArray[$sIndex][3]
 
 	$sStringSplit = StringSplit($sDestination, "|") ; 1 = Destination Folder, 2 = Remove Source.
@@ -5953,7 +6311,7 @@ Func _Sorting_ConvertFile($sMainArray, $sIndex, $sElementsGUI, $sProfile) ; <<<<
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ConvertFile
 
-Func _Sorting_CopyFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+Func _Sorting_CopyFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sSource = $sMainArray[$sIndex][0], $sAction = $sMainArray[$sIndex][2], $sDestination = $sMainArray[$sIndex][3] & "\" & __GetFileName($sMainArray[$sIndex][0])
 
 	If FileExists($sDestination) Then
@@ -6005,10 +6363,12 @@ Func _Sorting_CopyFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 		EndIf
 	EndIf
 
+	$sMainArray[$sIndex][3] = $sDestination
+
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_CopyFile
 
-Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword = "")
+Func _Sorting_DecryptFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile, $sPassword = "")
 	Local $sStringSplit, $sMsgBox, $sIsFolder, $sCryptDestination, $sAlgorithm, $sPassword_Code = $G_Global_PasswordKey
 	Local $sSource = $sMainArray[$sIndex][0], $sDestination = $sMainArray[$sIndex][3]
 
@@ -6025,7 +6385,7 @@ Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 
 	If $sStringSplit[2] == "7ZIP" Then
 			$sMainArray[$sIndex][3] = $sStringSplit[1] & "|" & $sStringSplit[4]
-			Return _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword)
+			Return _Sorting_ExtractFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile, $sPassword)
 	EndIf
 
 	$sDestination = $sStringSplit[1] & "\" & __GetFileName($sSource)
@@ -6069,7 +6429,7 @@ Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 		If $sPassword = -1 Then
 			Return SetError(1, 0, $sMainArray) ; Skipped.
 		EndIf
-		$sMainArray = _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword)
+		$sMainArray = _Sorting_DecryptFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile, $sPassword)
 		Return SetError(@error, 0, $sMainArray)
 	EndIf
 
@@ -6090,7 +6450,7 @@ Func _Sorting_DecryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_DecryptFile
 
-Func _Sorting_DeleteFile($sMainArray, $sIndex, $sElementsGUI)
+Func _Sorting_DeleteFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI)
 	Local $sDeleteText, $sSource = $sMainArray[$sIndex][0], $sDeletionMode = $sMainArray[$sIndex][3]
 
 	$sDeleteText = __GetDeleteString($sDeletionMode)
@@ -6111,7 +6471,7 @@ Func _Sorting_DeleteFile($sMainArray, $sIndex, $sElementsGUI)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_DeleteFile
 
-Func _Sorting_EncryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+Func _Sorting_EncryptFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sStringSplit, $sNewDestination, $sIsFolder, $sAlgorithm, $sPassword, $sPassword_Code = $G_Global_PasswordKey
 	Local $sSource = $sMainArray[$sIndex][0], $sDestination = $sMainArray[$sIndex][3]
 
@@ -6126,8 +6486,8 @@ Func _Sorting_EncryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	$sPassword = __StringEncrypt(0, $sStringSplit[3], $sPassword_Code)
 
 	If $sStringSplit[2] == "7ZIP" Then
-		$sMainArray[$sIndex][3] = $sStringSplit[1] & "|" & $sStringSplit[4] & ";7z;5;LZMA;AES-256;" & $sStringSplit[3]
-		Return _Sorting_CompressFile($sMainArray, $sIndex, $sIndex, $sElementsGUI, $sProfile)
+		$sMainArray[$sIndex][3] = $sStringSplit[1] & "\" & __GetFileName($sSource) & $STATIC_CRYPT_FOLDER_EXT & "|" & $sStringSplit[4] & ";7z;5;LZMA;AES-256;" & $sStringSplit[3]
+		Return _Sorting_CompressFile($sMainArray, $sIndex, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	EndIf
 
 	__EnsureDirExists($sDestination)
@@ -6192,7 +6552,7 @@ Func _Sorting_EncryptFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_EncryptFile
 
-Func _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword = "")
+Func _Sorting_ExtractFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile, $sPassword = "")
 	Local $sProcess, $sMsgBox, $sStringSplit, $sDuplicateMode, $sTempName = $G_Global_TempName
 	Local $sSource = $sMainArray[$sIndex][0], $sSize = $sMainArray[$sIndex][1], $sDestination = $sMainArray[$sIndex][3]
 
@@ -6259,7 +6619,7 @@ Func _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 		If $sPassword = -1 Then
 			Return SetError(1, 0, $sMainArray) ; Skipped.
 		EndIf
-		$sMainArray = _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPassword)
+		$sMainArray = _Sorting_ExtractFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile, $sPassword)
 		Return SetError(@error, 0, $sMainArray)
 	EndIf
 
@@ -6289,7 +6649,7 @@ Func _Sorting_ExtractFile($sMainArray, $sIndex, $sElementsGUI, $sProfile, $sPass
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ExtractFile
 
-Func _Sorting_GalleryFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_GalleryFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sStringSplit, $sSkipped, $sDestination, $sSubArray[$sTo - $sFrom + 2]
 	$sSubArray[0] = $sTo - $sFrom + 1
 
@@ -6312,7 +6672,7 @@ Func _Sorting_GalleryFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	__SetProgressStatus($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			$sSkipped += 1
 			$sSubArray[0] -= 1
 			ContinueLoop
@@ -6328,7 +6688,7 @@ Func _Sorting_GalleryFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_GalleryFile
 
-Func _Sorting_JoinFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_JoinFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sStringSplit, $B, $sNumber, $sOpenFile, $sOpenCurrFile, $sCurrPath, $sDestination, $sSubArray[1]
 	Local $sChunkSize, $sRemaining, $sPercent, $sLoadedSize, $sFullSize, $sDone = 0
 
@@ -6463,7 +6823,7 @@ Func _Sorting_JoinFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_JoinFile
 
-Func _Sorting_ListFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_ListFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sStringSplit, $sSkipped, $sDestination, $sSettings, $sSubArray[$sTo - $sFrom + 2]
 	$sSubArray[0] = $sTo - $sFrom + 1
 
@@ -6493,7 +6853,7 @@ Func _Sorting_ListFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	__SetProgressStatus($sElementsGUI, 1, $sDestination) ; Reset Single Progress Bar And Show Second Line.
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			$sSkipped += 1
 			$sSubArray[0] -= 1
 			ContinueLoop
@@ -6524,7 +6884,7 @@ Func _Sorting_ListFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ListFile
 
-Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
+Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI)
 	Local $sFailed, $sStringSplit, $sFilePath, $sFileNames, $sSource, $sError, $sTotalSource, $sTotalSize = 1, $sCurrentSize, $sInternalFrom = $sFrom, $sInternalTo = $sFrom
 	Local $sPassword_Code = $G_Global_PasswordKey, $sDestination = $sMainArray[$sFrom][3]
 
@@ -6544,7 +6904,7 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 	Next
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$sFileNames &= __GetFileName($sMainArray[$A][0])
@@ -6569,7 +6929,7 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 		EndIf
 
 		If $A <= $sTo Then
-			If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+			If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 				ContinueLoop
 			EndIf
 			$sSource = $sMainArray[$A][0]
@@ -6577,8 +6937,8 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 			If _WinAPI_PathIsDirectory($sSource) Then
 				$sFilePath = __CreateTempZIP($sSource) ; Compress Folders To Send Them As Single Archive.
 				If @error Then
-					__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
-					$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+					__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -2)
+					$sMainArray[$A][4] = -9 - 2 ; Force Result To Be Not Overwritten.
 					$sFailed = 1 ; At Least One Item Failed.
 					ContinueLoop
 				EndIf
@@ -6601,15 +6961,15 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 				$sFailed = 1 ; At Least One Item Failed.
 				$sError = -2
 			EndIf
-			__SetPositionResult($sMainArray, $sInternalFrom, $sInternalTo, $Global_ListViewProcess, $sElementsGUI, $sError)
+			__SetPositionResult($sMainArray, $sInternalFrom, $sInternalTo, $sListViewProcess, $sElementsGUI, $sError)
 			For $B = $sInternalFrom To $sInternalTo
 				If $sError = 0 And $sStringSplit[14] == "True" Then
-					If $sMainArray[$B][4] == -9 Then ; Skip Already Processed Item.
+					If $sMainArray[$B][4] <= -9 Then ; Skip Already Processed Item.
 						ContinueLoop
 					EndIf
 					_Sorting_RunDelete($sMainArray[$B][0]) ; Remove Source After Processing It.
 				EndIf
-				$sMainArray[$B][4] = -9 ; Force Result To Be Not Overwritten.
+				$sMainArray[$B][4] = -9 + $sError ; Force Result To Be Not Overwritten.
 			Next
 			$sInternalFrom = $A
 		EndIf
@@ -6628,7 +6988,7 @@ Func _Sorting_MailFile($sMainArray, $sFrom, $sTo, $sElementsGUI)
 	Return $sMainArray
 EndFunc   ;==>_Sorting_MailFile
 
-Func _Sorting_OpenFile($sMainArray, $sIndex, $sElementsGUI)
+Func _Sorting_OpenFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI)
 	Local $sStringSplit, $sSource = $sMainArray[$sIndex][0], $sDestination = $sMainArray[$sIndex][3]
 
 	__SetProgressStatus($sElementsGUI, 1, $sSource) ; Reset Single Progress Bar And Show Second Line.
@@ -6687,7 +7047,121 @@ Func _Sorting_PrintFile($sMainArray, $sIndex, $sElementsGUI)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_PrintFile
 
-Func _Sorting_PlaylistFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_MultiAction($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
+	Local $aAssociationNames, $i, $j, $aAssociations, $sPos = 0, $aTmp, $aSubMainArray[2][7], $bUsePreviousDestinationAsNextSource, $pStringSplit, $iCounter = -1
+
+	For $A = 0 To 6
+		$aSubMainArray[0][$A] = $sMainArray[0][$A]
+		If $A <> 1 Then ; Do not use file size, as otherwise progress indication gets wrong during multi action
+			$aSubMainArray[1][$A] = $sMainArray[$sIndex][$A]
+		EndIf
+	Next
+	$aSubMainArray[0][0] = 1
+
+	$pStringSplit = StringSplit($aSubMainArray[1][5], "|")
+	If $pStringSplit[0] > 1 Then
+		$iCounter = Int($pStringSplit[$pStringSplit[0]])
+	EndIf
+
+	;Find corresponding associations
+	$aAssociations = __GetAssociations($sProfile)
+	$aAssociationNames = StringSplit($sMainArray[$sIndex][3], ";")
+
+	__SetProgressStatus($sElementsGUI, 1, $aSubMainArray[1][0]) ; Reset Single Progress Bar And Show Second Line.
+
+	For $i = 1 to $aAssociationNames[0] - 1 Step 2
+		$sPos += 1
+
+		$aTmp = $aAssociations
+		For $j = $aTmp[0][0] to 1 Step -1
+			If $aTmp[$j][0] = $aAssociationNames[$i] Then
+				; enable association, so that it is definitely applied
+				$aTmp[$j][1] = $G_Global_StateEnabled
+			Else
+				; remove association from temporary array
+				_ArrayDelete($aTmp, $j)
+			EndIf
+		Next
+		$aTmp[0][0] = 1
+
+		If $aAssociationNames[$i + 1] = "OnSource" Then
+			$bUsePreviousDestinationAsNextSource = False
+		Else
+			If $aSubMainArray[$sPos][2] = "$D" Then
+				; work on previous source for CHANGE PROPERTIES action, though only on previous destination is forced in configuration, for usability purposes
+				$bUsePreviousDestinationAsNextSource = False
+			Else
+				$bUsePreviousDestinationAsNextSource = True
+			EndIf
+		EndIf
+		; copy destination name as source name for the next association to work on, if the user wants it
+		If $sPos > 1 Then
+			If $bUsePreviousDestinationAsNextSource Then
+				If StringInStr($aSubMainArray[$sPos - 1][3], "|") > 0 Then
+					$aSubMainArray[$sPos][0] = StringRegExpReplace($aSubMainArray[$sPos - 1][3], "([^\|]*)\|.*", "\1")
+				Else
+					$aSubMainArray[$sPos][0] = $aSubMainArray[$sPos - 1][3]
+				EndIf
+
+				If $aSubMainArray[$sPos - 1][2] = "$F" Then
+					; work on encrypted file as a result of ENCRYPT action instead of folder
+					$aSubMainArray[$sPos][0] &= "\" & __GetFileName($aSubMainArray[$sPos - 1][0]) & $STATIC_CRYPT_FOLDER_EXT
+				EndIf
+			Else
+				$aSubMainArray[$sPos][0] = $aSubMainArray[$sPos - 1][0]
+			EndIf
+		EndIf
+
+		$aSubMainArray = _Position_Checking($aSubMainArray, $sPos, $aTmp, $sProfile)
+		$aSubMainArray[$sPos][3] = _Destination_Fix($aSubMainArray[$sPos][0], $aSubMainArray[$sPos][3], $aSubMainArray[$sPos][2], $aSubMainArray[$sPos][6], $aSubMainArray[0][2], $sProfile)
+
+		; Replace counter abbreviation
+		If $iCounter >= 0 Then
+			$pStringSplit = StringSplit($aSubMainArray[$sPos][3], "|")
+			If StringInStr($pStringSplit[1], "%") And StringInStr("$C" & "$D" & "$E" & "$L", $aSubMainArray[$sPos][2]) = 0 Then
+				$pStringSplit[1] = StringReplace($pStringSplit[1], "%Counter%", StringFormat("%02d", $iCounter))
+				$aSubMainArray[$sPos][3] = _ArrayToString($pStringSplit, "|", 1)
+			EndIf
+		EndIf
+
+		If $aSubMainArray[$sPos][4] = -1 And $aTmp[1][3] = "$2" Then
+			; the item shall be ignored, so stop further execution of actions for it here (=matching Ignore action)
+			ExitLoop
+		EndIf
+
+		If $aSubMainArray[$sPos][4] < 0 And Not $aTmp[1][3] = "$2" Then
+			$sMainArray[$sIndex][3] = $aSubMainArray
+			__SetProgressStatus($sElementsGUI, 2, $aSubMainArray[1][0])
+			Return SetError(2, 0, $sMainArray) ; Failed.
+		EndIf
+
+		; if current action was ignore, but did not match the current input file, so proceed with next action without throwing an error
+		; process the group, but do not update the list view, as the details will be stored only in the multi action results
+		If _Position_ProcessGroup($aSubMainArray, $sPos, $sPos, -1, $sProfile, $sElementsGUI) = 0 Or $aTmp[1][3] = "$2"  Then
+			If $i < $aAssociationNames[0] - 1 Then
+				ReDim $aSubMainArray[$sPos + 2][7]
+				$aSubMainArray[0][0] += 1
+			EndIf
+		Else
+			$sMainArray[$sIndex][3] = $aSubMainArray
+			__SetProgressStatus($sElementsGUI, 2, $aSubMainArray[1][0])
+			Return SetError(2, 0, $sMainArray) ; Failed.
+		EndIf
+		If @error And Not $aTmp[1][3] = "$2" Then
+			$sMainArray[$sIndex][3] = $aSubMainArray
+			__SetProgressStatus($sElementsGUI, 2, $aSubMainArray[1][0])
+			Return SetError(2, 0, $sMainArray) ; Failed.
+		EndIf
+
+		GUICtrlSetData($sElementsGUI[3], $sPos / ($aAssociationNames[0] / 2))
+	Next
+
+	$sMainArray[$sIndex][3] = $aSubMainArray
+	__SetProgressStatus($sElementsGUI, 2, $aSubMainArray[1][0])
+	Return $sMainArray ; OK.
+EndFunc   ;==>_Sorting_MultiAction
+
+Func _Sorting_PlaylistFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sSkipped, $sSubArray[$sTo - $sFrom + 2], $sPlaylistFile = $sMainArray[$sFrom][3]
 	$sSubArray[0] = $sTo - $sFrom + 1
 
@@ -6708,7 +7182,7 @@ Func _Sorting_PlaylistFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	__SetProgressStatus($sElementsGUI, 1, $sPlaylistFile) ; Reset Single Progress Bar And Show Second Line.
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			$sSkipped += 1
 			$sSubArray[0] -= 1
 			ContinueLoop
@@ -6734,25 +7208,25 @@ Func _Sorting_PlaylistFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_PlaylistFile
 
-Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sFailed, $sSource, $sDestination, $sTempName = $G_Global_TempName
 
 	For $A = $sFrom To $sTo ; To Be Sure To Do Not Wrongly Overwrite During Process.
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$sSource = $sMainArray[$A][0]
 		__SureMove($sSource, $sSource & $sTempName)
 		If @error Then
-			__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
-			$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+			__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -2)
+			$sMainArray[$A][4] = -9 - 2 ; Force Result To Be Not Overwritten.
 			$sFailed = 1 ; At Least One Item Failed.
 			ContinueLoop
 		EndIf
 	Next
 
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$sSource = $sMainArray[$A][0]
@@ -6762,8 +7236,8 @@ Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 			__SureMove($sSource & $sTempName, $sSource)
 			$sDestination = __Duplicate_Process($sProfile, $sSource, $sDestination)
 			If @error = 2 Then
-				__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -1)
-				$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+				__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -1)
+				$sMainArray[$A][4] = -9 - 1 ; Force Result To Be Not Overwritten.
 				ContinueLoop ; Skipped.
 			EndIf
 			$sMainArray[$A][3] = $sDestination
@@ -6771,8 +7245,8 @@ Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 				If __Is("IgnoreAttributes") Then
 					FileSetAttrib($sDestination, '-RH') ; Needed To Overwrite Hidden And Read-Only Files/Folders.
 				Else
-					__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
-					$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+					__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -2)
+					$sMainArray[$A][4] = -9 - 2 ; Force Result To Be Not Overwritten.
 					$sFailed = 1 ; At Least One Item Failed.
 					ContinueLoop ; Skipped.
 				EndIf
@@ -6784,13 +7258,13 @@ Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 
 		__SureMove($sSource, $sDestination)
 		If @error Then
-			__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
-			$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+			__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -2)
+			$sMainArray[$A][4] = -9 - 2 ; Force Result To Be Not Overwritten.
 			$sFailed = 1 ; At Least One Item Failed.
 			ContinueLoop
 		EndIf
-		__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, 0)
-		$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+		__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, 0)
+		$sMainArray[$A][4] = -9 - 0 ; Force Result To Be Not Overwritten.
 	Next
 
 	If $sFailed Then
@@ -6799,7 +7273,7 @@ Func _Sorting_RenameFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 	Return $sMainArray
 EndFunc   ;==>_Sorting_RenameFile
 
-Func _Sorting_ShortcutFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+Func _Sorting_ShortcutFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sSource = $sMainArray[$sIndex][0], $sShortcut = $sMainArray[$sIndex][3]
 
 	If FileExists($sShortcut) Then
@@ -6824,7 +7298,7 @@ Func _Sorting_ShortcutFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_ShortcutFile
 
-Func _Sorting_SplitFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
+Func _Sorting_SplitFile($sMainArray, $sIndex, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sStringSplit, $sSettings, $sOpenFile, $sOpenCurrFile, $sCurrPath, $sFileName, $sLast, $sParts, $sChunkSize, $sRemaining, $sPercent, $sRealSize, $sDone = 0
 	Local $sSource = $sMainArray[$sIndex][0], $sFullSize = $sMainArray[$sIndex][1], $sDestination = $sMainArray[$sIndex][3]
 
@@ -6935,13 +7409,13 @@ Func _Sorting_SplitFile($sMainArray, $sIndex, $sElementsGUI, $sProfile)
 		_Sorting_RunDelete($sMainArray[$sIndex][0]) ; Remove Source After Processing It.
 	EndIf
 
-	__SetPositionResult($sMainArray, $sIndex, $sIndex, $Global_ListViewProcess, $sElementsGUI, 0)
-	$sMainArray[$sIndex][4] = -9 ; Force Result To Be Not Overwritten.
+	__SetPositionResult($sMainArray, $sIndex, $sIndex, $sListViewProcess, $sElementsGUI, 0)
+	$sMainArray[$sIndex][4] = -9 - 0 ; Force Result To Be Not Overwritten.
 	$sMainArray[$sIndex][3] = $sDestination
 	Return $sMainArray ; OK.
 EndFunc   ;==>_Sorting_SplitFile
 
-Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
+Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sListViewProcess, $sElementsGUI, $sProfile)
 	Local $sFailed, $sFileName, $sSource, $sSize, $sDate, $sStringSplit, $sDirectory, $sOpen, $sConn, $sListArray
 	Local $sPassiveMode = 0, $sPassword_Code = $G_Global_PasswordKey, $sDestination = $sMainArray[$sFrom][3]
 	;Local $ERR, $MESS ; <<<<< Debug.
@@ -6993,7 +7467,7 @@ Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 			Return SetExtended(1, $sMainArray) ; Aborted.
 		EndIf
 
-		If $sMainArray[$A][4] == -9 Then ; Skip Already Processed Item.
+		If $sMainArray[$A][4] <= -9 Then ; Skip Already Processed Item.
 			ContinueLoop
 		EndIf
 		$sSource = $sMainArray[$A][0]
@@ -7007,8 +7481,8 @@ Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 				If $sFileName = $sListArray[$B][0] Then
 					$sDestination = __Duplicate_ProcessOnline($sProfile, $sSource, $sStringSplit[1], $sDirectory, $sListArray[$B][3], $sListArray[$B][1], $sListArray, $sStringSplit[5])
 					If @error = 2 Then
-						__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -1)
-						$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+						__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -1)
+						$sMainArray[$A][4] = -9 - 1 ; Force Result To Be Not Overwritten.
 						ContinueLoop 2 ; Skipped.
 					EndIf
 					__SetProgressStatus($sElementsGUI, 1, $sStringSplit[1] & $sDestination) ; Reset Single Progress Bar And Show Second Line.
@@ -7031,13 +7505,13 @@ Func _Sorting_UploadFile($sMainArray, $sFrom, $sTo, $sElementsGUI, $sProfile)
 		If @error Then
 			;_FTP_GetLastResponseInfo($ERR, $MESS) ; <<<<< Debug.
 			;msgbox(0, "test", $ERR & @LF & $MESS) ; <<<<< Debug.
-			__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, -2)
-			$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+			__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, -2)
+			$sMainArray[$A][4] = -9 - 2 ; Force Result To Be Not Overwritten.
 			$sFailed = 1 ; At Least One Item Failed.
 			ContinueLoop
 		EndIf
-		__SetPositionResult($sMainArray, $A, $A, $Global_ListViewProcess, $sElementsGUI, 0)
-		$sMainArray[$A][4] = -9 ; Force Result To Be Not Overwritten.
+		__SetPositionResult($sMainArray, $A, $A, $sListViewProcess, $sElementsGUI, 0)
+		$sMainArray[$A][4] = -9 - 0 ; Force Result To Be Not Overwritten.
 
 		$sListArray[0][0] += 1
 		$sListArray[$sListArray[0][0]][0] = __GetFileName($sDestination)
