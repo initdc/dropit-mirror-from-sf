@@ -144,7 +144,7 @@ Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Export, $Global
 Global $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New ; ListView Variables.
 Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1, $Global_ListViewProcess_Open, $Global_ListViewProcess_Info, $Global_ListViewProcess_Skip ; ListView Variables.
 Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
-Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringImmediate, $Global_MonitoringChanges[1], $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
+Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringImmediate, $Global_MonitoringChanges[1], $Global_MonitoringFileChanges[1], $Global_MonitoringChangedFiles = "", $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
 Global $Global_Clipboard, $Global_Wheel, $Global_ScriptRefresh, $Global_ScriptRestart, $Global_ListViewCreateGallery, $Global_ListViewCreateList ; Misc.
 Global $Global_NewDroppedFiles, $Global_DroppedFiles[1], $Global_PriorityActions[1], $Global_SendTo_ControlID ; Misc.
 Global $Global_AbortButton, $Global_PauseButton ; Process GUI.
@@ -7330,7 +7330,7 @@ Func _Main_Create()
 EndFunc   ;==>_Main_Create
 
 Func _SetFeaturesWithTimer($mINI)
-	Local $mMonitored, $iId, $mStringSplit
+	Local $mMonitored, $iId, $mStringSplit, $iMsg, $iFCId
 
 	$Global_GraduallyHide = 0
 	If __Is("GraduallyHide") Then
@@ -7364,7 +7364,11 @@ Func _SetFeaturesWithTimer($mINI)
 			$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
 			If @error = 0 Then
 				_RDC_Destroy()
+				For $A = 1 to UBound($Global_MonitoringFileChanges) - 1
+					_WinAPI_ShellChangeNotifyDeregister($Global_MonitoringFileChanges[$A])
+				Next
 				Dim $Global_MonitoringChanges[1]
+				Dim $Global_MonitoringFileChanges[1]
 				For $A = 1 To $mMonitored[0][0]
 					$mStringSplit = StringSplit($mMonitored[$A][1], "|")
 					ReDim $mStringSplit[3]
@@ -7376,6 +7380,12 @@ Func _SetFeaturesWithTimer($mINI)
 						$iId = _RDC_Create($mMonitored[$A][0], True, $FILE_NOTIFY_CHANGE_FILE_NAME)
 					EndIf
 					If @error = 0 Then
+						;register for file changes
+						$iMsg = _WinAPI_RegisterWindowMessage('SHELLCHANGENOTIFY')
+						GUIRegisterMsg($iMsg, 'WM_SHELLCHANGENOTIFY')
+						$iFCId = _WinAPI_ShellChangeNotifyRegister($Global_GUI_1, $iMsg, $SHCNE_UPDATEITEM, BitOR($SHCNRF_INTERRUPTLEVEL, $SHCNRF_SHELLLEVEL, $SHCNRF_RECURSIVEINTERRUPT), $mMonitored[$A][0], 1)
+						_ArrayAdd($Global_MonitoringFileChanges, $iFCId)
+
 						_ArrayAdd($Global_MonitoringChanges, $iId)
 					EndIf
 				Next
@@ -7384,8 +7394,26 @@ Func _SetFeaturesWithTimer($mINI)
 	EndIf
 EndFunc   ;==>_SetFeaturesWithTimer
 
+Func WM_SHELLCHANGENOTIFY($hWnd, $iMsg, $wParam, $lParam)
+    #forceref $hWnd, $iMsg
+
+    Local $sPath = _WinAPI_ShellGetPathFromIDList(DllStructGetData(DllStructCreate('dword Item1; dword Item2', $wParam), 'Item1'))
+    If $sPath Then
+		; only execute, if the path is a file
+		If FileExists($sPath) Then
+			If StringInStr(FileGetAttrib($sPath), "D") = 0 Then
+				If $Global_MonitoringChangedFiles <> "" Then
+					$Global_MonitoringChangedFiles &= "|"
+				EndIf
+				$Global_MonitoringChangedFiles &= $sPath
+			EndIf
+		EndIf
+    EndIf
+EndFunc   ;==>WM_SHELLCHANGENOTIFY
+
 Func _MonitoringChanges()
-	Local $iId, $i, $j, $aData, $sResult = ""
+	Local $iId, $i, $j, $aData, $sResult = $Global_MonitoringChangedFiles
+	$Global_MonitoringChangedFiles = ""
 
 	For $i = 1 to UBound($Global_MonitoringChanges) - 1
 		$iId = $Global_MonitoringChanges[$i]
