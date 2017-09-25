@@ -112,7 +112,7 @@ Func __IsSettingsFile($iINI = -1)
 			"IgnoreNew=False" & @LF & "IgnoreInUse=False" & @LF & "IgnoreAttributes=True" & @LF & "AlertSize=True" & @LF & "AlertDelete=False" & @LF & "AlertFailed=True" & @LF & _
 			"AlertAmbiguity=False" & @LF & "AlertMail=True" & @LF & "FixOpenWithDestination=True" & @LF & "GroupOrder=Path" & @LF & "GraduallyHide=False" & @LF & _
 			"GraduallyHideSpeed=5" & @LF & "GraduallyHideTime=0" & @LF & "GraduallyHideVisPx=8" & @LF & "Monitoring=False" & @LF & "MonitoringTime=60" & @LF & _
-			"MonitoringSize=0" & @LF & "MonitoringFirstAtStartup=False" & @LF & "MasterPassword=" & @LF & "EndCommandLine=" & @LF & "ImmediateMonitorMode=Never")
+			"MonitoringSize=0" & @LF & "MonitoringFirstAtStartup=False" & @LF & "MasterPassword=" & @LF & "EndCommandLine=")
 	__IniWriteEx($iINI, "MonitoredFolders", "", "")
 	__IniWriteEx($iINI, "EnvironmentVariables", "", "")
 
@@ -909,31 +909,35 @@ Func __GetDuplicateMode($gMode, $gForCombo = 0)
 	Return $gReturnValue
 EndFunc   ;==>__GetDuplicateMode
 
-Func __GetImmediateMonitorMode($gMode, $gForCombo = 0)
+Func __GetMonitorMode($gMode, $gForCombo = 0)
 	Local $gReturnValue
 
 	If $gForCombo Then
 		Switch $gMode
-			Case "Never"
-				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
-			Case "OnCreateFiles"
-				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_1', 'on creating files')
-			Case Else ; Never
-				$gReturnValue = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
+			Case 1
+				$gReturnValue = __GetLang('MONITOR_MODE_1', 'time-interval')
+			Case 2
+				$gReturnValue = __GetLang('MONITOR_MODE_2', 'immediate on-change')
+			Case 3
+				$gReturnValue = __GetLang('MONITOR_MODE_3', 'time-interval and immediate on-change')
+			Case Else ; Time Interval.
+				$gReturnValue = __GetLang('MONITOR_MODE_1', 'time-interval')
 		EndSwitch
 	Else
 		Switch $gMode
-			Case __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never')
-				$gReturnValue = "Never"
-			Case __GetLang('IMMEDIATE_MONITOR_MODE_1', 'on creating files')
-				$gReturnValue = "OnCreateFiles"
-			Case Else ; Never
-				$gReturnValue = "Never"
+			Case __GetLang('MONITOR_MODE_1', 'time-interval')
+				$gReturnValue = 1
+			Case __GetLang('MONITOR_MODE_2', 'immediate on-change')
+				$gReturnValue = 2
+			Case __GetLang('MONITOR_MODE_3', 'time-interval and immediate on-change')
+				$gReturnValue = 3
+			Case Else ; Time Interval.
+				$gReturnValue = 1
 		EndSwitch
 	EndIf
 
 	Return $gReturnValue
-EndFunc   ;==>__GetImmediateMonitorMode
+EndFunc   ;==>__GetMonitorMode
 
 Func __GetOrderMode($gMode, $gForCombo = 0)
 	#cs

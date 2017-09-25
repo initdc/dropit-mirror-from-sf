@@ -144,7 +144,7 @@ Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Export, $Global
 Global $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New ; ListView Variables.
 Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1, $Global_ListViewProcess_Open, $Global_ListViewProcess_Info, $Global_ListViewProcess_Skip ; ListView Variables.
 Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
-Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringImmediate, $Global_MonitoringChanges[1], $Global_MonitoringFileChanges[1], $Global_MonitoringChangedFiles = "", $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
+Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringChanges[1], $Global_MonitoringFileChanges[1], $Global_MonitoringChangedFiles = "", $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
 Global $Global_Clipboard, $Global_Wheel, $Global_ScriptRefresh, $Global_ScriptRestart, $Global_ListViewCreateGallery, $Global_ListViewCreateList ; Misc.
 Global $Global_NewDroppedFiles, $Global_DroppedFiles[1], $Global_PriorityActions[1], $Global_SendTo_ControlID ; Misc.
 Global $Global_AbortButton, $Global_PauseButton ; Process GUI.
@@ -7185,7 +7185,7 @@ Func _Main()
 		EndIf
 		If $Global_Monitoring <> 0 Then
 			Dim $mForceMonitoringNowOn[1] = [0]
-			If $Global_MonitoringImmediate <> "Never" Then
+			If $Global_Monitoring >= 2 Then
 				$mForceMonitoringNowOn = _MonitoringChanges()
 			EndIf
 			$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now, $mForceMonitoringNowOn)
@@ -7350,17 +7350,16 @@ Func _SetFeaturesWithTimer($mINI)
 	EndIf
 	$Global_Monitoring = 0
 	If __Is("Monitoring") Then
-		$Global_Monitoring = 1
+		$Global_Monitoring = Number(IniRead($mINI, $G_Global_GeneralSection, "Monitoring", 1))
 		$Global_MonitoringTimer = Number(IniRead($mINI, $G_Global_GeneralSection, "MonitoringTime", ""))
-		If $Global_MonitoringTimer < 0 Then
-			$Global_MonitoringTimer = 0 ; disable monitoring by fixed time
+		If $Global_MonitoringTimer < 1 Then
+			$Global_MonitoringTimer = 30 ; Seconds.
 		EndIf
 		$Global_MonitoringSizer = Number(IniRead($mINI, $G_Global_GeneralSection, "MonitoringSize", ""))
 		If $Global_MonitoringSizer < 0 Then
 			$Global_MonitoringSizer = 0 ; KB.
 		EndIf
-		$Global_MonitoringImmediate = IniRead($mINI, $G_Global_GeneralSection, "ImmediateMonitorMode", "")
-		If $Global_MonitoringImmediate <> "Never" Then
+		If $Global_Monitoring >= 2 Then
 			$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
 			If @error = 0 Then
 				_RDC_Destroy()
@@ -7376,7 +7375,7 @@ Func _SetFeaturesWithTimer($mINI)
 						ContinueLoop
 					EndIf
 
-					If $Global_MonitoringImmediate = "OnCreateFiles" Then
+					If $Global_Monitoring >= 2 Then
 						$iId = _RDC_Create($mMonitored[$A][0], True, $FILE_NOTIFY_CHANGE_FILE_NAME)
 					EndIf
 					If @error = 0 Then
@@ -7460,7 +7459,7 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 
 	If $mForceExecutionOn = "" Then Dim $mForceExecutionOn[1] = [0]
 
-	If ($Global_MonitoringTimer > 0 And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000)) Or $mForceExecutionOn[0] > 0 Then
+	If (($Global_Monitoring = 1 Or $Global_Monitoring = 3) And $Global_MonitoringTimer > 0 And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000)) Or $mForceExecutionOn[0] > 0 Then
 		$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
 		If @error = 0 Then
 			$Global_MenuDisable = 1
@@ -7481,7 +7480,7 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 				If FileExists($mLoadedFolder[1]) = 0 Then
 					ContinueLoop ; Skip Folder If Does Not Exist
 				EndIf
-				If DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer And $Global_MonitoringTimer > 0 Then
+				If DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer And $mForceExecutionOn[0] = 0 Then
 					ContinueLoop ; Skip Folder If Is Smaller Than Defined Size And Timer Is Used.
 				EndIf
 				If $Global_MonitoringTimer > 0 And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
@@ -7742,7 +7741,7 @@ Func _Options($oHandle = -1)
 	Local $oINI_TrueOrFalse_Array[29] = [28, "OnTop", "LockPosition", "MultipleInstances", "UseSendTo", "CreateLog", "FolderAsFile", "IgnoreNew", "AutoDup", "ShowSorting", _
 			"ProfileEncryption", "CustomTrayIcon", "StartAtStartup", "AlertSize", "AlertDelete", "Monitoring", "CheckUpdates", "Minimized", "ScanSubfolders", "AmbiguitiesCheck", _
 			"PlaySound", "AutoStart", "AutoClose", "ShowMonitored", "AlertFailed", "GraduallyHide", "IgnoreInUse", "AutoBackup", "MouseScroll"]
-	Local $oINI_Various_Array[8] = [7, "SendToMode", "DupMode", "MasterPassword", "MonitoringTime", "MonitoringSize", "GroupOrder", "ImmediateMonitorMode"]
+	Local $oINI_Various_Array[7] = [6, "SendToMode", "DupMode", "MasterPassword", "MonitoringTime", "MonitoringSize", "GroupOrder"]
 	Local $oPW, $oPW_Code = $G_Global_PasswordKey
 	Local $oBackupDirectory = __GetDefault(32) ; Get Default Backup Directory.
 	Local $oLogFile = __GetDefault(513) ; Get Default Directory & LogFile File Name.
@@ -7795,14 +7794,14 @@ Func _Options($oHandle = -1)
 
 	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_15', 'Folder Monitoring'), 10, 30, 399, 455)
 	$oCheckItems[15] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_36', 'Enable scan of monitored folders'), 20, 30 + 15 + 2, 270, 20)
-	$oScanTime = GUICtrlCreateInput("", 20, 30 + 15 + 25, 70, 20, 0x2002)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_25', 'Monitor folders based on'), 20, 30 + 15 + 25 + 2, 270, 20)
+	$oComboItems[3] = GUICtrlCreateCombo("", 20, 30 + 15 + 45 + 2, 380, 20, 0x0003)
+	$oScanTime = GUICtrlCreateInput("", 20, 30 + 15 + 75, 70, 20, 0x2002)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_10', 'Scan monitored folders with a defined time interval.'))
-	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_19', 'Time interval in seconds'), 20 + 80, 30 + 15 + 25 + 3, 270, 20)
-	$oScanSize = GUICtrlCreateInput("", 20, 30 + 15 + 50, 70, 20, 0x2002)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_19', 'Time interval in seconds'), 20 + 80, 30 + 15 + 75 + 3, 270, 20)
+	$oScanSize = GUICtrlCreateInput("", 20, 30 + 15 + 100, 70, 20, 0x2002)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_21', 'Scan monitored folders if bigger than defined size.'))
-	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_20', 'Minimum size in KB'), 20 + 80, 30 + 15 + 50 + 3, 270, 20)
-	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_25', 'Monitor folders immediately on-line'), 20, 30 + 15 + 75 + 2, 270, 20)
-	$oComboItems[3] = GUICtrlCreateCombo("", 20, 30 + 15 + 95 + 2, 380, 20, 0x0003)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_20', 'Minimum size in KB'), 20 + 80, 30 + 15 + 100 + 3, 270, 20)
 	$oCheckItems[23] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_35', 'Show progress window for monitored folders'), 20, 30 + 15 + 125 + 1)
 	$oListView = GUICtrlCreateListView(__GetLang('MONITORED_FOLDER', 'Monitored Folder') & "|" & __GetLang('ASSOCIATED_PROFILE', 'Associated Profile'), 20, 30 + 15 + 160, 380, 235, BitOR($LVS_NOSORTHEADER, $LVS_REPORT, $LVS_SINGLESEL))
 	$oMn_Add = GUICtrlCreateButton(__GetLang('OPTIONS_BUTTON_4', 'Add'), 20, 430 + 15 + 3, 110, 22)
@@ -7881,8 +7880,8 @@ Func _Options($oHandle = -1)
 			__GetLang('DATE_CREATED', 'Date Created') & "|" & __GetLang('DATE_MODIFIED', 'Date Modified') & "|" & __GetLang('DATE_OPENED', 'Date Opened')
 	$oCurrent[2] = __GetOrderMode(IniRead($oINI, $G_Global_GeneralSection, "GroupOrder", "Path"), 1)
 
-	$oGroup[3] = __GetLang('IMMEDIATE_MONITOR_MODE_0', 'never') & "|" & __GetLang('IMMEDIATE_MONITOR_MODE_1', 'on creating files')
-	$oCurrent[3] = __GetImmediateMonitorMode(IniRead($oINI, $G_Global_GeneralSection, "ImmediateMonitorMode", "Never"), 1)
+	$oGroup[3] = __GetLang('MONITOR_MODE_1', 'time-interval') & "|" & __GetLang('MONITOR_MODE_2', 'immediate on-change') & "|" & __GetLang('MONITOR_MODE_3', 'time-interval and immediate on-change')
+	$oCurrent[3] = __GetMonitorMode(IniRead($oINI, $G_Global_GeneralSection, "Monitoring", 0), 1)
 
 	For $A = 1 To $oComboItems[0]
 		GUICtrlSetData($oComboItems[$A], $oGroup[$A], $oCurrent[$A])
@@ -7961,7 +7960,8 @@ Func _Options($oHandle = -1)
 
 	; Monitoring Settings:
 	$oState = $GUI_DISABLE
-	If GUICtrlRead($oCheckItems[15]) = 1 Then
+	If Number(IniRead($oINI, $G_Global_GeneralSection, "Monitoring", 0)) > 0 Then
+		GUICtrlSetState($oCheckItems[15], $GUI_CHECKED)
 		$oState = $GUI_ENABLE
 	EndIf
 	GUICtrlSetState($oComboItems[3], $oState)
@@ -7973,7 +7973,7 @@ Func _Options($oHandle = -1)
 	GUICtrlSetState($oMn_Remove, $oState)
 	$oState = IniRead($oINI, $G_Global_GeneralSection, "MonitoringTime", "")
 	If $oState = "" Then
-		$oState = 0
+		$oState = 30
 	EndIf
 	GUICtrlSetData($oScanTime, $oState)
 	$oState = IniRead($oINI, $G_Global_GeneralSection, "MonitoringSize", "")
@@ -7981,11 +7981,6 @@ Func _Options($oHandle = -1)
 		$oState = 0
 	EndIf
 	GUICtrlSetData($oScanSize, $oState)
-	If GUICtrlRead($oScanTime) > 0 Then
-		GUICtrlSetState($oScanSize, $oState)
-	Else
-		GUICtrlSetState($oScanSize, $GUI_DISABLE)
-	EndIf
 
 	; ListView Settings:
 	$oListView_Handle = GUICtrlGetHandle($oListView)
@@ -8032,7 +8027,7 @@ Func _Options($oHandle = -1)
 			If GUICtrlGetState($oMn_Remove) = 80 Then
 				GUICtrlSetState($oMn_Remove, 144) ; $GUI_DISABLE + $GUI_SHOW.
 			EndIf
-		ElseIf GUICtrlRead($oCheckItems[15]) = 1 Then ; Monitoring Enabled.
+		ElseIf GUICtrlRead($oCheckItems[15]) = $GUI_CHECKED Then ; Monitoring Enabled.
 			If GUICtrlGetState($oMn_Edit) > 80 Then
 				GUICtrlSetState($oMn_Edit, 80) ; $GUI_ENABLE + $GUI_SHOW.
 			EndIf
@@ -8041,10 +8036,11 @@ Func _Options($oHandle = -1)
 			EndIf
 		EndIf
 		$oState = $GUI_DISABLE
-		If GUICtrlRead($oCheckItems[15]) = 1 And GUICtrlRead($oScanTime) > 0 Then
+		If GUICtrlRead($oCheckItems[15]) = $GUI_CHECKED And (GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_1', 'time-interval') Or GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_3', 'time-interval and immediate on-change')) Then
 			$oState = $GUI_ENABLE
 		EndIf
 		If BitAND(GUICtrlGetState($oScanSize), $oState) <> $oState Then
+			GUICtrlSetState($oScanTime, $oState)
 			GUICtrlSetState($oScanSize, $oState)
 		EndIf
 
@@ -8115,21 +8111,20 @@ Func _Options($oHandle = -1)
 
 			Case $oCheckItems[15] ; Monitoring Checkbox.
 				$oState = $GUI_DISABLE
-				If GUICtrlRead($oCheckItems[15]) = 1 Then
+				If GUICtrlRead($oCheckItems[15]) = $GUI_CHECKED Then
 					$oState = $GUI_ENABLE
 				EndIf
 				GUICtrlSetState($oComboItems[3], $oState)
-				GUICtrlSetState($oScanTime, $oState)
-				If GUICtrlRead($oScanTime) > 0 Then
-					GUICtrlSetState($oScanSize, $oState)
-				Else
-					GUICtrlSetState($oScanSize, $GUI_DISABLE)
-				EndIf
 				GUICtrlSetState($oCheckItems[23], $oState)
 				GUICtrlSetState($oListView, $oState)
 				GUICtrlSetState($oMn_Add, $oState)
 				GUICtrlSetState($oMn_Edit, $oState)
 				GUICtrlSetState($oMn_Remove, $oState)
+				If $oState = $GUI_ENABLE And Not (GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_1', 'time-interval') Or GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_3', 'time-interval and immediate on-change')) Then
+					$oState = $GUI_DISABLE
+				EndIf
+				GUICtrlSetState($oScanTime, $oState)
+				GUICtrlSetState($oScanSize, $oState)
 
 			Case $oLogRemove
 				FileDelete($oLogFile[1][0] & $oLogFile[2][0])
@@ -8185,7 +8180,6 @@ Func _Options($oHandle = -1)
 			Case $oOK
 				__IniWriteEx($oINI, $G_Global_GeneralSection, $oINI_Various_Array[2], __GetDuplicateMode(GUICtrlRead($oComboItems[1])))
 				__IniWriteEx($oINI, $G_Global_GeneralSection, $oINI_Various_Array[6], __GetOrderMode(GUICtrlRead($oComboItems[2])))
-				__IniWriteEx($oINI, $G_Global_GeneralSection, $oINI_Various_Array[7], __GetImmediateMonitorMode(GUICtrlRead($oComboItems[3])))
 
 				If __Is("CreateLog", $oINI) And GUICtrlRead($oCheckItems[5]) <> 1 And FileExists($oLogFile[1][0] & $oLogFile[2][0]) Then
 					__Log_Write("===== " & __GetLang('LOG_DISABLED', 'Log Disabled') & " =====")
@@ -8194,8 +8188,8 @@ Func _Options($oHandle = -1)
 					$oLogWrite = 1 ; Needed To Write "Log Enabled" After Log Activation.
 				EndIf
 
-				If _GUICtrlListView_GetItemCount($oListView_Handle) = 0 Or (GUICtrlRead($oScanTime) = 0 And GUICtrlRead($oComboItems[3]) = __GetImmediateMonitorMode("Never")) Then
-					GUICtrlSetState($oCheckItems[15], $GUI_UNCHECKED) ; Disable Monitoring If ListView Is Empty Or Immediate Monitoring And Scan Time Are Disabled.
+				If _GUICtrlListView_GetItemCount($oListView_Handle) = 0 Then
+					GUICtrlSetState($oCheckItems[15], $GUI_UNCHECKED) ; Disable Monitoring If ListView Is Empty.
 				EndIf
 
 				For $A = 1 To $oINI_TrueOrFalse_Array[0]
@@ -8208,6 +8202,12 @@ Func _Options($oHandle = -1)
 					EndIf
 					__IniWriteEx($oINI, $G_Global_GeneralSection, $oINI_TrueOrFalse_Array[$A], $oState)
 				Next
+
+				If GUICtrlRead($oCheckItems[15]) = $GUI_CHECKED Then
+					__IniWriteEx($oINI, $G_Global_GeneralSection, 'Monitoring', __GetMonitorMode(GUICtrlRead($oComboItems[3])))
+				Else
+					__IniWriteEx($oINI, $G_Global_GeneralSection, 'Monitoring', 0)
+				EndIf
 
 				If $oLogWrite = 1 Then
 					__Log_Write("===== " & __GetLang('LOG_ENABLED', 'Log Enabled') & " =====")
@@ -9223,8 +9223,8 @@ Func __Upgrade()
 		Return SetError(1, 0, 0) ; Abort Upgrade If INI Version Is The Same Of Current Software Version.
 	EndIf
 
-	Local $uINI_Array[61][2] = [ _
-			[60, 2], _
+	Local $uINI_Array[60][2] = [ _
+			[59, 2], _
 			["Profile", 1], _
 			["Language", 1], _
 			["PosX", 1], _
@@ -9283,8 +9283,7 @@ Func __Upgrade()
 			["MonitoringSize", 1], _
 			["MonitoringFirstAtStartup", 1], _ ; INI Setting Only (Not In Options).
 			["MasterPassword", 1], _
-			["EndCommandLine", 1], _ ; INI Setting Only (Not In Options).
-			["ImmediateMonitorMode", 1]]
+			["EndCommandLine", 1]] ; INI Setting Only (Not In Options).
 
 	Local $uINIRead
 	FileMove($uINI, $uINI & ".old", 1) ; Rename The Old INI.
