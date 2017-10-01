@@ -112,13 +112,16 @@ Func __Gallery_WriteHTML($lSubArray, $lGalleryPath, $lElementsGUI, $lStringPrope
 		If __IsValidFileType($lSubArray[$A], 'jpg;jpeg;png;gif;tif;tiff') Then
 			$lFileType = 'photos'
 			__ImageWriteResize($lSubArray[$A], $lGalleryPath & "\thumbs\" & $lFileName, $lThumbSize[1], $lThumbSize[2], 1)
+		ElseIf __IsValidFileType($lSubArray[$A], 'svg') Then
+			$lFileType = 'photos'
+			FileCopy($lSubArray[$A], $lGalleryPath & "\thumbs\" & $lFileName, 9)
 		Else
 			$lFileType = 'files'
 		EndIf
 		$lPhotoLink = $lFileType & '/' & $lFileName
 		If $lStringSplit[1] = 5 Then ; If Is "Link original files".
 			$lPhotoLink = 'file:///' & $lSubArray[$A]
-		ElseIf ($lFileType = 'photos' And $lStringSplit[1] = 4) Or $lFileType = 'files' Then ; If Is "Copy for best quality".
+		ElseIf ($lFileType = 'photos' And $lStringSplit[1] = 4) Or ($lFileType = 'photos' And __IsValidFileType($lSubArray[$A], 'svg')) Or $lFileType = 'files' Then ; If Is "Copy for best quality" Or SVG Image Or A File.
 			FileCopy($lSubArray[$A], $lGalleryPath & '\' & $lFileType & '\' & $lFileName, 9)
 		Else ; If Is "Resize for high/medium/low quality".
 			Switch $lStringSplit[1]
