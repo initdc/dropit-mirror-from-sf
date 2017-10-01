@@ -7794,8 +7794,8 @@ Func _Options($oHandle = -1)
 
 	GUICtrlCreateGroup(__GetLang('OPTIONS_LABEL_15', 'Folder Monitoring'), 10, 30, 399, 455)
 	$oCheckItems[15] = GUICtrlCreateCheckbox(__GetLang('OPTIONS_CHECKBOX_36', 'Enable scan of monitored folders'), 20, 30 + 15 + 2, 270, 20)
-	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_25', 'Monitor folders based on'), 20, 30 + 15 + 25 + 2, 270, 20)
-	$oComboItems[3] = GUICtrlCreateCombo("", 20, 30 + 15 + 45 + 2, 380, 20, 0x0003)
+	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_25', 'Monitor folders based on:'), 20, 30 + 15 + 25 + 2, 270, 20)
+	$oComboItems[3] = GUICtrlCreateCombo("", 20, 30 + 15 + 45 + 1, 380, 20, 0x0003)
 	$oScanTime = GUICtrlCreateInput("", 20, 30 + 15 + 75, 70, 20, 0x2002)
 	GUICtrlSetTip(-1, __GetLang('OPTIONS_TIP_10', 'Scan monitored folders with a defined time interval.'))
 	GUICtrlCreateLabel(__GetLang('OPTIONS_LABEL_19', 'Time interval in seconds'), 20 + 80, 30 + 15 + 75 + 3, 270, 20)
@@ -7880,7 +7880,7 @@ Func _Options($oHandle = -1)
 			__GetLang('DATE_CREATED', 'Date Created') & "|" & __GetLang('DATE_MODIFIED', 'Date Modified') & "|" & __GetLang('DATE_OPENED', 'Date Opened')
 	$oCurrent[2] = __GetOrderMode(IniRead($oINI, $G_Global_GeneralSection, "GroupOrder", "Path"), 1)
 
-	$oGroup[3] = __GetLang('MONITOR_MODE_1', 'time-interval') & "|" & __GetLang('MONITOR_MODE_2', 'immediate on-change') & "|" & __GetLang('MONITOR_MODE_3', 'time-interval and immediate on-change')
+	$oGroup[3] = __GetLang('MONITOR_MODE_1', 'Time interval') & "|" & __GetLang('MONITOR_MODE_2', 'Immediate on-change') & "|" & __GetLang('MONITOR_MODE_3', 'Time interval + Immediate on-change')
 	$oCurrent[3] = __GetMonitorMode(IniRead($oINI, $G_Global_GeneralSection, "Monitoring", 0), 1)
 
 	For $A = 1 To $oComboItems[0]
@@ -8036,7 +8036,7 @@ Func _Options($oHandle = -1)
 			EndIf
 		EndIf
 		$oState = $GUI_DISABLE
-		If GUICtrlRead($oCheckItems[15]) = $GUI_CHECKED And (GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_1', 'time-interval') Or GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_3', 'time-interval and immediate on-change')) Then
+		If GUICtrlRead($oCheckItems[15]) = $GUI_CHECKED And (GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_1', 'Time interval') Or GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_3', 'Time interval + Immediate on-change')) Then
 			$oState = $GUI_ENABLE
 		EndIf
 		If BitAND(GUICtrlGetState($oScanSize), $oState) <> $oState Then
@@ -8120,7 +8120,7 @@ Func _Options($oHandle = -1)
 				GUICtrlSetState($oMn_Add, $oState)
 				GUICtrlSetState($oMn_Edit, $oState)
 				GUICtrlSetState($oMn_Remove, $oState)
-				If $oState = $GUI_ENABLE And Not (GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_1', 'time-interval') Or GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_3', 'time-interval and immediate on-change')) Then
+				If $oState = $GUI_ENABLE And Not (GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_1', 'Time interval') Or GUICtrlRead($oComboItems[3]) = __GetLang('MONITOR_MODE_3', 'Time interval + Immediate on-change')) Then
 					$oState = $GUI_DISABLE
 				EndIf
 				GUICtrlSetState($oScanTime, $oState)

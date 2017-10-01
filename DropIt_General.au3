@@ -914,22 +914,18 @@ Func __GetMonitorMode($gMode, $gForCombo = 0)
 
 	If $gForCombo Then
 		Switch $gMode
-			Case 1
-				$gReturnValue = __GetLang('MONITOR_MODE_1', 'time-interval')
 			Case 2
-				$gReturnValue = __GetLang('MONITOR_MODE_2', 'immediate on-change')
+				$gReturnValue = __GetLang('MONITOR_MODE_2', 'Immediate on-change')
 			Case 3
-				$gReturnValue = __GetLang('MONITOR_MODE_3', 'time-interval and immediate on-change')
+				$gReturnValue = __GetLang('MONITOR_MODE_3', 'Time interval + Immediate on-change')
 			Case Else ; Time Interval.
-				$gReturnValue = __GetLang('MONITOR_MODE_1', 'time-interval')
+				$gReturnValue = __GetLang('MONITOR_MODE_1', 'Time interval')
 		EndSwitch
 	Else
 		Switch $gMode
-			Case __GetLang('MONITOR_MODE_1', 'time-interval')
-				$gReturnValue = 1
-			Case __GetLang('MONITOR_MODE_2', 'immediate on-change')
+			Case __GetLang('MONITOR_MODE_2', 'Immediate on-change')
 				$gReturnValue = 2
-			Case __GetLang('MONITOR_MODE_3', 'time-interval and immediate on-change')
+			Case __GetLang('MONITOR_MODE_3', 'Time interval + Immediate on-change')
 				$gReturnValue = 3
 			Case Else ; Time Interval.
 				$gReturnValue = 1
