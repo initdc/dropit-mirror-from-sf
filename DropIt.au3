@@ -7176,7 +7176,7 @@ Func _Main()
 	_WinAPI_EmptyWorkingSet() ; Reduce Memory Usage Of DropIt.
 
 	If $Global_Monitoring <> 0 And __Is("MonitoringFirstAtStartup") Then
-		$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now, 1) ; Do A First Monitoring Scan At Startup.
+		$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now) ; Do A First Monitoring Scan At Startup.
 	EndIf
 
 	While 1
@@ -7184,7 +7184,7 @@ Func _Main()
 			$mHidingTime_Now = _HidingTargetImage($mHidingTime_Now)
 		EndIf
 		If $Global_Monitoring <> 0 Then
-			Dim $mForceMonitoringNowOn[1] = [0]
+			Dim $mForceMonitoringNowOn = ""
 			If $Global_Monitoring >= 2 Then
 				$mForceMonitoringNowOn = _MonitoringChanges()
 			EndIf
@@ -7349,13 +7349,13 @@ Func _SetFeaturesWithTimer($mINI)
 		EndIf
 	EndIf
 	$Global_Monitoring = 0
-	If __Is("Monitoring") Then
+	If Number(IniRead($mINI, $G_Global_GeneralSection, "Monitoring", 1)) > 0 Then
 		$Global_Monitoring = Number(IniRead($mINI, $G_Global_GeneralSection, "Monitoring", 1))
-		$Global_MonitoringTimer = Number(IniRead($mINI, $G_Global_GeneralSection, "MonitoringTime", ""))
+		$Global_MonitoringTimer = Number(IniRead($mINI, $G_Global_GeneralSection, "MonitoringTime", 30))
 		If $Global_MonitoringTimer < 1 Then
 			$Global_MonitoringTimer = 30 ; Seconds.
 		EndIf
-		$Global_MonitoringSizer = Number(IniRead($mINI, $G_Global_GeneralSection, "MonitoringSize", ""))
+		$Global_MonitoringSizer = Number(IniRead($mINI, $G_Global_GeneralSection, "MonitoringSize", 0))
 		If $Global_MonitoringSizer < 0 Then
 			$Global_MonitoringSizer = 0 ; KB.
 		EndIf
@@ -7433,6 +7433,8 @@ Func _MonitoringChanges()
 		Next
 	Next
 
+	If $sResult = "" Then Return ""
+
 	Return StringSplit($sResult, "|")
 EndFunc   ;==>_MonitoringChanges
 
@@ -7457,9 +7459,7 @@ EndFunc   ;==>_HidingTargetImage
 Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 	Local $mMonitored, $mStringSplit, $mLoadedFolder[2] = [1, 0], $i
 
-	If $mForceExecutionOn = "" Then Dim $mForceExecutionOn[1] = [0]
-
-	If (($Global_Monitoring = 1 Or $Global_Monitoring = 3) And $Global_MonitoringTimer > 0 And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000)) Or $mForceExecutionOn[0] > 0 Then
+	If (($Global_Monitoring = 1 Or $Global_Monitoring = 3) And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000)) Or IsArray($mForceExecutionOn) Then
 		$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
 		If @error = 0 Then
 			$Global_MenuDisable = 1
