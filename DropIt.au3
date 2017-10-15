@@ -7492,11 +7492,11 @@ Func _MonitoringChanges()
 		EndIf
 
 		For $j = 1 to $aData[0][0]
-			If $aData[$j][0] = 1 Then ; only force execution on file creation
+			If $aData[$j][0] = $FILE_ACTION_ADDED Or $aData[$j][0] = $FILE_ACTION_RENAMED_NEW_NAME Then ; only force execution on file creation or rename
 				If $sResult <> "" Then
 					$sResult &= "|"
 				EndIf
-				$sResult &= _RDC_GetDirectory($iId) & "\\" & $aData[$i][1]
+				$sResult &= _RDC_GetDirectory($iId) & "\" & $aData[$j][1]
 			EndIf
 		Next
 	Next
@@ -7551,7 +7551,7 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 				If DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer And $mForceExecutionOn[0] = 0 Then
 					ContinueLoop ; Skip Folder If Is Smaller Than Defined Size And Timer Is Used.
 				EndIf
-				If $Global_MonitoringTimer > 0 And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
+				If ($Global_Monitoring = 1 Or $Global_Monitoring = 3) And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
 					;always execute drop event for whole folder with priority over the force execution files
 					__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1])
 					If $Global_GUI_State = 1 Then ; GUI Is Visible.
@@ -7571,7 +7571,7 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 						EndIf
 					Next
 				EndIf
-					GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
+				GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
 			Next
 			TraySetClick(8)
 			$Global_MenuDisable = 0
