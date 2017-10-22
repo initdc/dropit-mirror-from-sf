@@ -7230,7 +7230,7 @@ Func _Main()
 	__IsProfile() ; Check If A Default Profile Is Available.
 	_Main_Create() ; Create The Main GUI, ContextMenu & TrayMenu.
 
-	;GUIRegisterMsg($WM_CONTEXTMENU, "_WM_CONTEXTMENU")
+	GUIRegisterMsg($WM_CONTEXTMENU, "_WM_CONTEXTMENU")
 	GUIRegisterMsg($WM_MOUSEWHEEL, "_WM_MOUSEWHEEL")
 	GUIRegisterMsg($WM_SYSCOMMAND, "_WM_SYSCOMMAND")
 	GUIRegisterMsg($WM_POWERBROADCAST, "_WM_SLEEPMODE")
