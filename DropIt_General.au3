@@ -633,7 +633,7 @@ Func __EnsureDirExists($sDestination)
 	Return 1
 EndFunc   ;==>__EnsureDirExists
 
-Func __SetPositionResult($sMainArray, $sFrom, $sTo, $sListView, $sElementsGUI, $sResult)
+Func __SetPositionResult($sMainArray, $sFrom, $sTo, $sListView, $sElementsGUI, $sResult, $sWriteToLog = True)
 	#cs
 		Description: Set The Position Result In The ListView.
 		Returns: Nothing.
@@ -641,25 +641,39 @@ Func __SetPositionResult($sMainArray, $sFrom, $sTo, $sListView, $sElementsGUI, $
 	Local $sText, $sDestination, $sAction = $sMainArray[$sFrom][2]
 	$sDestination = __GetDestinationString($sAction, $sMainArray[$sFrom][3])
 
-	If $sResult == 0 Then
-		$sText = __GetLang('OK', 'OK')
-		__Log_Write(__GetActionResult($sAction), $sDestination)
-	EndIf
-
 	For $A = $sFrom To $sTo
-		If $sMainArray[$A][4] <> -9 Then ; If Not Previously Processed.
-			If $sResult <> 0 Then
-				If $sResult == -1 Then
-					$sText = __GetLang('POSITIONPROCESS_LOGMSG_0', 'Skipped')
-				Else
-					$sText = __GetLang('POSITIONPROCESS_LOGMSG_2', 'Failed')
-				EndIf
+		If $sMainArray[$A][4] <= -9 Then ; If Previously Processed Respect The Result From That Run.
+			$sResult = $sMainArray[$A][4] + 9
+		EndIf
+
+		If $sResult == 0 Then
+			$sText = __GetLang('OK', 'OK')
+			If $sMainArray[$A][4] > -9 And $sWriteToLog Then
+				__Log_Write(__GetActionResult($sAction), $sDestination)
+			EndIf
+		EndIf
+
+		If $sResult <> 0 Then
+			If $sResult == -1 Then
+				$sText = __GetLang('POSITIONPROCESS_LOGMSG_0', 'Skipped')
+			Else
+				$sText = __GetLang('POSITIONPROCESS_LOGMSG_2', 'Failed')
+			EndIf
+			If $sMainArray[$A][4] > -9 And $sWriteToLog Then ; If Not Previously Processed.
 				__Log_Write($sText, $sMainArray[$A][0])
 			EndIf
-			If $sMainArray[$A][4] <> -8 Then ; If Not Previously Virtually Processed.
-				__SetProgressResult($sElementsGUI, $sMainArray[$A][1], $sMainArray[0][0], $A)
+		EndIf
+		If $sMainArray[$A][4] > -8 And $sElementsGUI <> -1 Then ; If Not Previously Virtually Processed And Not Previously Processed.
+			__SetProgressResult($sElementsGUI, $sMainArray[$A][1], $sMainArray[0][0], $A)
+		EndIf
+
+		; do not update the lst view if the given list view is -1, which is the case during a multi action
+		If $sListView <> -1 Then
+			If $sAction = "$L" Then
+				_GUICtrlListView_AddSubItem($sListView, $A - 1, __GetLang('MANAGE_MULTI_ACTION_DETAILS', 'Further information for this action can be found by using "Show details" context menu.'), 2)
+			Else
+				_GUICtrlListView_AddSubItem($sListView, $A - 1, $sDestination, 2)
 			EndIf
-			_GUICtrlListView_AddSubItem($sListView, $A - 1, $sDestination, 2)
 			_GUICtrlListView_AddSubItem($sListView, $A - 1, $sText, 3)
 			_GUICtrlListView_EnsureVisible($sListView, $A)
 		EndIf
@@ -1086,6 +1100,7 @@ Func __GetPercent($gSize, $gUpdateCurrent = 1)
 	If $G_Global_SortingTotalSize = 0 Then
 		Return 0
 	EndIf
+
 	Return Round($gCurrentSize / $G_Global_SortingTotalSize * 100)
 EndFunc   ;==>__GetPercent
 

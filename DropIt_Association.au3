@@ -158,6 +158,8 @@ Func __GetActionString($gAction)
 				$gReturn = __GetLang('ACTION_SPLIT', 'Split')
 			Case "$J"
 				$gReturn = __GetLang('ACTION_JOIN', 'Join')
+			Case "$L"
+				$gReturn = __GetLang('ACTION_MULTI', 'Multi action')
 			Case "$M"
 				$gReturn = __GetLang('ACTION_PRINT', 'Print')
 			Case Else ; Move.
@@ -203,6 +205,8 @@ Func __GetActionString($gAction)
 				$gReturn = "$I"
 			Case __GetLang('ACTION_JOIN', 'Join'), 'Join'
 				$gReturn = "$J"
+			Case __GetLang('ACTION_MULTI', 'Multi action'), 'Multi action'
+				$gReturn = "$L"
 			Case __GetLang('ACTION_PRINT', 'Print'), 'Print'
 				$gReturn = "$M"
 			Case Else ; __GetLang('ACTION_MOVE', 'Move').
@@ -291,7 +295,7 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 	#cs
 		Description: Get Destination To Show [Defined Settings].
 	#ce
-	Local $gStringSplit
+	Local $gStringSplit, $gTmp
 
 	Switch $gAction
 		Case "$6"
@@ -318,6 +322,21 @@ Func __GetDestinationString($gAction, $gDestination, $gSiteSettings = -1)
 			Else
 				$gDestination = __GetLang('MAIL_SETTINGS_DEFINED', 'Defined Settings')
 			EndIf
+		Case "$L"
+			; Prettify text of multi action destination
+			$gStringSplit = StringSplit($gDestination, ";")
+			$gTmp = ""
+			For $A = 1 to $gStringSplit[0] - 1 Step 2
+				If $gTmp <> "" Then
+					$gTmp &= " >> "
+				EndIf
+				If $gStringSplit[$A + 1] = "OnSource" Then
+					$gTmp &= $gStringSplit[$A] & " (" & __GetLang('MANAGE_MULTI_ACTION_ON_SOURCE', 'on previous source') & ")"
+				ElseIf $gStringSplit[$A + 1] = "OnDest" Then
+					$gTmp &= $gStringSplit[$A] & " (" & __GetLang('MANAGE_MULTI_ACTION_ON_DESTINATION', 'on previous destination') & ")"
+				EndIf
+			Next
+			$gDestination = $gTmp
 	EndSwitch
 
 	Return $gDestination
@@ -508,7 +527,7 @@ Func __GetAssociationKey($gParameter = -1, $gType = 0)
 		Description: Get A Key String ($gParameter = Number) Or A Key Number ($gParameter = String).
 		Returns: Key $gType = 0 [ExtractSettings] Or Key $gType = 1 [EXTRACT SETTINGS]
 	#ce
-	Local $gIsNumber = StringIsDigit($gParameter), $gNumberFields = 21
+	Local $gIsNumber = StringIsDigit($gParameter), $gNumberFields = 22
 	If $gParameter = -1 Then
 		Return $gNumberFields
 	EndIf
@@ -617,7 +636,7 @@ Func __SetAssociationName($sNewAssociationName, $sOldAssociationName, $sProfileP
 		Description: Define New Association And Report If The Name Already Exists.
 		Return: 1
 	#ce
-	Local $iMsgBox = 6
+	Local $iMsgBox = 6, $aAssociations, $i, $j, $aMultiActionIni
 
 	If __StringIsValid($sNewAssociationName, ';#|[]') = 0 Then
 		MsgBox(0x30, __GetLang('MANAGE_EDIT_MSGBOX_4', 'Association Error'), __GetLang('MANAGE_EDIT_MSGBOX_36', 'You cannot use the following characters in association name:') & @LF & "; # | [ ]", 0, __OnTop($hGUI))
@@ -637,6 +656,21 @@ Func __SetAssociationName($sNewAssociationName, $sOldAssociationName, $sProfileP
 	EndIf
 	If $iIsNewAssociation = 0 Then
 		IniDelete($sProfilePath, $sOldAssociationName) ; Remove The Old Section Name.
+
+		;update the name in the multi action associations
+		$aAssociations = __GetAssociations()
+		For $i = 1 To UBound($aAssociations) - 1
+				If $aAssociations[$i][3] = "$L" Then
+					$aMultiActionIni = __IniReadSection($sProfilePath, $aAssociations[$i][0])
+					For $j = 1 To UBound($aMultiActionIni) - 1
+						If $aMultiActionIni[$j][0] = "Destination" Then
+							$aMultiActionIni[$j][1] = StringRegExpReplace($aMultiActionIni[$j][1], "(^|;)" & $sOldAssociationName & "(;|$)", "\1" & $sNewAssociationName & "\2")
+							ExitLoop
+						EndIf
+					Next
+					__IniWriteEx($sProfilePath, $aAssociations[$i][0], "", _ArrayToString($aMultiActionIni, "=", 1))
+				EndIf
+		Next
 	EndIf
 
 	Return $sNewAssociationName
