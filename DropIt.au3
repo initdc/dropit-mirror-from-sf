@@ -7492,7 +7492,7 @@ Func _MonitoringChanges()
 		EndIf
 
 		For $j = 1 to $aData[0][0]
-			If $aData[$j][0] = $FILE_ACTION_ADDED Or $aData[$j][0] = $FILE_ACTION_RENAMED_NEW_NAME Then ; only force execution on file creation or rename
+			If $aData[$j][0] = $FILE_ACTION_ADDED Or $aData[$j][0] = $FILE_ACTION_MODIFIED Or $aData[$j][0] = $FILE_ACTION_RENAMED_NEW_NAME Or $aData[$j][0] = $FILE_NOTIFY_CHANGE_SIZE Then
 				If $sResult <> "" Then
 					$sResult &= "|"
 				EndIf
@@ -7525,7 +7525,7 @@ Func _HidingTargetImage($mTime_Now)
 EndFunc   ;==>_HidingTargetImage
 
 Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
-	Local $mMonitored, $mStringSplit, $mLoadedFolder[2] = [1, 0], $i
+	Local $mMonitored, $mStringSplit, $mLoadedFolder[2] = [1, 0], $mChangedFiles[1] = [0]
 
 	If (($Global_Monitoring = 1 Or $Global_Monitoring = 3) And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000)) Or IsArray($mForceExecutionOn) Then
 		$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
@@ -7546,9 +7546,9 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 					EndIf
 				EndIf
 				If FileExists($mLoadedFolder[1]) = 0 Then
-					ContinueLoop ; Skip Folder If Does Not Exist
+					ContinueLoop ; Skip Folder If Does Not Exist.
 				EndIf
-				If DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer And $mForceExecutionOn[0] = 0 Then
+				If DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer And Not IsArray($mForceExecutionOn) Then
 					ContinueLoop ; Skip Folder If Is Smaller Than Defined Size And Timer Is Used.
 				EndIf
 				If ($Global_Monitoring = 1 Or $Global_Monitoring = 3) And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
@@ -7558,18 +7558,22 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 						GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
 					EndIf
 					_DropEvent($mLoadedFolder, $mStringSplit[1], 1)
-				Else
+				ElseIf IsArray($mForceExecutionOn) Then
 					;execute drop on given force execution items
-					For $i = 1 to $mForceExecutionOn[0]
-						If StringInStr($mForceExecutionOn[$i], $mLoadedFolder[1]) > 0 Then
-							__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1] & " -> " & $mForceExecutionOn[$i])
-							$mLoadedFolder[1] = $mForceExecutionOn[$i]
-							If $Global_GUI_State = 1 Then ; GUI Is Visible.
-								GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
-							EndIf
-							_DropEvent($mLoadedFolder, $mStringSplit[1], 1)
+					For $B = 1 to $mForceExecutionOn[0]
+						If StringInStr($mForceExecutionOn[$B], $mLoadedFolder[1]) > 0 Then
+							__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1] & " -> " & $mForceExecutionOn[$B])
+							$mChangedFiles[0] += 1
+							ReDim $mChangedFiles[$mChangedFiles[0] + 1]
+							$mChangedFiles[$mChangedFiles[0]] = $mForceExecutionOn[$B]
 						EndIf
 					Next
+					If $mChangedFiles[0] > 0 Then
+						If $Global_GUI_State = 1 Then ; GUI Is Visible.
+							GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
+						EndIf
+						_DropEvent($mChangedFiles, $mStringSplit[1])
+					EndIf
 				EndIf
 				GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
 			Next
