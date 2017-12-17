@@ -37,6 +37,7 @@ http://www.autoitscript.com/forum/topic/133053-iconimage-udf/
 Image Get Info Library (ImageGetInfo.au3) - 13/11/2010
 http://www.autoitscript.com/forum/topic/13096-udf-imagegetinfo/
 
+
 RDC (ReadDirectoryChanges Wrapper) Library (RDC.au3) - 11/05/2016
 https://www.autoitscript.com/forum/topic/167024-rdc-udf-readdirectorychanges-wrapper/
 

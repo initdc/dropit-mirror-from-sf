@@ -7698,7 +7698,7 @@ Func _Main()
 	Local $mHidingTime_Now = $mMonitoringTime_Now
 
 	DragDropEvent_Startup() ; Enable Drag & Drop.
-	_RDC_OpenDll(@ScriptDir & '\Lib\udf\RDC.dll')
+	_RDC_OpenDll(@ScriptDir & '\Lib\rdc\RDC.dll')
 	_SetFeaturesWithTimer($mINI) ; Load Global Monitoring Configuration.
 	__InstalledCheck() ; Check To See If DropIt Is Installed.
 	__IsProfile() ; Check If A Default Profile Is Available.
