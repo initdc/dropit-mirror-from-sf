@@ -4763,7 +4763,7 @@ Func _DropEvent($dFiles, $dProfile, $dMonitored = 0)
 
 	; Create The Array Of Dropped Items:
 	GUICtrlSetData($dElementsGUI[0], __GetLang('POSITIONPROCESS_1', 'Loading files') & '...')
-	$dMainArray = _Position_MainArray($dMainArray, $dFiles, $dElementsGUI, $dMonitored)
+	$dMainArray = _Position_MainArray($dMainArray, $dFiles, $dElementsGUI)
 	If @error Then ; Error Only If Aborted.
 		_DropStop(1)
 		Return SetError(1, 0, 0)
