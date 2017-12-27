@@ -7918,7 +7918,7 @@ Func _SetFeaturesWithTimer($mINI)
 					EndIf
 
 					If $Global_Monitoring >= 2 Then
-						$iId = _RDC_Create($mMonitored[$A][0], True, $FILE_NOTIFY_CHANGE_FILE_NAME)
+						$iId = _RDC_Create($mMonitored[$A][0], True, BitOR($FILE_NOTIFY_CHANGE_FILE_NAME, $FILE_NOTIFY_CHANGE_DIR_NAME, $FILE_NOTIFY_CHANGE_SIZE))
 					EndIf
 					If @error = 0 Then
 						;register for file changes
