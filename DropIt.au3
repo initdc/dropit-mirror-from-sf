@@ -144,7 +144,7 @@ Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Export, $Global
 Global $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New ; ListView Variables.
 Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1, $Global_ListViewProcess_Open, $Global_ListViewProcess_Info, $Global_ListViewProcess_Skip ; ListView Variables.
 Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
-Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringChanges[1], $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
+Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringChanges[1], $Global_MonitoringPreviousChanges = "", $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
 Global $Global_Clipboard, $Global_Wheel, $Global_ScriptRefresh, $Global_ScriptRestart, $Global_ListViewCreateGallery, $Global_ListViewCreateList ; Misc.
 Global $Global_NewDroppedFiles, $Global_DroppedFiles[1], $Global_PriorityActions[1], $Global_SendTo_ControlID ; Misc.
 Global $Global_AbortButton, $Global_PauseButton ; Process GUI.
@@ -7465,7 +7465,7 @@ Func _MonitoringChanges()
 
 		For $j = 1 to $aData[0][0]
 			If $aData[$j][0] = $FILE_ACTION_ADDED Or $aData[$j][0] = $FILE_ACTION_MODIFIED Or $aData[$j][0] = $FILE_ACTION_RENAMED_NEW_NAME Or $aData[$j][0] = $FILE_NOTIFY_CHANGE_SIZE Then
-				If Not StringInStr($sResult, _RDC_GetDirectory($iId) & "\" & $aData[$j][1]) Then
+				If Not StringInStr($sResult, _RDC_GetDirectory($iId) & "\" & $aData[$j][1]) And Not StringInStr($Global_MonitoringPreviousChanges, _RDC_GetDirectory($iId) & "\" & $aData[$j][1]) Then
 					If $sResult <> "" Then
 						$sResult &= "|"
 					EndIf
@@ -7474,6 +7474,8 @@ Func _MonitoringChanges()
 			EndIf
 		Next
 	Next
+
+	$Global_MonitoringPreviousChanges = $sResult
 
 	If $sResult = "" Then Return ""
 
