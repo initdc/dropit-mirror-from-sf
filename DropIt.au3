@@ -8022,7 +8022,7 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 						If $Global_GUI_State = 1 Then ; GUI Is Visible.
 							GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
 						EndIf
-						_DropEvent($mChangedFiles, $mStringSplit[1])
+						_DropEvent($mChangedFiles, $mStringSplit[1], 1)
 					EndIf
 				EndIf
 				GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
