@@ -8017,15 +8017,8 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 				If DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer And Not IsArray($mForceExecutionOn) Then
 					ContinueLoop ; Skip Folder If Is Smaller Than Defined Size And Timer Is Used.
 				EndIf
-				If ($Global_Monitoring = 1 Or $Global_Monitoring = 3) And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
-					;always execute drop event for whole folder with priority over the force execution files
-					__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1])
-					If $Global_GUI_State = 1 Then ; GUI Is Visible.
-						GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
-					EndIf
-					_DropEvent($mLoadedFolder, $mStringSplit[1], 1)
-				ElseIf IsArray($mForceExecutionOn) Then
-					;execute drop on given force execution items
+				If IsArray($mForceExecutionOn) Then
+					; ExecuteForceExecutionOn Items Always First, To Remove Duplicate File Appearance.
 					For $B = 1 to $mForceExecutionOn[0]
 						If StringInStr($mForceExecutionOn[$B], $mLoadedFolder[1]) > 0 Then
 							__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1] & " -> " & $mForceExecutionOn[$B])
@@ -8040,6 +8033,13 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 						EndIf
 						_DropEvent($mChangedFiles, $mStringSplit[1], 1)
 					EndIf
+				ElseIf ($Global_Monitoring = 1 Or $Global_Monitoring = 3) And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
+					; Finally Execute Regular Timer Drop Event
+					__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1])
+					If $Global_GUI_State = 1 Then ; GUI Is Visible.
+						GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
+					EndIf
+					_DropEvent($mLoadedFolder, $mStringSplit[1], 1)
 				EndIf
 				GUISetState(@SW_HIDE, $Global_GUI_2) ; Hide Small Working Icon.
 			Next
