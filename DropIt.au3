@@ -7694,7 +7694,7 @@ EndFunc   ;==>_Sorting_RunDelete
 Func _Main()
 	Local $mProfileList, $mCurrentProfile, $mMsg
 	Local $mINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Local $mMonitoringTime_Now = TimerInit(), $mForceMonitoringNowOn[1] = [0]
+	Local $mMonitoringTime_Now = TimerInit(), $mImmediateMonitoringFiles[1] = [0], $mImmediateMonitoring_DelayTimer = 0
 	Local $mHidingTime_Now = $mMonitoringTime_Now
 
 	DragDropEvent_Startup() ; Enable Drag & Drop.
@@ -7726,11 +7726,26 @@ Func _Main()
 			$mHidingTime_Now = _HidingTargetImage($mHidingTime_Now)
 		EndIf
 		If $Global_Monitoring <> 0 Then
-			Dim $mForceMonitoringNowOn = ""
+
+			; Realize Immediate Monitoring
 			If $Global_Monitoring >= 2 Then
-				$mForceMonitoringNowOn = _MonitoringChanges()
+				_MonitoringChanges($mImmediateMonitoringFiles)
+				If $mImmediateMonitoringFiles[0] > 0 Then
+					If $mImmediateMonitoring_DelayTimer = 0 Then
+						$mImmediateMonitoring_DelayTimer = TimerInit()
+					ElseIf TimerDiff($mImmediateMonitoring_DelayTimer) > 2000 Then
+						$mImmediateMonitoring_DelayTimer = -1
+					EndIf
+				EndIf
 			EndIf
-			$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now, $mForceMonitoringNowOn)
+
+			If $mImmediateMonitoring_DelayTimer = -1 Then
+				$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now, $mImmediateMonitoringFiles)
+				$mImmediateMonitoring_DelayTimer = 0
+				Dim $mImmediateMonitoringFiles[1] = [0]
+			Else
+				$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now)
+			EndIf
 		EndIf
 		If $Global_Wheel <> 0 Then ; Switch Profiles With Mouse Scroll Wheel.
 			If __Is("MouseScroll") Then
@@ -7925,7 +7940,7 @@ Func _SetFeaturesWithTimer($mINI)
 	EndIf
 EndFunc   ;==>_SetFeaturesWithTimer
 
-Func _MonitoringChanges()
+Func _MonitoringChanges(ByRef $aInitialData)
 	Local $iId, $i, $j, $aData, $sResult = ""
 
 	For $i = 1 to UBound($Global_MonitoringChanges) - 1
@@ -7951,9 +7966,10 @@ Func _MonitoringChanges()
 
 	$Global_MonitoringPreviousChanges = $sResult
 
-	If $sResult = "" Then Return ""
+	If $sResult = "" Then Return
+	_ArrayAdd($aInitialData, $sResult, 0, "|")
+	$aInitialData[0] = UBound($aInitialData) - 1
 
-	Return StringSplit($sResult, "|")
 EndFunc   ;==>_MonitoringChanges
 
 Func _HidingTargetImage($mTime_Now)
