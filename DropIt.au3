@@ -144,7 +144,7 @@ Global $Global_ListViewProfiles_Import, $Global_ListViewProfiles_Export, $Global
 Global $Global_ListViewProfiles_Options, $Global_ListViewProfiles_Example[2], $Global_ListViewFolders_Enter, $Global_ListViewFolders_New, $Global_ListViewProcess_ShowDetails ; ListView Variables.
 Global $Global_ListViewRules_ComboBox, $Global_ListViewRules_ComboBoxChange = 0, $Global_ListViewRules_ItemChange = -1, $Global_ListViewProcess_Open, $Global_ListViewProcess_Info, $Global_ListViewProcess_Skip ; ListView Variables.
 Global $Global_ListViewRules_CopyTo, $Global_ListViewRules_Duplicate, $Global_ListViewRules_Delete, $Global_ListViewRules_Enter, $Global_ListViewRules_New, $Global_ListViewFolders_ItemChange = -1 ; ListView Variables.
-Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringChanges[1], $Global_MonitoringFileChanges[1], $Global_MonitoringChangedFiles = "", $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
+Global $Global_Monitoring, $Global_MonitoringTimer, $Global_MonitoringSizer, $Global_MonitoringChanges[1], $Global_MonitoringPreviousChanges = "", $Global_GraduallyHide, $Global_GraduallyHideTimer, $Global_GraduallyHideSpeed, $Global_GraduallyHideVisPx ; Misc.
 Global $Global_Clipboard, $Global_Wheel, $Global_ScriptRefresh, $Global_ScriptRestart, $Global_ListViewCreateGallery, $Global_ListViewCreateList ; Misc.
 Global $Global_NewDroppedFiles, $Global_DroppedFiles[1], $Global_PriorityActions[1], $Global_SendTo_ControlID ; Misc.
 Global $Global_AbortButton, $Global_PauseButton ; Process GUI.
@@ -4763,7 +4763,7 @@ Func _DropEvent($dFiles, $dProfile, $dMonitored = 0)
 
 	; Create The Array Of Dropped Items:
 	GUICtrlSetData($dElementsGUI[0], __GetLang('POSITIONPROCESS_1', 'Loading files') & '...')
-	$dMainArray = _Position_MainArray($dMainArray, $dFiles, $dElementsGUI, $dMonitored)
+	$dMainArray = _Position_MainArray($dMainArray, $dFiles, $dElementsGUI)
 	If @error Then ; Error Only If Aborted.
 		_DropStop(1)
 		Return SetError(1, 0, 0)
@@ -7694,7 +7694,7 @@ EndFunc   ;==>_Sorting_RunDelete
 Func _Main()
 	Local $mProfileList, $mCurrentProfile, $mMsg
 	Local $mINI = __IsSettingsFile() ; Get Default Settings INI File.
-	Local $mMonitoringTime_Now = TimerInit(), $mForceMonitoringNowOn[1] = [0]
+	Local $mMonitoringTime_Now = TimerInit(), $mImmediateMonitoringFiles[1] = [0], $mImmediateMonitoring_DelayTimer = 0
 	Local $mHidingTime_Now = $mMonitoringTime_Now
 
 	DragDropEvent_Startup() ; Enable Drag & Drop.
@@ -7726,11 +7726,26 @@ Func _Main()
 			$mHidingTime_Now = _HidingTargetImage($mHidingTime_Now)
 		EndIf
 		If $Global_Monitoring <> 0 Then
-			Dim $mForceMonitoringNowOn = ""
+
+			; Realize Immediate Monitoring
 			If $Global_Monitoring >= 2 Then
-				$mForceMonitoringNowOn = _MonitoringChanges()
+				_MonitoringChanges($mImmediateMonitoringFiles)
+				If $mImmediateMonitoringFiles[0] > 0 Then
+					If $mImmediateMonitoring_DelayTimer = 0 Then
+						$mImmediateMonitoring_DelayTimer = TimerInit()
+					ElseIf TimerDiff($mImmediateMonitoring_DelayTimer) > 2000 Then
+						$mImmediateMonitoring_DelayTimer = -1
+					EndIf
+				EndIf
 			EndIf
-			$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now, $mForceMonitoringNowOn)
+
+			If $mImmediateMonitoring_DelayTimer = -1 Then
+				$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now, $mImmediateMonitoringFiles)
+				$mImmediateMonitoring_DelayTimer = 0
+				Dim $mImmediateMonitoringFiles[1] = [0]
+			Else
+				$mMonitoringTime_Now = _MonitoringFolders($mINI, $mMonitoringTime_Now)
+			EndIf
 		EndIf
 		If $Global_Wheel <> 0 Then ; Switch Profiles With Mouse Scroll Wheel.
 			If __Is("MouseScroll") Then
@@ -7872,7 +7887,7 @@ Func _Main_Create()
 EndFunc   ;==>_Main_Create
 
 Func _SetFeaturesWithTimer($mINI)
-	Local $mMonitored, $iId, $mStringSplit, $iMsg, $iFCId
+	Local $mMonitored, $iId, $mStringSplit
 
 	$Global_GraduallyHide = 0
 	If __Is("GraduallyHide") Then
@@ -7905,11 +7920,7 @@ Func _SetFeaturesWithTimer($mINI)
 			$mMonitored = __IniReadSection($mINI, "MonitoredFolders") ; Get Associations Array For The Current Profile.
 			If @error = 0 Then
 				_RDC_Destroy()
-				For $A = 1 to UBound($Global_MonitoringFileChanges) - 1
-					_WinAPI_ShellChangeNotifyDeregister($Global_MonitoringFileChanges[$A])
-				Next
 				Dim $Global_MonitoringChanges[1]
-				Dim $Global_MonitoringFileChanges[1]
 				For $A = 1 To $mMonitored[0][0]
 					$mStringSplit = StringSplit($mMonitored[$A][1], "|")
 					ReDim $mStringSplit[3]
@@ -7918,15 +7929,9 @@ Func _SetFeaturesWithTimer($mINI)
 					EndIf
 
 					If $Global_Monitoring >= 2 Then
-						$iId = _RDC_Create($mMonitored[$A][0], True, $FILE_NOTIFY_CHANGE_FILE_NAME)
+						$iId = _RDC_Create($mMonitored[$A][0], True, BitOR($FILE_NOTIFY_CHANGE_FILE_NAME, $FILE_NOTIFY_CHANGE_DIR_NAME, $FILE_NOTIFY_CHANGE_SIZE))
 					EndIf
 					If @error = 0 Then
-						;register for file changes
-						$iMsg = _WinAPI_RegisterWindowMessage('SHELLCHANGENOTIFY')
-						GUIRegisterMsg($iMsg, 'WM_SHELLCHANGENOTIFY')
-						$iFCId = _WinAPI_ShellChangeNotifyRegister($Global_GUI_1, $iMsg, $SHCNE_UPDATEITEM, BitOR($SHCNRF_INTERRUPTLEVEL, $SHCNRF_SHELLLEVEL, $SHCNRF_RECURSIVEINTERRUPT), $mMonitored[$A][0], 1)
-						_ArrayAdd($Global_MonitoringFileChanges, $iFCId)
-
 						_ArrayAdd($Global_MonitoringChanges, $iId)
 					EndIf
 				Next
@@ -7935,26 +7940,8 @@ Func _SetFeaturesWithTimer($mINI)
 	EndIf
 EndFunc   ;==>_SetFeaturesWithTimer
 
-Func WM_SHELLCHANGENOTIFY($hWnd, $iMsg, $wParam, $lParam)
-    #forceref $hWnd, $iMsg
-
-    Local $sPath = _WinAPI_ShellGetPathFromIDList(DllStructGetData(DllStructCreate('dword Item1; dword Item2', $wParam), 'Item1'))
-    If $sPath Then
-		; only execute, if the path is a file
-		If FileExists($sPath) Then
-			If StringInStr(FileGetAttrib($sPath), "D") = 0 Then
-				If $Global_MonitoringChangedFiles <> "" Then
-					$Global_MonitoringChangedFiles &= "|"
-				EndIf
-				$Global_MonitoringChangedFiles &= $sPath
-			EndIf
-		EndIf
-    EndIf
-EndFunc   ;==>WM_SHELLCHANGENOTIFY
-
-Func _MonitoringChanges()
-	Local $iId, $i, $j, $aData, $sResult = $Global_MonitoringChangedFiles
-	$Global_MonitoringChangedFiles = ""
+Func _MonitoringChanges(ByRef $aInitialData)
+	Local $iId, $i, $j, $aData, $sResult = ""
 
 	For $i = 1 to UBound($Global_MonitoringChanges) - 1
 		$iId = $Global_MonitoringChanges[$i]
@@ -7967,17 +7954,22 @@ Func _MonitoringChanges()
 
 		For $j = 1 to $aData[0][0]
 			If $aData[$j][0] = $FILE_ACTION_ADDED Or $aData[$j][0] = $FILE_ACTION_MODIFIED Or $aData[$j][0] = $FILE_ACTION_RENAMED_NEW_NAME Or $aData[$j][0] = $FILE_NOTIFY_CHANGE_SIZE Then
-				If $sResult <> "" Then
-					$sResult &= "|"
+				If Not StringInStr($sResult, _RDC_GetDirectory($iId) & "\" & $aData[$j][1]) And Not StringInStr($Global_MonitoringPreviousChanges, _RDC_GetDirectory($iId) & "\" & $aData[$j][1]) Then
+					If $sResult <> "" Then
+						$sResult &= "|"
+					EndIf
+					$sResult &= _RDC_GetDirectory($iId) & "\" & $aData[$j][1]
 				EndIf
-				$sResult &= _RDC_GetDirectory($iId) & "\" & $aData[$j][1]
 			EndIf
 		Next
 	Next
 
-	If $sResult = "" Then Return ""
+	$Global_MonitoringPreviousChanges = $sResult
 
-	Return StringSplit($sResult, "|")
+	If $sResult = "" Then Return
+	_ArrayAdd($aInitialData, $sResult, 0, "|")
+	$aInitialData[0] = UBound($aInitialData) - 1
+
 EndFunc   ;==>_MonitoringChanges
 
 Func _HidingTargetImage($mTime_Now)
@@ -8025,8 +8017,24 @@ Func _MonitoringFolders($mINI, $mTime_Now, $mForceExecutionOn = "")
 				If DirGetSize($mLoadedFolder[1]) / 1024 < $Global_MonitoringSizer And Not IsArray($mForceExecutionOn) Then
 					ContinueLoop ; Skip Folder If Is Smaller Than Defined Size And Timer Is Used.
 				EndIf
-				If ($Global_Monitoring = 1 Or $Global_Monitoring = 3) And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
-					;always execute drop event for whole folder with priority over the force execution files
+				If IsArray($mForceExecutionOn) Then
+					; ExecuteForceExecutionOn Items Always First, To Remove Duplicate File Appearance.
+					For $B = 1 to $mForceExecutionOn[0]
+						If StringInStr($mForceExecutionOn[$B], $mLoadedFolder[1]) > 0 Then
+							__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1] & " -> " & $mForceExecutionOn[$B])
+							$mChangedFiles[0] += 1
+							ReDim $mChangedFiles[$mChangedFiles[0] + 1]
+							$mChangedFiles[$mChangedFiles[0]] = $mForceExecutionOn[$B]
+						EndIf
+					Next
+					If $mChangedFiles[0] > 0 Then
+						If $Global_GUI_State = 1 Then ; GUI Is Visible.
+							GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
+						EndIf
+						_DropEvent($mChangedFiles, $mStringSplit[1], 1)
+					EndIf
+				ElseIf ($Global_Monitoring = 1 Or $Global_Monitoring = 3) And TimerDiff($mTime_Now) > ($Global_MonitoringTimer * 1000) Then
+					; Finally Execute Regular Timer Drop Event
 					__Log_Write(__GetLang('MONITORED_FOLDER', 'Monitored Folder'), $mLoadedFolder[1])
 					If $Global_GUI_State = 1 Then ; GUI Is Visible.
 						GUISetState(@SW_SHOWNOACTIVATE, $Global_GUI_2) ; Show Small Working Icon.
