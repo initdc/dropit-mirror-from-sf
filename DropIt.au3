@@ -18,8 +18,8 @@
 #AutoIt3Wrapper_Outfile=DropIt.exe
 #AutoIt3Wrapper_UseUpx=N
 #AutoIt3Wrapper_Res_Description=DropIt: Personal Assistant to Automatically Manage Your Files
-#AutoIt3Wrapper_Res_Fileversion=8.5.0.0
-#AutoIt3Wrapper_Res_ProductVersion=8.5.0.0
+#AutoIt3Wrapper_Res_Fileversion=8.5.1.0
+#AutoIt3Wrapper_Res_ProductVersion=8.5.1.0
 #AutoIt3Wrapper_Res_LegalCopyright=Andrea Luparia
 #AutoIt3Wrapper_Res_Language=1033
 #AutoIt3Wrapper_Res_Field=Website|http://www.dropitproject.com
@@ -7224,7 +7224,7 @@ Func _Main()
 	Local $mHidingTime_Now = $mMonitoringTime_Now
 
 	DragDropEvent_Startup() ; Enable Drag & Drop.
-	_RDC_OpenDll(@ScriptDir & '\Lib\udf\RDC.dll')
+	_RDC_OpenDll(@ScriptDir & '\Lib\rdc\RDC.dll')
 	_SetFeaturesWithTimer($mINI) ; Load Global Monitoring Configuration.
 	__InstalledCheck() ; Check To See If DropIt Is Installed.
 	__IsProfile() ; Check If A Default Profile Is Available.
