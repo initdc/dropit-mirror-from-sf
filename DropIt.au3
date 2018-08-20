@@ -7954,7 +7954,7 @@ Func _MonitoringChanges(ByRef $aInitialData)
 
 		For $j = 1 to $aData[0][0]
 			If $aData[$j][0] = $FILE_ACTION_ADDED Or $aData[$j][0] = $FILE_ACTION_MODIFIED Or $aData[$j][0] = $FILE_ACTION_RENAMED_NEW_NAME Or $aData[$j][0] = $FILE_NOTIFY_CHANGE_SIZE Then
-				If Not StringInStr($sResult, _RDC_GetDirectory($iId) & "\" & $aData[$j][1]) And Not StringInStr($Global_MonitoringPreviousChanges, _RDC_GetDirectory($iId) & "\" & $aData[$j][1]) Then
+				If StringInStr($sResult, _RDC_GetDirectory($iId) & "\" & $aData[$j][1]) = 0 And StringInStr($Global_MonitoringPreviousChanges, _RDC_GetDirectory($iId) & "\" & $aData[$j][1]) = 0 And _ArraySearch($aInitialData, _RDC_GetDirectory($iId) & "\" & $aData[$j][1]) = 0 Then
 					If $sResult <> "" Then
 						$sResult &= "|"
 					EndIf
